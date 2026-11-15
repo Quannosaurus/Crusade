@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<meta name="referrer" content="no-referrer">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Crusade Training Book</title>
+<meta name="theme-color" content="#0c0c0d">
+
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true"><rect x="2" y="2" width="96" height="96" rx="12" fill="#ece5d3" stroke="#c0141f" stroke-width="4"/><g fill="#0c0c0d"><g transform="rotate(0 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><g transform="rotate(90 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><g transform="rotate(180 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><g transform="rotate(270 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><circle cx="50" cy="50" r="9"/></g></svg>
+    <div><h1>Crusade Training Book</h1><p class="sub" id="subline"></p></div>
+  </header>
+  <main id="app"></main>
+</div>
+<div class="timer" role="region" aria-label="Rest timer"><div class="in">
+  <span class="clock" id="clock" role="timer" aria-label="Rest">0:00</span>
+  <button class="b sm" data-t="60" type="button">60 s</button>
+  <button class="b sm" data-t="90" type="button">90 s</button>
+  <button class="b sm" data-t="120" type="button">2 min</button>
+  <button class="b sm" data-t="180" type="button">3 min</button>
+  <button class="b sm" id="tstop" type="button">Stop</button>
+</div></div>
+<p id="live" class="vh" aria-live="polite"></p>
+<nav class="nav" aria-label="Tabs"><div class="in" id="nav"></div></nav>
+
+
+<script src="app.js"></script>
+</body>
+</html>
