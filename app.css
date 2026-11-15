@@ -109,8 +109,10 @@ summary+.ex{border-top:none}
 .chk input{width:22px;height:22px;accent-color:var(--red)}
 .grid2{display:grid;grid-template-columns:1fr auto;gap:8px 12px;align-items:center}
 .tally{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:6px}
-.t{background:var(--panel2);border:1px solid var(--line);border-radius:7px;padding:7px 10px;font-size:.86rem}
-.t b{display:block}
+.t{border-left:3px solid var(--line);padding:1px 0 1px 10px;font-size:.84rem;color:var(--muted);cursor:default}
+.t b{display:block;color:var(--bone);font-size:1rem}
+.t.met{border-left-color:var(--ok)}
+.tally{row-gap:12px}
 .log{display:grid;grid-template-columns:1fr auto;gap:2px 8px;padding:9px 0;border-top:1px dashed var(--line)}
 .log:first-child{border-top:none}
 .warn{background:var(--red-soft);border:1px solid var(--red);border-radius:8px;padding:10px 12px;font-size:.9rem}
@@ -215,3 +217,9 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .sw4 i{border:1px solid var(--line)}
 .filebtn2{display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
 .row .b{flex:1}
+.how summary{display:block;color:var(--muted);font-size:.85rem;cursor:pointer;padding:2px 0;list-style:none}.how summary::-webkit-details-marker{display:none}.how summary::before{content:"ⓘ ";}
+.how p{margin:4px 0 2px;font-size:.88rem;color:var(--bone);background:var(--panel2);border-radius:7px;padding:8px 10px}
+.lnk.hold{color:var(--acc-t);font-weight:700;text-decoration:none}
+.log{flex-wrap:wrap}.lacts{display:flex;gap:6px;margin-left:auto}
+.edit .grid2{grid-template-columns:auto minmax(0,1fr)}.edit input,.edit select{width:100%;min-width:0;box-sizing:border-box}
+.edit{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px;margin:2px 0 8px;display:flex;flex-direction:column;gap:8px}

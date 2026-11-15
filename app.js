@@ -555,7 +555,7 @@ function mSections(m,short){
   return L;
 }
 function poseRow(x,id2,dy){var on=!!dy.done[id2],pc=picFor(x[0]);
-  return '<div class="ex pose'+(on?" done":"")+'"><input type="checkbox" id="c'+id2+'" data-a="done" data-id="'+id2+'"'+(on?" checked":"")+' aria-label="'+esc(x[0])+' done">'+(pc?'<div class="pw">'+pc+'</div>':'')+'<div class="exb"><label class="n" for="c'+id2+'">'+esc(x[0])+'</label><div class="tg">'+esc(x[1])+'</div>'+(x[2]?'<div class="c">'+esc(x[2])+'</div>':'')+'</div></div>';}
+  return '<div class="ex pose'+(on?" done":"")+'"><input type="checkbox" id="c'+id2+'" data-a="done" data-id="'+id2+'"'+(on?" checked":"")+' aria-label="'+esc(x[0])+' done">'+(pc?'<div class="pw">'+pc+'</div>':'')+'<div class="exb"><label class="n" for="c'+id2+'">'+esc(x[0])+'</label><div class="tg">'+esc(x[1])+'</div>'+(x[2]?'<div class="c">'+esc(x[2])+'</div>':'')+(holdBtn(x[1])?'<div class="acts">'+holdBtn(x[1])+'</div>':'')+'</div></div>';}
 
 /* ================= Cool-down: 5 min static stretching after every session =================
    About 30–45 s per stretch on warm muscles. Static stretching improves flexibility; gains level off around
@@ -573,6 +573,42 @@ function COOL(kind){return {name:"Cool-down",info:"5 min · "+COOLS[kind].n+" ·
 var KM_POST={name:"Cool-down",info:"5 min · after kickboxing · hold, breathe slowly",p:1,rest:0,items:COOLS_KICK()};
 var COOLK={KA:"up",KB:"up",SK:"up",HO:"up",HK:"up",CH:"legs",TE:"up",DL:"legs",KC:"legs"};
 
+/* Short technique notes: first matching pattern wins. Families share one note. */
+var HOWTO=[
+ [/bail|cartwheel/i,"From the handstand, turn one hand and step down sideways like a cartwheel. Practise it near the wall until it is automatic."],
+ [/hollow|plank|dead bug|mountain climber|bird dog|superman|swimmer|windshield|russian twist|v-up|sit-up|crunch|leg lower|leg raise|rocks/i,"Brace as if someone is about to poke your belly. Low back stays controlled, move slowly and breathe out on the effort."],
+ [/muscle-up/i,"From a dead hang, pull explosively to the hips, lean the chest over the bar and push to straight arms. Control the way down. Only clean reps count."],
+ [/transition/i,"Low bar, feet on the floor. Practise rolling the chest over the bar from pull to dip, slowly, with the feet helping."],
+ [/explosive.*pull|chest-to-bar/i,"Pull as fast and high as you can, aim the chest or belly at the bar. Stop the set when the height drops."],
+ [/negative pull|negative.*chin/i,"Jump or step to the top, chin over the bar, then lower as slowly as you can. Shoulders stay active down to the hang."],
+ [/archer pull|commando|wide pull|pull-ups|chin-up|pull-up/i,"Hang with straight arms, pull the shoulder blades down first, then pull until the chin clears the bar. Lower under control, no swinging."],
+ [/lat pulldown|straight-arm pulldown|pullover/i,"Chest up, pull the elbows down toward your hips. Shoulders stay away from the ears. Slow on the way up."],
+ [/row/i,"Body or torso straight, pull the elbows back until the hands reach the ribs. Squeeze the shoulder blades, lower slowly."],
+ [/front lever/i,"Hang with straight arms, press the bar down toward the hips and lift the body to horizontal. Ribs in, shoulder blades down. Tuck the knees as much as you need."],
+ [/planche lean|pseudo-planche/i,"Hands turned out slightly, arms straight, lean the shoulders forward past the hands. Push the floor away, upper back round."],
+ [/planche/i,"Hands on floor or parallettes, arms locked, lean forward until the feet lift. Push the floor away, round the upper back, knees as tucked as needed."],
+ [/hspu|pike push|shoulder press|landmine press/i,"Press overhead: head moves forward through the arms at the top, elbows slightly in front. Lower under control."],
+ [/chest-to-wall|handstand|wall walk|pike handstand|pike walk/i,"Hands shoulder-width, fingers spread, push tall through the shoulders. Ribs in, glutes tight, body in one line. Come down by stepping or cartwheeling out."],
+ [/l-sit|tuck l-sit|l-rows/i,"Hands next to the hips, arms locked, push the shoulders down hard and lift the legs. Tuck the knees until you can straighten them."],
+ [/dips to|ring-dips|dips/i,"Start at the top with straight arms, shoulders down. Lower until the shoulders are just below the elbows, chest slightly forward, then press up."],
+ [/archer push|diamond push|deep push|push-ups|push-up|knee push/i,"Hands under the shoulders, body like a plank. Lower the chest to the floor with elbows about 45° from the body, press up. Knees on the floor if needed."],
+ [/bench press|chest press/i,"Shoulder blades pulled back, feet planted. Lower to mid-chest, elbows about 45°, press up."],
+ [/triceps|french press/i,"Elbows stay in place, only the forearms move. Full stretch at the bottom, lock out at the top."],
+ [/curl/i,"Elbows at your sides, curl without swinging. Lower slowly, the way down builds the tendons."],
+ [/face pull|reverse fly|reverse butterfly|pull-apart|y-raise|y-t-w/i,"Light weight. Pull back and slightly up, thumbs out, squeeze between the shoulder blades. No shrugging."],
+ [/external rotation/i,"Elbow fixed at your side (or on your hip when lying). Rotate the forearm out slowly, back slowly. Light weight, no pain."],
+ [/serratus|scapula push/i,"Arms straight, push the shoulder blades apart at the end, as if pushing the floor or wall away. Small but deliberate."],
+ [/squat|lunge|leg press|split/i,"Knee follows the toes, heel stays down, chest up. Go as deep as you can with a neutral back, drive up through the whole foot."],
+ [/romanian deadlift|hip thrust|glute bridge|hyperext|swing|nordic|leg curl/i,"Hinge at the hips with a long back. Drive the hips forward and squeeze the glutes at the top. Nordics: lower as slowly as possible."],
+ [/calf raise|tibialis/i,"Full range: deep stretch at the bottom, pause at the top. Slow on the way down."],
+ [/abductor|adductor|copenhagen|band walk|side-lying leg/i,"Hips level, slow and controlled. Feel the side or inside of the hip, not the lower back."],
+ [/pallof|woodchop|rotation|medicine ball|landmine/i,"Power comes from the hips and trunk. Arms stay long, the core controls the rotation."],
+ [/box jump|jumping|switching lunges/i,"Land softly with bent knees, step down from the box. Quality over count: stop when jumps get lower."],
+ [/horse stance|side kick hold|leg raise/i,"Stand tall, hips square. Hold the position actively without leaning back."],
+ [/active hang|hang/i,"Hang from the bar, pull the shoulders down away from the ears, arms straight. Breathe."]
+];
+function howto(name){for(var i=0;i<HOWTO.length;i++)if(HOWTO[i][0].test(name))return HOWTO[i][1];return "";}
+
 /* ================= Darstellung ================= */
 var app=document.getElementById("app"), rendering=false, TB=null;
 var TABS=[["start","Today"],["verlauf","Chronicle"],["stand","Status"],["mehr","More"]];
@@ -585,6 +621,8 @@ function setBoxes(id,n,inp,ph,isS,rest,last){
   for(var i=0;i<n;i++) h+='<label>'+(n>1?(i+1)+'.':(isS?"Sec.":"reps"))+'<input type="number" inputmode="numeric" data-set="'+i+'" data-id="'+id+'" data-rest="'+rest+'" data-last="'+(last?1:0)+'" data-n="'+n+'" value="'+esc(s[i])+'" placeholder="'+ph+'" aria-label="Set '+(i+1)+(isS?" seconds":" reps")+'"></label>';
   return h;
 }
+function holdBtn(dose){var m=String(dose).match(/^(\d+)\s*s( each side| each)?$/);if(!m)return "";var sec=+m[1],sides=m[2]?2:1;
+  return '<button type="button" class="lnk hold" data-a="hold" data-s="'+sec+'" data-sides="'+sides+'">▶ Hold '+sec+' s'+(sides>1?' × 2':'')+'</button>';}
 function itemHTML(it,id,dy,loc,b,c,sid,last){
   var v=curVar(it,loc); if(v<0) return "";
   var o=it.opts[v], a=avail(it,loc), on=!!dy.done[id], sk=!!dy.skip[id], inp=dy.inp[id]||{}, rest=b&&b.rest||0, tg, g=null, n=1, isS=false, extra="", pain=!(b&&b.rehab)&&painHit(o.n);
@@ -602,12 +640,13 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(sk) return h+'<div class="c">'+(pain?"Skipped because of pain.":"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
   h+='<div class="tg">'+esc(tg)+'</div>';
   if(it.c) h+='<div class="c">'+esc(it.c)+'</div>';
+  var hw=pc?"":howto(o.n); if(hw) h+='<details class="how"><summary>How?</summary><p>'+esc(hw)+'</p></details>';
   if(g&&g.note) h+='<div class="c gold">'+esc(g.note)+'</div>';
   h+=extra;
   if(!it.f){ h+='<div class="inp">';
     if(o.w&&!it.iso&&!it.test) h+='<label>kg<input type="number" step="0.5" inputmode="decimal" data-inp="w" data-id="'+id+'" value="'+esc(inp.w)+'" placeholder="'+(g.w||"")+'"></label>';
     h+=setBoxes(id,n,inp,g.r,isS,rest,last)+'</div>'; }
-  h+='<div class="acts">'+(a.length>1?'<button type="button" class="lnk" data-a="chg" data-id="'+id+'">⇄ Swap</button>':'')+'<button type="button" class="lnk" data-a="skip" data-id="'+id+'">Skip</button></div>';
+  h+='<div class="acts">'+(it.f?holdBtn(tg):'')+(a.length>1?'<button type="button" class="lnk" data-a="chg" data-id="'+id+'">⇄ Swap</button>':'')+'<button type="button" class="lnk" data-a="skip" data-id="'+id+'">Skip</button></div>';
   return h+'</div></div>';
 }
 function blockHTML(b,bi,id,dy,loc,c,first){
@@ -623,7 +662,7 @@ function absHTML(ab,dy,loc,first){
   var A=ABS[ab.i],on=!!dy.done["abs-T"],run=TB!==null;
   var h='<details class="blk'+(on?" fin":"")+'" data-blk="abs" '+((dy.open&&dy.open.abs!=null?dy.open.abs:!!first)||run?"open":"")+'><summary><span class="bn">Ab Tabata · '+esc(A.n)+'</span><span class="bc">'+(on?"✓":"")+'</span><span class="bi"><span class="kind z">Tabata</span>'+ab.rounds+' × 20 s work, 10 s rest · '+(ab.rounds/2)+' min · two exercises alternating</span></summary>';
   A.items.forEach(function(it,ii){var v=curVar(it,loc),a=avail(it,loc);
-    h+='<div class="ex"><span class="num">'+(ii?"B":"A")+'</span><div class="exb"><div class="tgrow"><span class="n">'+esc(it.opts[v].n)+'</span>'+(a.length>1?'<button type="button" class="lnk" data-a="chg" data-id="abs-'+ab.i+'-'+ii+'">⇄ Swap</button>':'')+'</div><div class="c">'+esc(it.c)+'</div></div></div>';});
+    h+='<div class="ex"><span class="num">'+(ii?"B":"A")+'</span><div class="exb"><div class="tgrow"><span class="n">'+esc(it.opts[v].n)+'</span>'+(a.length>1?'<button type="button" class="lnk" data-a="chg" data-id="abs-'+ab.i+'-'+ii+'">⇄ Swap</button>':'')+'</div><div class="c">'+esc(it.c)+'</div>'+(howto(it.opts[v].n)?'<details class="how"><summary>How?</summary><p>'+esc(howto(it.opts[v].n))+'</p></details>':'')+'</div></div>';});
   h+='<div class="tb"><div class="tbbox" id="tbbox"'+(run?'':' hidden')+'><span class="eyebrow" id="tbp">Ready</span><span class="tbt" id="tbt">5</span><span class="muted" id="tbn"></span></div>'+
      (run?'<button type="button" class="b wide" data-a="tbstop">Cancel</button>':'<button type="button" class="b red wide" data-a="tbgo" data-r="'+ab.rounds+'" data-i="'+ab.i+'">'+(on?"Start again":"Start Tabata")+'</button>'+(on?'':'<button type="button" class="lnk" data-a="tbdone">Mark as done without the timer</button>'))+'</div>';
   return h+'</details>';
@@ -924,16 +963,22 @@ function vVerlauf(){
   var sk=selSk().length?4:0,F=D.focus,T2=F==="run"?[["Strength sessions",n(function(l){return STR[l.id];}),2],["Easy run",n(function(l){return l.id==="RE";}),3],["Intervals",n(function(l){return l.id==="RI";}),1],["Long run",n(function(l){return l.id==="RH";}),1],["Skill training",n(function(l){return l.sk?l.sk.length>0:HASHS[l.id];}),sk?2:0]]:
     [["Strength A",n(function(l){return l.id==="KA";}),1],["Strength B",n(function(l){return l.id==="KB";}),1],["Strength C / Challenge",n(function(l){return l.id==="KC"||l.id==="CH";}),1],["Skill training",n(function(l){return l.sk?l.sk.length>0:HASHS[l.id];}),sk],["Easy run",n(function(l){return l.id==="RE";}),F==="str"?0:1],["Hard run",n(function(l){return l.id==="RH"||l.id==="RI";}),F==="str"?0:1]];
   T2=T2.concat([["Kickboxing",n(function(l){return l.id==="KI";}),D.kickDays.length],["Ab Tabata",n(function(l){return l.abs;}),5],["Morning routine",n(function(l){return l.id==="MO";}),7]]);
-  var h='<div class="card">'+statsHTML()+'<div class="sec"><h2>This week</h2><div class="tally">'+T2.filter(function(t){return t[2]>0;}).map(function(t){return '<div class="t"><b>'+t[1]+' / '+t[2]+(t[1]>=t[2]?' ✓':'')+'</b>'+t[0]+'</div>';}).join("")+'</div></div>';
+  var h='<div class="card">'+statsHTML()+'<div class="sec"><h2>This week</h2><div class="tally">'+T2.filter(function(t){return t[2]>0;}).map(function(t){return '<div class="t'+(t[1]>=t[2]?' met':'')+'"><b>'+t[1]+' / '+t[2]+(t[1]>=t[2]?' ✓':'')+'</b>'+t[0]+'</div>';}).join("")+'</div></div>';
   var ex=Object.keys(D.ex).map(function(k){return D.ex[k];}).filter(function(e){return e.n;}).sort(function(a,b){return a.d<b.d?1:-1;}).slice(0,10);
   if(ex.length) h+='<div class="sec"><h3>Latest values</h3>'+ex.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?' × '+fmtKg(e.w)+' kg':'')+'</b></div>';}).join("")+'</div>';
   h+='<div class="sec"><h3>All entries</h3>';
   if(!D.logs.length) h+='<p class="muted">Nothing logged yet.</p>';
   var rev=D.logs.slice().reverse();rev.forEach(function(l,ri){if(ri===20)h+='<details class="tv"><summary>Show all '+rev.length+' entries</summary>';var i=D.logs.indexOf(l),d=pd(l.d);
-    h+='<div class="log"><b>'+esc(l.t)+'</b><span class="muted">'+d.getDate()+' '+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></div>';});
+    h+='<div class="log"><b>'+esc(l.t)+'</b><span class="muted">'+d.getDate()+' '+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
   if(rev.length>20)h+='</details>';
   return h+'</div></div>';
 }
+function editForm(l){var ids=Object.keys(NAMES).filter(function(k){return k!=="MO"||l.id==="MO";});
+  return '<div class="edit"><div class="grid2"><label for="e_d">Date</label><input type="text" id="e_d" inputmode="numeric" value="'+esc(l.d)+'">'+
+    '<label for="e_id">Session</label><select id="e_id">'+ids.map(function(k){return '<option value="'+k+'"'+(k===l.id?" selected":"")+'>'+esc(NAMES[k])+'</option>';}).join("")+'</select>'+
+    '<label for="e_rpe">How hard</label><select id="e_rpe">'+[[0,"–"],[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return '<option value="'+x[0]+'"'+((l.rpe||0)===x[0]?" selected":"")+'>'+x[1]+'</option>';}).join("")+'</select>'+
+    (isRun(l)?'<label for="e_km">Distance km</label><input type="number" id="e_km" step="0.01" inputmode="decimal" value="'+esc(l.km||"")+'"><label for="e_min">Time min</label><input type="number" id="e_min" step="0.1" inputmode="decimal" value="'+esc(l.min||"")+'">':'')+
+    '</div><label class="lab" for="e_note">Note</label><textarea id="e_note">'+esc(l.note||"")+'</textarea><div class="row"><button type="button" class="b" data-a="edit" data-i="'+D.logs.indexOf(l)+'">Cancel</button><button type="button" class="b red" data-a="editsave">Save changes</button></div><p class="muted">Date format YYYY-MM-DD.</p></div>';}
 function vStand(){
   var p=D.profile,c=ctx(TODAY),L=lvl(),F2=[["pull","Clean pull-ups"],["dips","Dips"],["push","Push-ups"],["expl","Explosive chest-to-bar pull-ups"],["negmu","Negative Muscle-Ups (5 s)"],["mu","Clean muscle-ups"],["hang","Active Hang (s)"],["tuck","Tuck L-Sit (s)"],["lsit","Straight-leg L-sit (s)"],["hollow","Hollow Body (s)"],["hsw","Chest-to-wall handstand (s)"],["hsf","Freestanding handstand (s)"],["pike","Pike Push-Ups"]];
   var mu=L===0?"Basic: build pull-ups and dips":(p.mu>=3?"Advanced: build muscle-ups":(p.mu>=1?"Consolidate the muscle-up":(p.pull>=10&&p.expl>=5?"Free muscle-up attempts":"Build explosive strength")));
@@ -960,7 +1005,7 @@ function render(){
   document.getElementById("subline").textContent=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" · Week "+c.week+" · "+LVN[lvl()];
   var top={morgen:"start",train:"start",run:"start",kick:"start"}[D.tab]||D.tab;
   document.getElementById("nav").innerHTML=D.onb?tabs().map(function(t){return '<button type="button" data-tab="'+t[0]+'" class="'+(top===t[0]?"on":"")+'"'+(top===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>';}).join(""):"";
-  document.body.className=D.onb?(D.tab==="train"?"train":""):"ob";
+  document.body.className=D.onb?(["train","morgen","run","kick"].indexOf(D.tab)>=0?"train":""):"ob";
   if(!D.onb) document.getElementById("subline").textContent="Induction of a new recruit";
   rendering=true;
   app.innerHTML=D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,verlauf:vVerlauf,stand:vStand,mehr:vMehr}[D.tab]||vStart)()):vOnb();
@@ -1054,6 +1099,15 @@ document.addEventListener("click",function(e){
   else if(a==="savekick"){if(needRpe(dy))return;var rk0=rankOf(xpTotal());addLog({d:TODAY,id:"KI",t:NAMES.KI,rpe:dy.fin.rpe,note:(dy.fin.note||"").slice(0,300)});afterLog(rk0,[]);finish(dy);return;}
   else if(a==="savemo"){var mm=morning(TODAY),rk0=rankOf(xpTotal());addLog({d:TODAY,id:"MO",t:NAMES.MO,m:[mm.top].concat(D.mlen==="k"?[]:[mm.sec])});D.tab="start";afterLog(rk0,[]);D._toast=D._toastX||"Morning routine logged. Let the day come.";D._toastX="";}
   else if(a==="mlen"){D.mlen=t.dataset.v;}
+  else if(a==="hold"){startHold(+t.dataset.s,+t.dataset.sides);return;}
+  else if(a==="edit"){D._edit=D._edit===+t.dataset.i?null:+t.dataset.i;D._del=null;}
+  else if(a==="editsave"){var ei=D._edit,L=D.logs[ei];if(L){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
+      var nd=g("e_d");if(/^\d{4}-\d{2}-\d{2}$/.test(nd)&&!isNaN(pd(nd))&&nd<=TODAY)L.d=nd;
+      var nt=g("e_id");if(nt&&NAMES[nt]){L.id=nt;L.t=NAMES[nt];}
+      var rp=+g("e_rpe");if([0,4,6,8,10].indexOf(rp)>=0){if(rp)L.rpe=rp;else delete L.rpe;}
+      if(isRun(L)){var km=num(g("e_km")),mn=num(g("e_min"));L.km=km&&km>0?Math.round(km*100)/100:0;L.min=mn&&mn>0?Math.round(mn*10)/10:0;}
+      L.note=(g("e_note")||"").slice(0,300);
+      D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});D._edit=null;D._toast="Entry updated.";}}
   else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);D._del=null;} else D._del=i;}
   else if(a==="exp"){var o=JSON.parse(JSON.stringify(D));delete o._bk;delete o._msg;D._bk=bkJSON();D.bkAt=D.logs.length;D.bkDate=TODAY;D._msg="Backup created. Copy it now and store it, e.g. in a note.";}
   else if(a==="copy"){var tx=document.getElementById("bk").value;try{navigator.clipboard.writeText(tx).then(function(){D._msg="Copied.";render();},function(){D._msg="Copying is not allowed. Please select the text by hand.";render();});}catch(x){D._msg="Copying is not allowed. Please select the text by hand.";}}
@@ -1131,6 +1185,11 @@ function fmt(s){return Math.floor(s/60)+":"+pad(s%60);}
 function stop(){clearInterval(iv);iv=null;clock.classList.remove("run");}
 function startRest(sec){audio();stop();var end=Date.now()+sec*1000;clock.classList.add("run");
   function tick(){var left=Math.ceil((end-Date.now())/1000);clock.textContent=fmt(Math.max(left,0));if(left<=0){stop();tone(880,3);try{navigator.vibrate&&navigator.vibrate([250,120,250]);}catch(x){}clock.textContent="Go!";var lv=document.getElementById("live");if(lv)lv.textContent="Rest over, next set.";}}
+  tick();iv=setInterval(tick,250);}
+function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,lv=document.getElementById("live");clock.classList.add("run");
+  function tick(){var left=Math.ceil((end-Date.now())/1000);clock.textContent=(sides>1?(side===1?"L ":"R "):"")+fmt(Math.max(left,0));
+    if(left<=0){if(side<sides){side++;tone(660,2);try{navigator.vibrate&&navigator.vibrate(200);}catch(x){}if(lv)lv.textContent="Switch sides.";end=Date.now()+(sec+3)*1000;return;}
+      stop();tone(880,3);try{navigator.vibrate&&navigator.vibrate([250,120,250]);}catch(x){}clock.textContent="Done";if(lv)lv.textContent="Hold done.";}}
   tick();iv=setInterval(tick,250);}
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
