@@ -949,7 +949,7 @@ function W(k){var u=TH().ui||{};return u[k]||UIW[k]||UIX[k]||"";}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}
 function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=W("title")||"Crusade Training Book";document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
 function codeHash(x){var h=2166136261;for(var i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h;}
-var LOVEH=codeHash("crusade:1999");
+var LOVEH=1005865574;
 function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).filter(function(k){return k!=="love"||D.loveOK;}).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+
   (D.loveOK?'':'<details class="lock"'+(D.wantLove?" open":"")+'><summary><span aria-hidden="true">🔒</span> Secret theme</summary><div class="row"><input type="password" id="'+pre+'_code" inputmode="numeric" autocomplete="off" aria-label="Code for the secret theme" placeholder="Code"><button type="button" class="b" data-a="unlock" data-pre="'+pre+'">Unlock</button></div>'+(D._lockMsg?'<p class="warn" role="alert">'+esc(D._lockMsg)+'</p>':'')+'</details>')+'</div></fieldset>';}
 /* ================= Ranks, honours and statistics ================= */

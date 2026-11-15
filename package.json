@@ -1,0 +1,6 @@
+{
+  "name": "crusade-training-book",
+  "private": true,
+  "scripts": { "build": "python3 tools/build.py", "test": "sh tests/run.sh" },
+  "devDependencies": { "playwright": "^1.63.0", "jsdom": "^31.0.1" }
+}
