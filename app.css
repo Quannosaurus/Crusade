@@ -231,3 +231,15 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .note{margin:0;padding:10px 12px;border-radius:9px;background:var(--tint);border:1px solid var(--red);color:var(--bone);font-size:.95rem}.note span{color:var(--acc-l)}
 .lock{grid-column:1/-1;border:1px dashed var(--edge);border-radius:9px;padding:8px 10px;background:var(--panel2)}.lock summary{display:block;list-style:none;cursor:pointer;color:var(--muted);font-size:.9rem}.lock .row{margin-top:8px}.lock input{flex:1;min-width:0}
 .lnk.fv{text-decoration:none}.lnk.fv.on{color:var(--gold-t);font-weight:700}
+.favcard{width:100%;display:flex;align-items:center;gap:12px;text-align:left;background:var(--panel);border:1px solid var(--gold-t);border-radius:10px;padding:12px 14px;margin:0 0 12px;color:var(--bone);font:inherit;cursor:pointer}
+.favcard b{display:block}.favcard .muted{display:block;font-size:.85rem}.favcard .fvi{font-size:1.5rem;color:var(--gold-t);line-height:1}.favcard .go{margin-left:auto;color:var(--gold-t);font-weight:600;white-space:nowrap}
+.fvlist{display:flex;flex-direction:column;gap:6px;margin:8px 0}
+.fvrow{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:8px 12px;text-align:left;background:transparent;border:1px solid var(--line);border-radius:10px;color:var(--bone);font:inherit;cursor:pointer}
+.fvrow .st{font-size:1.3rem;width:1.4em;text-align:center;color:var(--muted)}.fvrow .fn{flex:1}
+.fvrow.on{border-color:var(--gold-t);background:rgba(200,160,60,.08)}.fvrow.on .st{color:var(--gold-t)}
+.gt{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--muted)}
+.fvg{margin:8px 0}.fvg summary{cursor:pointer;font-weight:600;padding:8px 0}
+.hid{display:none!important}.fvs{color:var(--gold-t)}
+.howit{border:1px solid var(--line);border-radius:10px;padding:8px 12px;margin-top:8px}.howit summary{cursor:pointer;font-weight:600}
+.lnk.fv{border:1px solid var(--line);border-radius:999px;padding:4px 10px}.lnk.fv.on{border-color:var(--gold-t)}
+#favq{width:100%;box-sizing:border-box;margin-bottom:6px;background:var(--panel2);color:var(--bone);border:1px solid var(--line);border-radius:8px;padding:10px 12px;font:inherit}
