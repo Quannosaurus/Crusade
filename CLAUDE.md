@@ -19,14 +19,14 @@ A personal training app (calisthenics, gym, running, mobility, kickboxing days) 
 | `src/app.js` | The whole app logic (~1300 lines) |
 | `src/icons/`, `src/fonts/` | App icons, self-hosted fonts (OFL) |
 | `tools/build.py` | Builds the PWA into the **repo root** (`index.html`, `app.js`, `app.css`, `sw.js`, manifest, icons, fonts) and `.build/index.html` (single file for tests) |
-| `tests/` | Playwright/JSDOM tests, `tests/run.sh` runs all of them |
+| `tests/` | Playwright/JSDOM tests, `tests/run.sh` runs all of them, `tests/README.md` lists every test and the retired numbers |
 | Repo root | **Generated** – never edit by hand, only via `tools/build.py` |
 
 ## Workflow per order
 1. Read the order fully. If anything is unclear, ask **once** before building.
 2. Change only `src/` (plus tests/docs). Then `python3 tools/build.py`.
-3. Run `sh tests/run.sh` (setup once: `npm install && npx playwright install chromium`). Everything must show `(0)`; `t13` is a persona report you read and judge yourself.
-4. For new features, add a **new test** `tests/tNN.js` (next free number) that prints a result line `=== AUFFÄLLIGKEITEN (n) ===`.
+3. Run `sh tests/run.sh` (setup once: `npm install && npx playwright install chromium`). It prints one line per test (`PASS tNN name` / `FAIL tNN name – reason`) and a summary `n passed, m failed (m)`; the exit code is non-zero on any failure. The summary must show `(0)`. `t13 persona-report` is a report: it passes if it runs, but read its output (`node tests/t13.js`) and judge it yourself.
+4. For new features, add a **new test** `tests/tNN.js` (next free number above the highest; gaps are never refilled). Line 1: `// @name <kebab-name>`; it prints a result line `=== AUFFÄLLIGKEITEN (n) ===` with issues as ` - …` lines. Add a row to `tests/README.md` (t19 suite-naming enforces both).
 5. Look at UI changes in a mobile viewport (390×844) with a screenshot.
 6. Commit with a clear English message and push to `main`. Pages deploys automatically (~1 min).
 7. Finish with a **report (Rapport)** in exactly this format, so the user can paste it into the Leitstand:

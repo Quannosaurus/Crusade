@@ -1,20 +1,54 @@
 # Tests
 
-`sh tests/run.sh` builds and runs everything. Each test ends with a line `... (n)`; `(0)` = passed.
+`sh tests/run.sh` builds and runs everything. Setup once: `npm install && npx playwright install chromium`.
 
-| Test | Checks |
+## Output format
+
+One line per test, then a summary line. The exit code is non-zero as soon as one test fails.
+
+```
+PASS t03 weekly-plan
+FAIL t11 records-honours – 1 issue(s): Erste Ehrung fehlt
+13 passed, 1 failed (1)
+```
+
+A test passes when it exits with 0 and every result line (`=== AUFFÄLLIGKEITEN (n) ===` etc.) shows `(0)`.
+Tests marked as **report** pass if they run without crashing; read their output manually (`node tests/t13.js`).
+
+## Conventions
+
+- Line 1 of every test file declares its name: `// @name <kebab-case-name>` (English, short, unique).
+- `// @report` in line 2 marks a manual report.
+- Numbers are stable. A new test takes the next free number above the highest one; gaps are never refilled.
+- Every test must be listed in the table below (checked by t19 suite-naming).
+
+## Tests
+
+| Test | Name | File | Checks |
+|---|---|---|---|
+| t03 | weekly-plan | t3.js | Weekly plan, schedule, progression targets, coverage |
+| t04 | ui-flow | t4.js | UI flow (JSDOM): tabs, training, short session, home screen |
+| t05 | data-migration | t5.js | Data migration of old states, focus UI |
+| t06 | focus-sims | t6.js | Focus simulations (bal/str/run), deselected skills |
+| t07 | front-lever | t7.js | Front lever progression, skill logging, stall hint |
+| t08 | morning-cooldown | t8.js | Morning routine modules, cool-down |
+| t09 | import-security | t9.js | Backup import security (`cleanImport`) |
+| t11 | records-honours | t11.js | Records, honours, themes |
+| t12 | welcome-restore | t12.js | Welcome/restore, one-tap set entry |
+| t13 | persona-report | t13.js | 10-persona simulation – **report, read manually** |
+| t14 | entry-edit | t14.js | Edit entries, how-to, hold timer |
+| t15 | love-lock | t15.js | Love theme lock |
+| t16 | emphasis-favs | t16.js | Emphasis block and favourites in sessions (Playwright) |
+| t18 | emphasis-matrix | t18.js | All emphases × gym/home, favourites page UI (Playwright, 390×844) |
+| t19 | suite-naming | t19.js | Meta: every test has a name, is listed here, gaps are documented |
+
+## Retired numbers
+
+These numbers are not used and must not be reused.
+
+| Number | Note |
 |---|---|
-| t3 | Weekly plan, schedule, coverage |
-| t4 | UI flow (JSDOM) |
-| t5 | Data migration, focus UI |
-| t6 | Focus simulations (bal/str/run) |
-| t7 | Front lever progression |
-| t8 | Morning routine, cool-down |
-| t9 | Backup import security (cleanImport) |
-| t11 | Records, honours, themes |
-| t12 | Welcome/restore, one-tap set entry |
-| t13 | 10-persona simulation – **report, read manually** |
-| t14 | Edit entries, how-to, hold timer |
-| t15 | Love theme lock |
-| t16 | Emphasis block and favourites in sessions |
-| t18 | All emphases × gym/home, favourites page UI |
+| t01 | Retired before the repo was created; purpose not recorded |
+| t02 | Retired before the repo was created; purpose not recorded |
+| t10 | Retired before the repo was created; purpose not recorded |
+| t17 | Dropped before the repo was created; purpose not recorded |

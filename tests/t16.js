@@ -1,3 +1,4 @@
+// @name emphasis-favs
 const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage();const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.goto('file://'+require('path').resolve(__dirname,'../.build/index.html'));
 const r=await p.evaluate(()=>{const K=window.__kz;localStorage.clear();return 1;});

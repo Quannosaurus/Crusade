@@ -1,3 +1,5 @@
+// @name persona-report
+// @report
 const {JSDOM}=require('jsdom');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const F=[];

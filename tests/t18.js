@@ -1,3 +1,4 @@
+// @name emphasis-matrix
 const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
 await p.route(/fonts\.g/,r=>r.abort());
 await p.goto('file://'+require('path').resolve(__dirname,'../.build/index.html'));const iss=[];

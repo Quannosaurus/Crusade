@@ -1,3 +1,4 @@
+// @name welcome-restore
 const {JSDOM}=require('jsdom');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
