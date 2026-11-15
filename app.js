@@ -90,7 +90,7 @@ function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
 function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
 function diff(a,b){return Math.round((pd(b)-pd(a))/864e5);}
 var TODAY=ds(new Date());
-function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:7,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[2,5],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false},bkAt:0,home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
+function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false},bkAt:0,home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
     var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
@@ -130,6 +130,15 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
   if(THEMES[n.theme])b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
   if(n.vr&&typeof n.vr==="object")Object.keys(n.vr).slice(0,300).forEach(function(k){if(/^[a-z0-9_]+$/.test(k))b.vr[k]=Math.max(0,Math.min(20,Math.floor(numv(n.vr[k]))));});
   return b;}
+function bkJSON(){var o=JSON.parse(JSON.stringify(D));["_bk","_msg","_toast","_toastX","days"].forEach(function(k){delete o[k];});return JSON.stringify(o);}
+function bkName(){return "crusade-backup-"+TODAY+".json";}
+function saveBackupFile(){var txt=bkJSON(),f=null;try{f=new File([txt],bkName(),{type:"application/json"});}catch(x){}
+  D.bkAt=D.logs.length;D.bkDate=TODAY;save();
+  if(f&&navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title:"Crusade backup"}).then(function(){D._msg="Backup shared. Keep it somewhere safe, e.g. Google Drive.";render();}).catch(function(){});return;}
+  var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=bkName();document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
+  D._msg="Backup file saved to your downloads.";render();}
+function restoreText(txt,where){try{var n=JSON.parse(txt);if(!n||!n.profile||!n.logs)throw 0;var b=cleanImport(n);b.onb=true;D=b;D.tab=where||"start";D._toast="Restored: "+b.logs.length+" entries. Welcome back.";save();render();window.scrollTo(0,0);return true;}catch(x){return false;}}
+function askPersist(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(function(p){if(!p)navigator.storage.persist();});}catch(x){}}
 function fmtKg(w){return String(w);}
 
 /* ================= Bausteine ================= */
@@ -242,7 +251,8 @@ var PAINRX={w:/Handstand|Push-up|Shoulder taps|Bail|wrist|Frog stand|Wall Walk|P
 
 /* ================= Einheiten ================= */
 var NAMES={KA:"Strength A: Muscle-up",KB:"Strength B: Volume",KC:"Strength C: Full body & legs",CH:"Venus Challenge",SK:"Skill session",RS:"Recovery & kick mobility",DL:"Deload",TE:"Test",HO:"Home strength",HK:"Home skills",RE:"Easy run",RH:"Hard run",RI:"Interval run",KI:"Kickboxing",MO:"Morning routine"};
-function updNames(){NAMES.KA=D.skills.mu?"Strength A: Muscle-up":"Strength A: Pull & push";}
+function homeB(){return D.logs.filter(function(l){return l.id==="HO";}).length%2===1;}
+function updNames(){NAMES.HO=homeB()?"Home strength B":"Home strength A";NAMES.KA=D.skills.mu?"Strength A: Muscle-up":"Strength A: Pull & push";}
 function postBlocks(id,bl){var sk=D.skills,out=[];
   bl.forEach(function(b){
     if(b.hsb){ skBlocks(id,b.lg,b.p).forEach(function(x){out.push(x);}); return; }
@@ -271,6 +281,9 @@ var GYM=["KA","KB","KC","CH","SK","RS","DL","TE"], HOME=["HO","HK","RS"];
 var HARD={KA:1,KB:1,KC:1,CH:1,RH:1,RI:1,KI:1,TE:1,HO:1}, STR={KA:1,KB:1,KC:1,CH:1,DL:1,TE:1,HO:1}, HASHS={KA:1,KB:1,SK:1,KC:1,HO:1,HK:1};
 function S(id,c){
   var s=S0(id,c),sk=D.skills;
+  if(!sk.mu&&id==="KA") s.goal="Pulling and pushing strength, explosive power"+(selSk().length?" and your skills.":".");
+  if(!sk.mu&&id==="KB") s.goal="Lots of clean pulling and pushing volume in a circuit, plus shoulder health.";
+  if(id==="HO"&&homeB()){s.goal="Home strength B: same muscles, different variations and legs first.";s.blocks.forEach(function(b){if(b.rounds){b.items=b.items.slice(2).concat(b.items.slice(0,2));b.items.forEach(function(it){if(!it.def&&it.opts.length>1)it.def=function(){return 1;};});}});}
   s.blocks=postBlocks(id,s.blocks);
   return s;
 }
@@ -418,7 +431,7 @@ function ctx(s){
 }
 function hist(s){
   var h={},y=onDay(addD(s,-1));
-  ["KA","KB","KC","CH","RE","RH","RI","DL","TE","HO","SK","KI"].forEach(function(k){h[k]=since(k,s);});
+  ["KA","KB","KC","CH","RE","RH","RI","DL","TE","HO","SK","KI","RS"].forEach(function(k){h[k]=since(k,s);});
   h.C=Math.min(h.KC,h.CH);
   h.strY=y.some(function(l){return STR[l.id];}); h.kcY=y.some(function(l){return l.id==="KC";});
   h.rhY=y.some(function(l){return l.id==="RH"||l.id==="RI";}); h.limitY=y.some(function(l){return HARD[l.id]&&(l.rpe||0)>=10;});
@@ -426,7 +439,7 @@ function hist(s){
   h.hsN=D.logs.filter(function(l){var x=diff(l.d,s);return x>=0&&x<=6&&HASHS[l.id];}).length;
   h.runs7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&isRun(l);}).length;
   h.str7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=6&&STR[l.id];}).length;
-  h.lim7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&(l.rpe||0)>=10;}).length;
+  h.lim7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&(l.rpe||0)>=10&&HARD[l.id];}).length;
   h.skN=D.logs.filter(function(l){var x=diff(l.d,s);return x>=0&&x<=6&&(l.sk?l.sk.length>0:!!HASHS[l.id]);}).length;
   h.skT=selSk().length?4:0; h.hardR=Math.min(h.RH,h.RI);
   h.run=Math.min(h.RE,h.RH,h.RI);
@@ -454,7 +467,7 @@ function recAll(s,noKick){
   if(isKick(s)&&!noKick&&!td.some(function(l){return l.id==="KI";})) return {btn:"kick",id:"KI",why:"Today is kickboxing day."};
   if(h.rhY) return easyPick(h,"Yesterday was a hard run.");
   if(h.limitY) return easyPick(h,"Yesterday was at the limit.");
-  if(h.lim7>=3) return easyPick(h,"Three times at the limit in 7 days: your body needs rest.");
+  if(h.lim7>=3&&h.RS>=3) return {btn:"train",id:"RS",why:"Three hard sessions at the limit in 7 days: today is a rest day with light mobility. Progress happens while you recover."};
   if(h.hardRun>=3) return easyPick(h,"Three hard days in a row.");
   var strOK=!h.strY&&!h.strToday&&(F!=="run"||h.str7<2);
   if(c.cyc===6){
@@ -563,8 +576,9 @@ var COOLK={KA:"up",KB:"up",SK:"up",HO:"up",HK:"up",CH:"legs",TE:"up",DL:"legs",K
 /* ================= Darstellung ================= */
 var app=document.getElementById("app"), rendering=false, TB=null;
 var TABS=[["start","Today"],["verlauf","Chronicle"],["stand","Status"],["mehr","More"]];
+function tabs(){return TABS.map(function(t){return t[0]==="verlauf"?[t[0],W("chron")]:t;});}
 function back(){return '<button type="button" class="lnk bk" data-tab="start">← Today</button>';}
-function rpeHTML(f){return '<p class="q" id="rpeq">How hard was the battle?</p><div class="seg" role="group" aria-labelledby="rpeq">'+[[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return '<button type="button" class="b'+(f.rpe===x[0]?" on":"")+'" data-a="rpe" data-v="'+x[0]+'" aria-pressed="'+(f.rpe===x[0])+'">'+x[1]+'</button>';}).join("")+'</div>';}
+function rpeHTML(f){return '<p class="q" id="rpeq">'+W("battle")+'</p><div class="seg" role="group" aria-labelledby="rpeq">'+[[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return '<button type="button" class="b'+(f.rpe===x[0]?" on":"")+'" data-a="rpe" data-v="'+x[0]+'" aria-pressed="'+(f.rpe===x[0])+'">'+x[1]+'</button>';}).join("")+'</div>';}
 function painHit(name){var p=D.pain||{};return Object.keys(PAINRX).some(function(k){return p[k]&&PAINRX[k].test(name);});}
 function setBoxes(id,n,inp,ph,isS,rest,last){
   var s=inp.s||[],h='';
@@ -639,14 +653,18 @@ var STARTP={s0:["Just starting","No pull-ups yet, a few push-ups. Totally fine: 
   s1:["Some training","A few pull-ups and push-ups, some gym experience.",{pull:5,dips:8,push:15,expl:2,mu:0,hsw:20,hsf:0,pike:6,tuck:15,lsit:0,hang:30}],
   s2:["Experienced","Solid pull-ups and dips, working on skills.",{pull:12,dips:20,push:30,expl:6,mu:2,hsw:45,hsf:5,pike:12,tuck:30,lsit:10,hang:60}]};
 function vOnb(){
-  var st=D.obStep||0,T=["Choose your path","Your numbers","Equipment & training days"],h='',sk=D.skills;
-  h+='<section class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgt"><div class="dlgh"><span class="eyebrow">Oath of induction · step '+(st+1)+' of 3</span><h2 id="dlgt" tabindex="-1">'+T[st]+'</h2><div class="steps" aria-hidden="true">'+[0,1,2].map(function(i){return '<i class="'+(i<=st?"on":"")+'"></i>';}).join("")+'</div></div><div class="dlgb">';
+  var st=D.obStep||0,T=["Welcome","Choose your path","Your numbers","Equipment & training days"],h='',sk=D.skills;
+  h+='<section class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgt"><div class="dlgh"><span class="eyebrow">'+W("oath")+' · step '+(st+1)+' of 4</span><h2 id="dlgt" tabindex="-1">'+T[st]+'</h2><div class="steps" aria-hidden="true">'+[0,1,2,3].map(function(i){return '<i class="'+(i<=st?"on":"")+'"></i>';}).join("")+'</div></div><div class="dlgb">';
   if(st===0){
+    h+='<p>Your personal training book: it plans each day from what you did before. Everything stays on this phone.</p>'+themeHTML("o")+
+      '<fieldset class="fs"><legend>Have a backup?</legend><p class="muted">Coming from another phone or browser? Restore your backup and you are done. New here? Just tap Next.</p><label class="b filebtn2" for="bkin">Restore from backup file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"><details class="tv"><summary>Paste backup text instead</summary><textarea id="obbk" aria-label="Backup text" placeholder="Paste your backup text here"></textarea><button type="button" class="b" data-a="obimp">Restore from text</button></details>'+(D._msg?'<p class="warn" role="alert">'+esc(D._msg)+'</p>':'')+'</fieldset>';
+  }
+  if(st===1){
     h+='<p>Welcome to the crusade. First: where do you start, and what do you want to work on? Everything can be changed later under “More”.</p>';
     h+='<fieldset class="fs"><legend>Where do you start?</legend>'+Object.keys(STARTP).map(function(k){var x=STARTP[k];return '<label class="optc"><input type="radio" name="o_start" value="'+k+'" data-a="startp"'+(D.startP===k?" checked":"")+'><span><b>'+x[0]+'</b><span class="muted">'+x[1]+'</span></span></label>';}).join("")+'</fieldset>';
     h+=focusHTML("o");
   }
-  if(st===1){
+  if(st===2){
     var rep=[["push","Push-ups (knees count too)"],["pull","Clean pull-ups"],["dips","Dips"]],hold=[["hang","Hanging from a bar (seconds)"]];
     if(sk.mu){rep.push(["expl","Explosive chest-to-bar pull-ups"]);rep.push(["mu","Clean muscle-ups"]);}
     if(sk.hs){rep.push(["pike","Pike push-ups"]);hold.push(["hsw","Handstand, chest to wall"]);hold.push(["hsf","Freestanding handstand"]);}
@@ -655,10 +673,10 @@ function vOnb(){
       '<h3>Reps</h3>'+profGrid(rep,"o_")+'<h3>Holds · seconds</h3>'+profGrid(hold,"o_")+
       '<p class="muted" id="lvlnote" role="status">'+lvlNote()+'</p>';
   }
-  if(st===2) h+='<p>Almost done. Do you have a fixed kickboxing class, and what do you have at home?</p><h3>Kickboxing days</h3>'+kickSel("o_kick")+
+  if(st===3) h+='<p>Almost done. Do you have a fixed kickboxing class, and what do you have at home?</p><h3>Kickboxing days</h3>'+kickSel("o_kick")+
     '<h3>At home</h3><p class="muted">The yoga mat is always there.</p>'+Object.keys(EQ).map(function(k){return '<label class="chk"><input type="checkbox" data-a="eq" data-k="'+k+'"'+(D.home[k]?" checked":"")+'>'+EQ[k]+'</label>';}).join("")+
-    themeHTML("o")+'<div class="sum"><b>Your crusade</b><span>'+LVN[lvl()]+' · '+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · '+(["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", ")||"no skills")+'</span></div>';
-  h+='</div><div class="dlgf">'+(st>0?'<button type="button" class="b" data-a="obback">Back</button>':'<span></span>')+(st<2?'<button type="button" class="b red" data-a="obnext">Next</button>':'<button type="button" class="b red" data-a="onb">Begin the crusade</button>')+'</div></section>';
+    '<div class="sum"><b>'+W("crusade")+'</b><span>'+LVN[lvl()]+' · '+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · '+(["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", ")||"no skills")+'</span></div>';
+  h+='</div><div class="dlgf">'+(st>0?'<button type="button" class="b" data-a="obback">Back</button>':'<span></span>')+(st<3?'<button type="button" class="b red" data-a="obnext">Next</button>':'<button type="button" class="b red" data-a="onb">'+W("begin")+'</button>')+'</div></section>';
   return h;
 }
 function vStart(){
@@ -669,15 +687,16 @@ function vStart(){
   if(!D.seenFocus) h+='<button type="button" class="warn wbtn" data-tab="mehr">New: choose your doctrine. Focus on running, strength or balanced, plus your skills →</button>';
   if(memOnly) h+='<div class="warn">This browser does not allow saving here. Use the backup under More.</div>';
   var unb=D.logs.length-(D.bkAt||0);
-  if(unb>=10) h+='<button type="button" class="warn wbtn" data-tab="mehr">'+unb+' entries since the last backup. Back up now →</button>';
+  if(unb>=10) h+='<button type="button" class="warn wbtn" data-a="bkfile">'+unb+' entries since the last backup. Save backup file now →</button>';
   function big(tab,title,sub){var rec=r.btn===tab&&!dn[tab];
     return '<button type="button" class="big'+(dn[tab]?" done":(rec?" rec":""))+'" data-tab="'+tab+'"><span class="bt"><b>'+title+'</b>'+(dn[tab]?'<i class="tag ok">Done</i>':(rec?'<i class="tag">Recommended</i>':''))+'</span><span>'+(rec?'<span class="rn">'+esc(NAMES[r.id])+'</span><br>'+esc(r.why):esc(sub))+'</span></button>';}
   if(D.logs.length){var xp0=xpTotal(),st0=streaks();h+='<button type="button" class="rkline lnk" data-tab="verlauf"><span><b>'+esc(rankName(rankOf(xp0)))+'</b> · '+xp0+' XP</span><span>'+(st0.day.now>1?st0.day.now+'-day streak · ':'')+'Stats →</span></button>';}
-  h+='<h2 class="q">Your orders for today</h2>';
+  h+='<h2 class="q">'+W("orders")+'</h2>';
   h+=big("morgen","Morning routine","Home, on the mat · 7 or 15 min");
   h+=big("train","Training","Gym or home");
   h+=big("run","Running",D.focus==="str"?"Not in the plan · log it anyway":"Easy, intervals or hard "+fmtKg(D.runKm)+" km");
-  h+=big("kick","Kickboxing","Log it, with mobility before and after");
+  if(D.kickDays.length||dn.kick) h+=big("kick","Kickboxing","Log it, with mobility before and after");
+  else h+='<p class="ctr"><button type="button" class="lnk" data-tab="kick">Did a kickboxing or other class? Log it →</button></p>';
   if(r.btn==="kick"&&!dn.kick){var alt=recAll(TODAY,true);h+='<button type="button" class="lnk ctr" data-a="nokick">No kickboxing today? Then: '+esc(NAMES[alt.id])+'</button>';}
   if(dy.noKick&&isKick(TODAY)&&!dn.kick) h+='<button type="button" class="lnk ctr" data-a="nokick">Kickboxing after all</button>';
   if(td.some(isTrain)){var tr=recAll(addD(TODAY,1));h+='<p class="muted ctr">Likely tomorrow: <b>'+esc(({train:"Training · ",run:"Running · ",kick:""}[tr.btn])+NAMES[tr.id])+'</b></p>';}
@@ -720,9 +739,10 @@ function runRec(){var h0=hist(TODAY),a=recAll(TODAY,true);if(a.btn==="run")retur
   return (hardOK&&cap(h0.RH)>=cap(h0.RE)&&h0.RH>=6)?{id:"RH",why:NAMES.RH+" "+ago(h0.RH)+"."}:{id:"RE",why:"Easy run "+ago(h0.RE)+"."};}
 var RUNT={RE:"Easy",RI:"Intervals",RH:"Hard"};
 function runInfo(id){var R=D.focus==="run";
+  if(id==="RE"&&D.runKm<6&&!R) return {h:"20–30 min easy",p:"Easy enough to talk. Walking breaks are completely fine: e.g. 3 min jog, 1 min walk. Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RE") return {h:R?"30–45 min easy":"5 km easy",p:(R?"30–45 min. ":"30–35 min. ")+"Easy enough that you can speak in full sentences."+(R?" At the end 4–6 strides of 20 s: build speed smoothly, walk back.":"")+" Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RI") return {h:D.runI+" × 3 min fast",p:"10 min warm-up jog. Then "+D.runI+" × 3 min fast with 2 min jogging in between. 10 min cool-down jog. Fast means: only single words possible, but every rep equally quick. No strength training afterwards."};
-  return {h:fmtKg(D.runKm)+" km hard",p:"About 6:30/km. 5 min warm-up jog, no strength training afterwards."};}
+  return {h:fmtKg(D.runKm)+" km "+(D.runKm<6?"steady":"hard"),p:(D.runKm<6?"Faster than your easy runs, but steady the whole way.":"About 6:30/km.")+" 5 min warm-up jog, no strength training afterwards."};}
 function vRun(){
   var dy=day(),rr=runRec(),id=dy.run||rr.id,f=dy.fin,ri=runInfo(id);
   var h=back()+'<div class="seg" role="group" aria-label="Run type">'+["RE","RI","RH"].map(function(k){return '<button type="button" class="b'+(id===k?" on":"")+'" data-a="runtype" data-v="'+k+'" aria-pressed="'+(id===k)+'">'+RUNT[k]+'</button>';}).join("")+'</div>';
@@ -757,8 +777,11 @@ var THEMES={
    toast:["Logged. Nice work.","Logged. Consistency wins.","Logged. One more in the bank.","Logged. Keep it up."],up:"Level up!",morn:"Morning routine"}
 };
 function TH(){return THEMES[D.theme]||THEMES.templar;}
+var UIW={orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
+    UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"};
+function W(k){return (D.theme==="plain"?UIP:UIW)[k];}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}
-function applyTheme(){var t=TH();document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
+function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=D.theme==="plain"?"Training Book":"Crusade Training Book";document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
 function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+'</div></fieldset>';}
 /* ================= Ranks, honours and statistics ================= */
 var XPB={KA:40,KB:40,KC:40,CH:45,TE:45,SK:30,HO:30,HK:20,RS:15,DL:20,KI:35,RE:20,RH:30,RI:35,MO:10};
@@ -928,15 +951,15 @@ function vMehr(){
     '<div class="sec"><h3>Basics</h3><p class="muted">Re-enter values, focus and equipment in three steps.</p><button type="button" class="b" data-a="reonb">Re-enter basics</button></div>'+
     '<div class="sec"><h3>Training doctrine</h3><ol class="why">'+R.map(function(r){return "<li>"+esc(r)+"</li>";}).join("")+'</ol></div>'+
     '<div class="sec"><h3>Garmin</h3><p class="muted">Runs: import a GPX or TCX file from Garmin Connect on the run screen. Values like sleep or Body Battery need a connection outside this file.</p></div>'+
-    '<div class="sec"><h3>Backup</h3><p class="muted">Your data lives only in this browser on this device.</p><button type="button" class="b" data-a="exp">Create backup</button><textarea id="bk" aria-label="Backup text" placeholder="The backup appears here. Paste text here to restore. Only restore backups you made yourself.">'+esc(D._bk)+'</textarea><div class="row"><button type="button" class="b" data-a="copy">Copy</button><button type="button" class="b" data-a="imp">Restore from text</button></div>'+(D._msg?'<p class="muted">'+esc(D._msg)+'</p>':'')+'</div>'+
+    '<div class="sec"><h3>Backup</h3><p class="muted">Your data lives only in this browser on this device.'+(D.bkDate?' Last backup: '+dLab(D.bkDate)+'.':' No backup yet.')+'</p><div class="row"><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"></div><details class="tv"><summary>Backup as text instead</summary><button type="button" class="b" data-a="exp">Create backup text</button><textarea id="bk" aria-label="Backup text" placeholder="The backup appears here. Paste text here to restore. Only restore backups you made yourself.">'+esc(D._bk)+'</textarea><div class="row"><button type="button" class="b" data-a="copy">Copy</button><button type="button" class="b" data-a="imp">Restore from text</button></div></details>'+(D._msg?'<p class="muted" role="status">'+esc(D._msg)+'</p>':'')+'</div>'+
     '<div class="sec"><h3>Reset</h3><button type="button" class="b" data-a="reset">'+(D._rs?'Really delete everything':'Delete all data')+'</button></div></div>';
 }
 function render(){
-  updNames(); applyTheme();
+  updNames(); applyTheme(); setTimeout(wake,0);
   var c=ctx(TODAY),d=new Date();
   document.getElementById("subline").textContent=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" · Week "+c.week+" · "+LVN[lvl()];
   var top={morgen:"start",train:"start",run:"start",kick:"start"}[D.tab]||D.tab;
-  document.getElementById("nav").innerHTML=D.onb?TABS.map(function(t){return '<button type="button" data-tab="'+t[0]+'" class="'+(top===t[0]?"on":"")+'"'+(top===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>';}).join(""):"";
+  document.getElementById("nav").innerHTML=D.onb?tabs().map(function(t){return '<button type="button" data-tab="'+t[0]+'" class="'+(top===t[0]?"on":"")+'"'+(top===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>';}).join(""):"";
   document.body.className=D.onb?(D.tab==="train"?"train":""):"ob";
   if(!D.onb) document.getElementById("subline").textContent="Induction of a new recruit";
   rendering=true;
@@ -1013,9 +1036,9 @@ document.addEventListener("click",function(e){
   var dy=day(),a=t.dataset.a;
   if(t.dataset.tab){TB=null;D.tab=t.dataset.tab;D._del=null;D._rs=false;D._msg="";dy.fin={};save();render();window.scrollTo(0,0);var h2=app.querySelector("h2");if(h2&&t.closest(".nav,.bk,.big")){h2.tabIndex=-1;h2.focus({preventScroll:true});}return;}
   if(a==="rpe"){dy.fin.rpe=+t.dataset.v;}
-  else if(a==="onb"){D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;if(!D.logs.length)D.start=TODAY;D._toast="The crusade begins. The Emperor watches over you.";}
+  else if(a==="onb"){askPersist();D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;if(!D.logs.length)D.start=TODAY;D._toast=D.theme==="plain"?"All set. Your first plan is ready.":"The crusade begins. "+({sanguine:"The Angel watches over you.",sisters:"The Emperor protects, Sister.",slaanesh:"Let the pursuit of perfection begin."}[D.theme]||"The Emperor watches over you.");}
   else if(a==="reonb"){D.onb=false;D.obStep=0;}
-  else if(a==="obnext"||a==="obback"){D.obStep=Math.max(0,Math.min(2,(D.obStep||0)+(a==="obnext"?1:-1)));save();render();window.scrollTo(0,0);var hd=document.getElementById("dlgt");if(hd)hd.focus({preventScroll:true});return;}
+  else if(a==="obnext"||a==="obback"){D._msg="";D.obStep=Math.max(0,Math.min(3,(D.obStep||0)+(a==="obnext"?1:-1)));save();render();window.scrollTo(0,0);var hd=document.getElementById("dlgt");if(hd)hd.focus({preventScroll:true});return;}
   else if(a==="nokick"){dy.noKick=!dy.noKick;}
   else if(a==="kickday"){var v=+t.dataset.v,i=D.kickDays.indexOf(v);if(i>=0)D.kickDays.splice(i,1);else D.kickDays.push(v);}
   else if(a==="loc"){D.loc=t.dataset.v;dy.pick=null;}
@@ -1032,13 +1055,26 @@ document.addEventListener("click",function(e){
   else if(a==="savemo"){var mm=morning(TODAY),rk0=rankOf(xpTotal());addLog({d:TODAY,id:"MO",t:NAMES.MO,m:[mm.top].concat(D.mlen==="k"?[]:[mm.sec])});D.tab="start";afterLog(rk0,[]);D._toast=D._toastX||"Morning routine logged. Let the day come.";D._toastX="";}
   else if(a==="mlen"){D.mlen=t.dataset.v;}
   else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);D._del=null;} else D._del=i;}
-  else if(a==="exp"){var o=JSON.parse(JSON.stringify(D));delete o._bk;delete o._msg;D._bk=JSON.stringify(o);D.bkAt=D.logs.length;D._msg="Backup created. Copy it now and store it, e.g. in a note.";}
+  else if(a==="exp"){var o=JSON.parse(JSON.stringify(D));delete o._bk;delete o._msg;D._bk=bkJSON();D.bkAt=D.logs.length;D.bkDate=TODAY;D._msg="Backup created. Copy it now and store it, e.g. in a note.";}
   else if(a==="copy"){var tx=document.getElementById("bk").value;try{navigator.clipboard.writeText(tx).then(function(){D._msg="Copied.";render();},function(){D._msg="Copying is not allowed. Please select the text by hand.";render();});}catch(x){D._msg="Copying is not allowed. Please select the text by hand.";}}
-  else if(a==="imp"){try{var n=JSON.parse(document.getElementById("bk").value);if(!n||!n.profile||!n.logs)throw 0;var b=cleanImport(n);b.onb=true;D=b;D.tab="mehr";D._msg="Restored: "+n.logs.length+" entries.";}catch(x){D._msg="This text is not a valid backup.";}}
+  else if(a==="imp"){if(restoreText(document.getElementById("bk").value,"mehr"))return;D._msg="This text is not a valid backup.";}
+  else if(a==="bkfile"){saveBackupFile();return;}
+  else if(a==="obimp"){var ta=document.getElementById("obbk");if(ta&&restoreText(ta.value,"start"))return;D._msg="This text is not a valid backup.";}
   else if(a==="reset"){if(D._rs){D=fresh();}else D._rs=true;}
   save(); render();
 });
 function keepRender(){var y=window.scrollY,ae=document.activeElement,sel=ae&&ae.id?"#"+ae.id:(ae&&ae.dataset&&ae.dataset.a?'[data-a="'+ae.dataset.a+'"]'+(ae.dataset.k?'[data-k="'+ae.dataset.k+'"]':'')+(ae.value&&ae.type==="radio"?'[value="'+ae.value+'"]':''):null);render();window.scrollTo(0,y);if(sel){var n=app.querySelector(sel);if(n)n.focus({preventScroll:true});}}
+/* One tap per set: an empty set box takes the previous set's value (or the target) when tapped; leaving it commits. */
+document.addEventListener("focusin",function(e){var t=e.target;if(!t.dataset||t.dataset.set==null||t.value!=="")return;
+  var i=+t.dataset.set,prev=i>0?document.querySelector('input[data-set="'+(i-1)+'"][data-id="'+t.dataset.id+'"]'):null,v=(prev&&prev.value)||t.placeholder;
+  if(/^\d+(\.\d+)?$/.test(v)){t.value=v;t.dataset.pre="1";try{t.select();}catch(x){}}});
+document.addEventListener("focusout",function(e){var t=e.target;if(!t.dataset||t.dataset.pre!=="1")return;t.dataset.pre="";
+  var dy=day(),cur=((dy.inp[t.dataset.id]||{}).s||[])[+t.dataset.set];if(t.value!==""&&String(cur||"")!==t.value)t.dispatchEvent(new Event("change",{bubbles:true}));});
+/* Keep the screen on while training, running or doing the morning routine. */
+var wl=null;function wake(){var want=D.onb&&["train","run","morgen","kick"].indexOf(D.tab)>=0;
+  try{if(want&&!wl&&navigator.wakeLock){navigator.wakeLock.request("screen").then(function(x){wl=x;wl.addEventListener("release",function(){wl=null;});}).catch(function(){});}
+  else if(!want&&wl){wl.release();wl=null;}}catch(x){}}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible")wake();});
 document.addEventListener("toggle",function(e){var t=e.target;if(rendering||!t.dataset||!t.dataset.blk)return;var dy=day();(dy.open||(dy.open={}))[t.dataset.blk]=t.open;save();},true);
 document.addEventListener("change",function(e){
   var t=e.target,dy=day(),q=t.dataset;
@@ -1047,7 +1083,7 @@ document.addEventListener("change",function(e){
   else if(q.a==="focus"){ D.focus=t.value; save(); keepRender(); }
   else if(q.a==="theme"){ D.theme=t.value; save(); keepRender(); }
   else if(q.a==="statex"){ D.statEx=t.value; save(); keepRender(); }
-  else if(q.a==="startp"){ D.startP=t.value; var pp=STARTP[t.value][2]; Object.keys(pp).forEach(function(k){D.profile[k]=pp[k];}); save(); keepRender(); }
+  else if(q.a==="startp"){ D.startP=t.value; D.runKm={s0:4,s1:6,s2:7}[t.value]||7; var pp=STARTP[t.value][2]; Object.keys(pp).forEach(function(k){D.profile[k]=pp[k];}); save(); keepRender(); }
   else if(q.a==="skill"){ D.skills[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="stage"){ D.profile[q.k]=+t.value; save(); keepRender(); }
   else if(q.a==="pain"){ D.pain[q.k]=t.checked; save(); render(); }
@@ -1063,6 +1099,7 @@ document.addEventListener("change",function(e){
   else if(q.fin){ dy.fin[q.fin]=t.value; save(); if(q.fin==="km"||q.fin==="min") render(); }
   else if(q.prof){ var v=num(t.value); if(v!==null&&v>=0){D.profile[q.prof]=v; save(); var ln=document.getElementById("lvlnote"); if(ln) ln.innerHTML=lvlNote(); if(D.onb) render();} }
   else if(q.start){ if(/^\d{4}-\d{2}-\d{2}$/.test(t.value)&&!isNaN(pd(t.value))){D.start=t.value; save(); render();} }
+  else if(q.a==="bkin"&&t.files&&t.files[0]){var frb=new FileReader();frb.onload=function(){if(!restoreText(String(frb.result),D.onb?"mehr":"start")){D._msg="This file is not a valid backup.";render();}};frb.readAsText(t.files[0]);}
   else if(q.a==="gfile"&&t.files&&t.files[0]){ var fr=new FileReader(), name=t.files[0].name;
     fr.onload=function(){ var r=null; try{r=parseTrack(String(fr.result));}catch(x){}
       if(r){dy.fin.km=r.km; if(r.min>0)dy.fin.min=r.min; dy.fin.gmsg="Imported from "+name+": "+fmtKg(r.km)+" km"+(r.min>0?" in "+fmtKg(r.min)+" min.":". Please enter the time by hand.");}
@@ -1093,7 +1130,7 @@ var clock=document.getElementById("clock"),iv=null;
 function fmt(s){return Math.floor(s/60)+":"+pad(s%60);}
 function stop(){clearInterval(iv);iv=null;clock.classList.remove("run");}
 function startRest(sec){audio();stop();var end=Date.now()+sec*1000;clock.classList.add("run");
-  function tick(){var left=Math.ceil((end-Date.now())/1000);clock.textContent=fmt(Math.max(left,0));if(left<=0){stop();tone(880,3);clock.textContent="Go!";var lv=document.getElementById("live");if(lv)lv.textContent="Rest over, next set.";}}
+  function tick(){var left=Math.ceil((end-Date.now())/1000);clock.textContent=fmt(Math.max(left,0));if(left<=0){stop();tone(880,3);try{navigator.vibrate&&navigator.vibrate([250,120,250]);}catch(x){}clock.textContent="Go!";var lv=document.getElementById("live");if(lv)lv.textContent="Rest over, next set.";}}
   tick();iv=setInterval(tick,250);}
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
