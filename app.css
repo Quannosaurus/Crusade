@@ -226,3 +226,4 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .log{flex-wrap:wrap}.lacts{display:flex;gap:6px;margin-left:auto}
 .edit .grid2{grid-template-columns:auto minmax(0,1fr)}.edit input,.edit select{width:100%;min-width:0;box-sizing:border-box}
 .edit{background:var(--panel2);border:1px solid var(--line);border-radius:9px;padding:10px;margin:2px 0 8px;display:flex;flex-direction:column;gap:8px}
+.note{margin:0;padding:10px 12px;border-radius:9px;background:var(--tint);border:1px solid var(--red);color:var(--bone);font-size:.95rem}.note span{color:var(--acc-l)}

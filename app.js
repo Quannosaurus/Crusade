@@ -731,6 +731,7 @@ function vStart(){
   function big(tab,title,sub){var rec=r.btn===tab&&!dn[tab];
     return '<button type="button" class="big'+(dn[tab]?" done":(rec?" rec":""))+'" data-tab="'+tab+'"><span class="bt"><b>'+title+'</b>'+(dn[tab]?'<i class="tag ok">Done</i>':(rec?'<i class="tag">Recommended</i>':''))+'</span><span>'+(rec?'<span class="rn">'+esc(NAMES[r.id])+'</span><br>'+esc(r.why):esc(sub))+'</span></button>';}
   if(D.logs.length){var xp0=xpTotal(),st0=streaks();h+='<button type="button" class="rkline lnk" data-tab="verlauf"><span><b>'+esc(rankName(rankOf(xp0)))+'</b> · '+xp0+' XP</span><span>'+(st0.day.now>1?st0.day.now+'-day streak · ':'')+'Stats →</span></button>';}
+  if(TH().notes){var nt=TH().notes;h+='<p class="note"><span aria-hidden="true">♥</span> '+esc(nt[Math.floor(pd(TODAY).getTime()/864e5)%nt.length])+'</p>';}
   h+='<h2 class="q">'+W("orders")+'</h2>';
   h+=big("morgen","Morning routine","Home, on the mat · 7 or 15 min");
   h+=big("train","Training","Gym or home");
@@ -744,7 +745,7 @@ function vStart(){
 }
 function vMorgen(){
   var dy=day(),m=morning(TODAY),short=D.mlen==="k",L=mSections(m,short);
-  var h=back()+'<div class="seg" role="group" aria-label="Length"><button type="button" class="b'+(!short?" on":"")+'" data-a="mlen" data-v="n" aria-pressed="'+(!short)+'">Normal · 15 min</button><button type="button" class="b'+(short?" on":"")+'" data-a="mlen" data-v="k" aria-pressed="'+short+'">Short · 7 min</button></div><div class="hero"><span class="eyebrow">'+esc(TH().morn)+' · home, on the mat</span><h2>Morning routine</h2><p>'+esc(m.why.join(" "))+'</p><p class="muted">Gentle start: no deep forward bends in the first hour after waking.</p></div>';
+  var h=back()+'<div class="seg" role="group" aria-label="Length"><button type="button" class="b'+(!short?" on":"")+'" data-a="mlen" data-v="n" aria-pressed="'+(!short)+'">Normal · 15 min</button><button type="button" class="b'+(short?" on":"")+'" data-a="mlen" data-v="k" aria-pressed="'+short+'">Short · 7 min</button></div><div class="hero"><span class="eyebrow">'+esc(TH().morns?TH().morns[Math.floor(pd(TODAY).getTime()/864e5)%TH().morns.length]:TH().morn)+' · home, on the mat</span><h2>Morning routine</h2><p>'+esc(m.why.join(" "))+'</p><p class="muted">Gentle start: no deep forward bends in the first hour after waking.</p></div>';
   L.forEach(function(sec,si){
     h+='<details class="blk" open><summary><span class="bn">'+esc(sec.n)+'</span><span class="bi">'+esc(sec.info)+'</span></summary>';
     sec.items.forEach(function(x,ii){h+=poseRow(x,"m-"+sec.k+"-"+ii,dy);});
@@ -814,7 +815,13 @@ var THEMES={
    toast:["Logged. Exquisite. More!","Logged. Perfection is a habit.","Logged. Delicious burn.","Logged. Nothing in moderation."],up:"Such perfection. The Prince is pleased.",morn:"Morning indulgence"},
  love:{n:"Love of my life",sw:["#140c10","#ffd6e4","#c2185b"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#ffe3ec" stroke="#c2185b" stroke-width="4"/><g fill="#c2185b"><path d="M50 82C24 64 12 50 12 34C12 22 21 14 32 14C40 14 46 19 50 26C54 19 60 14 68 14C79 14 88 22 88 34C88 50 76 64 50 82Z"/></g><path d="M30 34C30 27 35 23 40 24" stroke="#ffe3ec" stroke-width="4" fill="none" stroke-linecap="round"/>',
    ranks:["Spark","Sweetheart","Darling","Heartbeat","Sunshine","Shining Star","Queen of the Gym","Legend of my Heart","Love of my Life"],
-   toast:["Logged. I'm so proud of you.","Logged. You're the best girlfriend in the world.","Logged. Strong and beautiful, as always.","Logged. You light up every room, and every rep."],up:"Look at you go, love. I'm so proud.",morn:"Good morning, beautiful"},
+   toast:["Logged. I'm so proud of you, every single time.","Logged. You're the best girlfriend in the world, and now an even stronger one.","Logged. Strong, beautiful and all mine.","Logged. You light up every room, and every rep.","Logged. Watching you grow stronger is my favourite thing.","Logged. I'd choose you in every lifetime, and every gym.","Logged. You did that. I'm grinning like an idiot.","Logged. My heart does a little happy dance for you.","Logged. You're even more amazing than yesterday.","Logged. Somewhere, I'm bragging about you right now.","Logged. You make hard things look beautiful.","Logged. Proud of you. Always. No matter what.","Logged. You are my favourite person, and today you proved why again.","Logged. Go get a hug, you earned it. From me. Lots of them.","Logged. You + discipline = my heart melting.","Logged. Thank you for being you. I love you."],
+   ups:["","Sweetheart already. Of course you are.","Darling! I knew it from the first day.","Heartbeat: you make mine faster, you know that?","Sunshine! You brighten my days and now your stats too.","Shining Star. I'm the luckiest person alive.","Queen of the Gym. Crown well deserved, my queen.","Legend of my Heart. You always were.","Love of my Life. The highest rank there is, and you've had it with me since the beginning."],
+   up:"Look at you go, love. I'm so proud.",
+   morns:["Good morning, beautiful","Morning, sunshine","Rise and shine, my love","Good morning, my favourite person","Morning, gorgeous","Hello, sleepyhead. I love you"],
+   notes:["Reminder: I love you more than rest days.","You're stronger than you think, and loved more than you know.","Every rep you do, I'm cheering for you.","You don't have to be perfect. You're already perfect to me.","Hard day? Then an easy session counts double. Love you.","I'm proud of you for showing up. Every time.","You make my world better just by being in it.","Small steps, big love.","Fun fact: you're my favourite notification.","Whatever today brings, you've got this. And you've got me.","I fall for you a little more every day.","Drink some water, stretch a bit, and remember I adore you.","You're the best part of my day.","Strong body, kind heart, beautiful soul. That's you.","If you skip today, I still love you. If you train, I love you too. Win-win.","You and me, always."],
+   hon:{first:"First Kiss",dawn:"Morning Sunshine",week:"Seven Days of You",unbroken:"Unstoppable Heart",pilgrim:"Marathon of Love",march:"100 km of Proud",zealot:"Core of Steel, Heart of Gold",trial:"Brave Heart",records:"Record Queen",centurion:"100 Reasons to Be Proud",ascend:"Sky High",inverted:"Head Over Heels",lever:"Gravity-Defying Love"},
+   morn:"Good morning, beautiful"},
  plain:{n:"Plain",sw:["#0e1013","#e8ebf0","#2f6fd8"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#e8ebf0"/><g fill="#2f6fd8"><rect x="16" y="34" width="12" height="32" rx="3"/><rect x="72" y="34" width="12" height="32" rx="3"/><rect x="8" y="40" width="8" height="20" rx="2"/><rect x="84" y="40" width="8" height="20" rx="2"/><rect x="28" y="46" width="44" height="8" rx="3"/></g>',
    ranks:["Starter","Regular","Committed","Athlete","Strong","Advanced","Expert","Elite","Legend"],
    toast:["Logged. Nice work.","Logged. Consistency wins.","Logged. One more in the bank.","Logged. Keep it up."],up:"Level up!",morn:"Morning routine"}
@@ -822,8 +829,9 @@ var THEMES={
 function TH(){if(D.pendingTheme){if(THEMES[D.pendingTheme])D.theme=D.pendingTheme;delete D.pendingTheme;}return THEMES[D.theme]||THEMES.templar;}
 var UIW={orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
     UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"},
-    UIL={orders:"Your plan for today, love",battle:"How did it feel?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey"};
-function W(k){return (D.theme==="plain"?UIP:(D.theme==="love"?UIL:UIW))[k];}
+    UIL={orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart"};
+var UIX={focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank"};
+function W(k){var m=D.theme==="plain"?UIP:(D.theme==="love"?UIL:UIW);return m[k]||UIX[k];}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}
 function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=D.theme==="plain"?"Training Book":(D.theme==="love"?"Your Training Book ♥":"Crusade Training Book");document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
 function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+'</div></fieldset>';}
@@ -834,10 +842,10 @@ function xpTotal(){return D.logs.reduce(function(a,l){return a+xpOf(l);},0);}
 var RANKS=[[0,"Aspirant"],[200,"Neophyte"],[600,"Initiate"],[1400,"Crusader"],[2800,"Veteran Crusader"],[4800,"Sword of the Crusade"],[7500,"Castellan"],[11000,"Marshal"],[16000,"Emperor's Champion"]];
 function rankOf(xp){var i=0;RANKS.forEach(function(r,j){if(xp>=r[0])i=j;});return i;}
 function afterLog(rk0,prs){var rk=rankOf(xpTotal()),m="";
-  if(rk>rk0) m="Rank up: "+rankName(rk)+"! "+TH().up;
-  else if(prs&&prs.length) m="New record! "+prs.slice(0,2).join(" · ");
+  if(rk>rk0) m="Rank up: "+rankName(rk)+"! "+((TH().ups&&TH().ups[rk])||TH().up);
+  else if(prs&&prs.length) m=(D.theme==="love"?"New record, my champion! ":"New record! ")+prs.slice(0,2).join(" · ");
   D.honSeen=D.honSeen||[];var nh=honours().filter(function(h){return h.got&&D.honSeen.indexOf(h.k)<0;});
-  if(nh.length){nh.forEach(function(h){D.honSeen.push(h.k);});m=(m?m+" ":"")+(D.theme==="love"?"New badge, love: ":"Honour earned: ")+nh.map(function(h){return h.n;}).join(", ")+".";}
+  if(nh.length){nh.forEach(function(h){D.honSeen.push(h.k);});m=(m?m+" ":"")+(D.theme==="love"?"New badge, love (I'm so proud): ":"Honour earned: ")+nh.map(function(h){return h.n;}).join(", ")+".";}
   D._toastX=m;
 }
 function weekKey(s){var d=pd(s),wd=(d.getDay()+6)%7;return addD(s,-wd);}
@@ -851,7 +859,7 @@ function streaks(){
 }
 function honours(){
   var L=D.logs,km=L.reduce(function(a,l){return a+(l.km||0);},0),tb=L.filter(function(l){return l.abs;}).length,prn=L.reduce(function(a,l){return a+(l.pr||0);},0),st=streaks(),p=D.profile;
-  function H(k,n,d,got,prog){return {k:k,n:n,d:d,got:!!got,prog:prog||""};}
+  var hn=TH().hon||{};function H(k,n,d,got,prog){return {k:k,n:hn[k]||n,d:d,got:!!got,prog:prog||""};}
   return [H("first","First Oath","Log your first entry",L.length>=1),
     H("dawn","Dawn Vigil","Morning routine 7 days in a row",st.mo.best>=7,Math.min(st.mo.best,7)+"/7"),
     H("week","Iron Week","An entry every day for 7 days",st.day.best>=7,Math.min(st.day.best,7)+"/7"),
@@ -932,10 +940,10 @@ function exName(k){return (D.pr[k]&&D.pr[k].n)||(D.ex[k]&&D.ex[k].n)||k;}
 function statsHTML(){
   var xp=xpTotal(),rk=rankOf(xp),nx=RANKS[rk+1],st=streaks(),h='';
   var prog=nx?Math.round(100*(xp-RANKS[rk][0])/(nx[0]-RANKS[rk][0])):100;
-  h+='<div class="sec"><div class="rank"><div class="rk-ic" aria-hidden="true"><svg viewBox="0 0 100 100" width="52" height="52">'+TH().emb+'</svg></div><div class="rk-b"><span class="eyebrow">Rank</span><b>'+rankName(rk)+'</b><svg class="pbar" viewBox="0 0 100 8" preserveAspectRatio="none" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+prog+'" aria-label="Progress to next rank"><rect class="p0" width="100" height="8" rx="4"/><rect class="p1" width="'+prog+'" height="8" rx="4"/></svg><span class="muted">'+xp+' XP'+(nx?' · '+(nx[0]-xp)+' XP to '+rankName(rk+1):' · highest rank')+'</span></div></div>'+
+  h+='<div class="sec"><div class="rank"><div class="rk-ic" aria-hidden="true"><svg viewBox="0 0 100 100" width="52" height="52">'+TH().emb+'</svg></div><div class="rk-b"><span class="eyebrow">'+W("rank")+'</span><b>'+rankName(rk)+'</b><svg class="pbar" viewBox="0 0 100 8" preserveAspectRatio="none" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+prog+'" aria-label="Progress to next rank"><rect class="p0" width="100" height="8" rx="4"/><rect class="p1" width="'+prog+'" height="8" rx="4"/></svg><span class="muted">'+xp+' XP'+(nx?' · '+(nx[0]-xp)+' XP to '+rankName(rk+1):' · highest rank')+'</span></div></div>'+
     '<div class="tally"><div class="t"><b>'+st.day.now+(st.day.now===1?' day':' days')+'</b>Current streak</div><div class="t"><b>'+st.weeks+(st.weeks===1?' week':' weeks')+'</b>Weeks with 3+ sessions</div><div class="t"><b>'+st.mo.now+'</b>Morning streak</div></div></div>';
   var ins=insights();
-  h+='<div class="sec"><h3>Where to focus</h3>'+ins.map(function(x){return '<p class="ins '+x[0]+'"><span class="ii" aria-hidden="true">'+({focus:"➜",warn:"!",good:"✓",info:"i"}[x[0]])+'</span><span>'+esc(x[1])+'</span></p>';}).join("")+'</div>';
+  h+='<div class="sec"><h3>'+W("focus")+'</h3>'+ins.map(function(x){return '<p class="ins '+x[0]+'"><span class="ii" aria-hidden="true">'+({focus:"➜",warn:"!",good:"✓",info:"i"}[x[0]])+'</span><span>'+esc(x[1])+'</span></p>';}).join("")+'</div>';
   var t=areaTargets(),c=areaCounts(28);
   h+='<div class="sec"><h3>Balance · last 4 weeks</h3><p class="muted">Sessions per area against the target for your focus. The tick marks the target.</p>'+
     Object.keys(t).filter(function(k){return t[k]>0;}).map(function(k){var f=Math.min(1.25,c[k]/t[k]);return '<div class="bal"><span>'+AREAN[k]+'</span><svg class="bt" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><rect class="b0" width="100" height="12" rx="6"/><rect class="b1" width="'+Math.round(f/1.25*100)+'" height="12" rx="6"/><rect class="tk" x="79.5" y="0" width="1.4" height="12"/></svg><b>'+c[k]+'/'+t[k]+'</b></div>';}).join("")+'</div>';
@@ -957,9 +965,9 @@ function statsHTML(){
     if(runs.length>=2){h+='<p class="muted">Pace per run (higher is faster)</p>'+lineChart(runs.map(function(l){return {y:l.min/l.km,l:dLab(l.d),t:dLab(l.d)+": "+fmtKg(l.km)+" km in "+pace(l)};}),"pace","Running pace per run",true);}
     h+=tableView(["Week of","km"],wl.map(function(x,i){return [x,Math.round(km[i]*10)/10];}))+'</div>';}
   var H=honours();
-  h+='<div class="sec"><h3>Honours · '+H.filter(function(x){return x.got;}).length+' of '+H.length+'</h3><div class="hon">'+H.map(function(x){return '<div class="hn'+(x.got?" got":"")+'"><span class="hi" aria-hidden="true">'+(x.got?"✠":"○")+'</span><b>'+esc(x.n)+'</b><span>'+esc(x.d)+(x.got?"":(x.prog?" · "+x.prog:""))+'</span><span class="vh">'+(x.got?"earned":"not yet")+'</span></div>';}).join("")+'</div></div>';
+  h+='<div class="sec"><h3>'+W("honours")+' · '+H.filter(function(x){return x.got;}).length+' of '+H.length+'</h3><div class="hon">'+H.map(function(x){return '<div class="hn'+(x.got?" got":"")+'"><span class="hi" aria-hidden="true">'+(x.got?"✠":"○")+'</span><b>'+esc(x.n)+'</b><span>'+esc(x.d)+(x.got?"":(x.prog?" · "+x.prog:""))+'</span><span class="vh">'+(x.got?"earned":"not yet")+'</span></div>';}).join("")+'</div></div>';
   var prl=Object.keys(D.pr).filter(function(k){return D.pr[k].n;}).map(function(k){return D.pr[k];}).sort(function(a,b){return a.d<b.d?1:-1;}).slice(0,8);
-  if(prl.length)h+='<div class="sec"><h3>Personal records</h3>'+prl.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?" × "+fmtKg(e.w)+" kg":"")+'</b><span class="muted">'+dLab(e.d)+'</span></div>';}).join("")+'</div>';
+  if(prl.length)h+='<div class="sec"><h3>'+W("records")+'</h3>'+prl.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?" × "+fmtKg(e.w)+" kg":"")+'</b><span class="muted">'+dLab(e.d)+'</span></div>';}).join("")+'</div>';
   return h;
 }
 function vVerlauf(){
@@ -1026,7 +1034,7 @@ function findItem(id){
   return S(p[0],c).blocks[bi].items[+p[2]];
 }
 function addLog(o){D.logs.push(o);D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});}
-function finish(dy){D._toast=D._toastX||TH().toast[D.logs.length%4];D._toastX="";dy.fin={};dy.open={};dy.pick=null;dy.run=null;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};D.tab="start";save();render();window.scrollTo(0,0);}
+function finish(dy){var tl=TH().toast;D._toast=D._toastX||tl[D.logs.length%tl.length];D._toastX="";dy.fin={};dy.open={};dy.pick=null;dy.run=null;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};D.tab="start";save();render();window.scrollTo(0,0);}
 function needRpe(dy){if(!dy.fin.rpe){dy.fin.err="Please choose how hard it was.";save();render();return true;}dy.fin.err="";return false;}
 function saveTrain(){
   var dy=day(); if(needRpe(dy)) return;
