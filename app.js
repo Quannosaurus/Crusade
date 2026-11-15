@@ -99,6 +99,7 @@ function load(){
   }catch(e){memOnly=true;}
   return fresh();}
 var D=load();
+(function(){try{var q=new URLSearchParams(location.search).get("theme");if(q&&!D.onb&&!D.logs.length&&/^[a-z]+$/.test(q))D.pendingTheme=q;}catch(x){}})();
 (function(){var f=fresh();if(D.skills==null&&D.onb)D.skills={hs:true,mu:true,ls:true,fl:false,pl:false};Object.keys(f).forEach(function(k){if(D[k]==null){D[k]=f[k];if(k==="focus")D.seenFocus=false;}});Object.keys(f.profile).forEach(function(k){if(D.profile[k]==null)D.profile[k]=f.profile[k];});Object.keys(f.skills).forEach(function(k){if(D.skills[k]==null)D.skills[k]=f.skills[k];});})();
 (function(){var cut=addD(TODAY,-14);Object.keys(D.days||{}).forEach(function(k){if(k<cut)delete D.days[k];});})();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){memOnly=true;}}
@@ -695,7 +696,7 @@ function vOnb(){
   var st=D.obStep||0,T=["Welcome","Choose your path","Your numbers","Equipment & training days"],h='',sk=D.skills;
   h+='<section class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgt"><div class="dlgh"><span class="eyebrow">'+W("oath")+' · step '+(st+1)+' of 4</span><h2 id="dlgt" tabindex="-1">'+T[st]+'</h2><div class="steps" aria-hidden="true">'+[0,1,2,3].map(function(i){return '<i class="'+(i<=st?"on":"")+'"></i>';}).join("")+'</div></div><div class="dlgb">';
   if(st===0){
-    h+='<p>Your personal training book: it plans each day from what you did before. Everything stays on this phone.</p>'+themeHTML("o")+
+    h+=(D.theme==="love"?'<p>Hello, love of my life. I made this for you: a training book that plans each day from what you did before. Everything stays on your phone.</p>':'<p>Your personal training book: it plans each day from what you did before. Everything stays on this phone.</p>')+themeHTML("o")+
       '<fieldset class="fs"><legend>Have a backup?</legend><p class="muted">Coming from another phone or browser? Restore your backup and you are done. New here? Just tap Next.</p><label class="b filebtn2" for="bkin">Restore from backup file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"><details class="tv"><summary>Paste backup text instead</summary><textarea id="obbk" aria-label="Backup text" placeholder="Paste your backup text here"></textarea><button type="button" class="b" data-a="obimp">Restore from text</button></details>'+(D._msg?'<p class="warn" role="alert">'+esc(D._msg)+'</p>':'')+'</fieldset>';
   }
   if(st===1){
@@ -811,16 +812,20 @@ var THEMES={
  slaanesh:{n:"Slaanesh",sw:["#100914","#f39ce4","#a8248f"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#2a1030" stroke="#f07ad8" stroke-width="4"/><g fill="#f39ce4"><path transform="rotate(-70 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(-35 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(0 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(35 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(70 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/></g><circle cx="50" cy="66" r="6" fill="#2a1030"/>',
    ranks:["Seeker","Devotee","Hedonist","Bliss-Bringer","Exalted","Champion of Excess","Herald","Daemon Prince","Chosen of the Prince"],
    toast:["Logged. Exquisite. More!","Logged. Perfection is a habit.","Logged. Delicious burn.","Logged. Nothing in moderation."],up:"Such perfection. The Prince is pleased.",morn:"Morning indulgence"},
+ love:{n:"Love of my life",sw:["#140c10","#ffd6e4","#c2185b"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#ffe3ec" stroke="#c2185b" stroke-width="4"/><g fill="#c2185b"><path d="M50 82C24 64 12 50 12 34C12 22 21 14 32 14C40 14 46 19 50 26C54 19 60 14 68 14C79 14 88 22 88 34C88 50 76 64 50 82Z"/></g><path d="M30 34C30 27 35 23 40 24" stroke="#ffe3ec" stroke-width="4" fill="none" stroke-linecap="round"/>',
+   ranks:["Spark","Sweetheart","Darling","Heartbeat","Sunshine","Shining Star","Queen of the Gym","Legend of my Heart","Love of my Life"],
+   toast:["Logged. I'm so proud of you.","Logged. You're the best girlfriend in the world.","Logged. Strong and beautiful, as always.","Logged. You light up every room, and every rep."],up:"Look at you go, love. I'm so proud.",morn:"Good morning, beautiful"},
  plain:{n:"Plain",sw:["#0e1013","#e8ebf0","#2f6fd8"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#e8ebf0"/><g fill="#2f6fd8"><rect x="16" y="34" width="12" height="32" rx="3"/><rect x="72" y="34" width="12" height="32" rx="3"/><rect x="8" y="40" width="8" height="20" rx="2"/><rect x="84" y="40" width="8" height="20" rx="2"/><rect x="28" y="46" width="44" height="8" rx="3"/></g>',
    ranks:["Starter","Regular","Committed","Athlete","Strong","Advanced","Expert","Elite","Legend"],
    toast:["Logged. Nice work.","Logged. Consistency wins.","Logged. One more in the bank.","Logged. Keep it up."],up:"Level up!",morn:"Morning routine"}
 };
-function TH(){return THEMES[D.theme]||THEMES.templar;}
+function TH(){if(D.pendingTheme){if(THEMES[D.pendingTheme])D.theme=D.pendingTheme;delete D.pendingTheme;}return THEMES[D.theme]||THEMES.templar;}
 var UIW={orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
-    UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"};
-function W(k){return (D.theme==="plain"?UIP:UIW)[k];}
+    UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"},
+    UIL={orders:"Your plan for today, love",battle:"How did it feel?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey"};
+function W(k){return (D.theme==="plain"?UIP:(D.theme==="love"?UIL:UIW))[k];}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}
-function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=D.theme==="plain"?"Training Book":"Crusade Training Book";document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
+function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=D.theme==="plain"?"Training Book":(D.theme==="love"?"Your Training Book ♥":"Crusade Training Book");document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
 function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+'</div></fieldset>';}
 /* ================= Ranks, honours and statistics ================= */
 var XPB={KA:40,KB:40,KC:40,CH:45,TE:45,SK:30,HO:30,HK:20,RS:15,DL:20,KI:35,RE:20,RH:30,RI:35,MO:10};
@@ -832,7 +837,7 @@ function afterLog(rk0,prs){var rk=rankOf(xpTotal()),m="";
   if(rk>rk0) m="Rank up: "+rankName(rk)+"! "+TH().up;
   else if(prs&&prs.length) m="New record! "+prs.slice(0,2).join(" · ");
   D.honSeen=D.honSeen||[];var nh=honours().filter(function(h){return h.got&&D.honSeen.indexOf(h.k)<0;});
-  if(nh.length){nh.forEach(function(h){D.honSeen.push(h.k);});m=(m?m+" ":"")+"Honour earned: "+nh.map(function(h){return h.n;}).join(", ")+".";}
+  if(nh.length){nh.forEach(function(h){D.honSeen.push(h.k);});m=(m?m+" ":"")+(D.theme==="love"?"New badge, love: ":"Honour earned: ")+nh.map(function(h){return h.n;}).join(", ")+".";}
   D._toastX=m;
 }
 function weekKey(s){var d=pd(s),wd=(d.getDay()+6)%7;return addD(s,-wd);}
@@ -1006,7 +1011,7 @@ function render(){
   var top={morgen:"start",train:"start",run:"start",kick:"start"}[D.tab]||D.tab;
   document.getElementById("nav").innerHTML=D.onb?tabs().map(function(t){return '<button type="button" data-tab="'+t[0]+'" class="'+(top===t[0]?"on":"")+'"'+(top===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>';}).join(""):"";
   document.body.className=D.onb?(["train","morgen","run","kick"].indexOf(D.tab)>=0?"train":""):"ob";
-  if(!D.onb) document.getElementById("subline").textContent="Induction of a new recruit";
+  if(!D.onb) document.getElementById("subline").textContent=D.theme==="love"?"For the love of my life":"Induction of a new recruit";
   rendering=true;
   app.innerHTML=D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,verlauf:vVerlauf,stand:vStand,mehr:vMehr}[D.tab]||vStart)()):vOnb();
   rendering=false;
@@ -1081,7 +1086,7 @@ document.addEventListener("click",function(e){
   var dy=day(),a=t.dataset.a;
   if(t.dataset.tab){TB=null;D.tab=t.dataset.tab;D._del=null;D._rs=false;D._msg="";dy.fin={};save();render();window.scrollTo(0,0);var h2=app.querySelector("h2");if(h2&&t.closest(".nav,.bk,.big")){h2.tabIndex=-1;h2.focus({preventScroll:true});}return;}
   if(a==="rpe"){dy.fin.rpe=+t.dataset.v;}
-  else if(a==="onb"){askPersist();D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;if(!D.logs.length)D.start=TODAY;D._toast=D.theme==="plain"?"All set. Your first plan is ready.":"The crusade begins. "+({sanguine:"The Angel watches over you.",sisters:"The Emperor protects, Sister.",slaanesh:"Let the pursuit of perfection begin."}[D.theme]||"The Emperor watches over you.");}
+  else if(a==="onb"){askPersist();D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;if(!D.logs.length)D.start=TODAY;D._toast=D.theme==="plain"?"All set. Your first plan is ready.":D.theme==="love"?"All set. You're going to be amazing, love.":"The crusade begins. "+({sanguine:"The Angel watches over you.",sisters:"The Emperor protects, Sister.",slaanesh:"Let the pursuit of perfection begin."}[D.theme]||"The Emperor watches over you.");}
   else if(a==="reonb"){D.onb=false;D.obStep=0;}
   else if(a==="obnext"||a==="obback"){D._msg="";D.obStep=Math.max(0,Math.min(3,(D.obStep||0)+(a==="obnext"?1:-1)));save();render();window.scrollTo(0,0);var hd=document.getElementById("dlgt");if(hd)hd.focus({preventScroll:true});return;}
   else if(a==="nokick"){dy.noKick=!dy.noKick;}
