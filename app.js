@@ -90,7 +90,7 @@ function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
 function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
 function diff(a,b){return Math.round((pd(b)-pd(a))/864e5);}
 var TODAY=ds(new Date());
-function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:7,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[2,5],focus:"bal",startP:"s1",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false},bkAt:0,home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
+function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:7,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[2,5],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false},bkAt:0,home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
     var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
@@ -120,8 +120,14 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
     var o={d:l.d,id:l.id,t:str(l.t,60),rpe:Math.max(0,Math.min(10,numv(l.rpe))),note:str(l.note),sum:str(l.sum),abs:l.abs?1:0};
     if(l.km!=null)o.km=numv(l.km);if(l.min!=null)o.min=numv(l.min);
     if(Array.isArray(l.sk))o.sk=l.sk.filter(function(x){return ["hs","mu","ls","fl","pl"].indexOf(x)>=0;});
-    if(Array.isArray(l.m))o.m=l.m.filter(function(x){return typeof x==="string"&&MMOD[x];});return o;});
+    if(Array.isArray(l.m))o.m=l.m.filter(function(x){return typeof x==="string"&&MMOD[x];});
+    if(l.pr)o.pr=Math.max(0,Math.min(20,Math.floor(numv(l.pr))));
+    if(l.ex&&typeof l.ex==="object"){o.ex={};Object.keys(l.ex).slice(0,60).forEach(function(k){var v=l.ex[k];if(/^[a-z0-9_:#]+$/.test(k)&&Array.isArray(v))o.ex[k]=[numv(v[0]),numv(v[1])];});}
+    if(l.tv&&typeof l.tv==="object"){o.tv={};Object.keys(l.tv).forEach(function(k){if(/^[a-z]+$/.test(k))o.tv[k]=numv(l.tv[k]);});}
+    return o;});
   if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&e&&typeof e==="object")b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80),stall:numv(e.stall)};});
+  if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&e&&typeof e==="object")b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80),p:numv(e.p),km:numv(e.km)};});
+  if(THEMES[n.theme])b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
   if(n.vr&&typeof n.vr==="object")Object.keys(n.vr).slice(0,300).forEach(function(k){if(/^[a-z0-9_]+$/.test(k))b.vr[k]=Math.max(0,Math.min(20,Math.floor(numv(n.vr[k]))));});
   return b;}
 function fmtKg(w){return String(w);}
@@ -651,7 +657,7 @@ function vOnb(){
   }
   if(st===2) h+='<p>Almost done. Do you have a fixed kickboxing class, and what do you have at home?</p><h3>Kickboxing days</h3>'+kickSel("o_kick")+
     '<h3>At home</h3><p class="muted">The yoga mat is always there.</p>'+Object.keys(EQ).map(function(k){return '<label class="chk"><input type="checkbox" data-a="eq" data-k="'+k+'"'+(D.home[k]?" checked":"")+'>'+EQ[k]+'</label>';}).join("")+
-    '<div class="sum"><b>Your crusade</b><span>'+LVN[lvl()]+' · '+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · '+(["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", ")||"no skills")+'</span></div>';
+    themeHTML("o")+'<div class="sum"><b>Your crusade</b><span>'+LVN[lvl()]+' · '+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · '+(["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", ")||"no skills")+'</span></div>';
   h+='</div><div class="dlgf">'+(st>0?'<button type="button" class="b" data-a="obback">Back</button>':'<span></span>')+(st<2?'<button type="button" class="b red" data-a="obnext">Next</button>':'<button type="button" class="b red" data-a="onb">Begin the crusade</button>')+'</div></section>';
   return h;
 }
@@ -666,6 +672,7 @@ function vStart(){
   if(unb>=10) h+='<button type="button" class="warn wbtn" data-tab="mehr">'+unb+' entries since the last backup. Back up now →</button>';
   function big(tab,title,sub){var rec=r.btn===tab&&!dn[tab];
     return '<button type="button" class="big'+(dn[tab]?" done":(rec?" rec":""))+'" data-tab="'+tab+'"><span class="bt"><b>'+title+'</b>'+(dn[tab]?'<i class="tag ok">Done</i>':(rec?'<i class="tag">Recommended</i>':''))+'</span><span>'+(rec?'<span class="rn">'+esc(NAMES[r.id])+'</span><br>'+esc(r.why):esc(sub))+'</span></button>';}
+  if(D.logs.length){var xp0=xpTotal(),st0=streaks();h+='<button type="button" class="rkline lnk" data-tab="verlauf"><span><b>'+esc(rankName(rankOf(xp0)))+'</b> · '+xp0+' XP</span><span>'+(st0.day.now>1?st0.day.now+'-day streak · ':'')+'Stats →</span></button>';}
   h+='<h2 class="q">Your orders for today</h2>';
   h+=big("morgen","Morning routine","Home, on the mat · 7 or 15 min");
   h+=big("train","Training","Gym or home");
@@ -678,7 +685,7 @@ function vStart(){
 }
 function vMorgen(){
   var dy=day(),m=morning(TODAY),short=D.mlen==="k",L=mSections(m,short);
-  var h=back()+'<div class="seg" role="group" aria-label="Length"><button type="button" class="b'+(!short?" on":"")+'" data-a="mlen" data-v="n" aria-pressed="'+(!short)+'">Normal · 15 min</button><button type="button" class="b'+(short?" on":"")+'" data-a="mlen" data-v="k" aria-pressed="'+short+'">Short · 7 min</button></div><div class="hero"><span class="eyebrow">Morning litany · home, on the mat</span><h2>Morning routine</h2><p>'+esc(m.why.join(" "))+'</p><p class="muted">Gentle start: no deep forward bends in the first hour after waking.</p></div>';
+  var h=back()+'<div class="seg" role="group" aria-label="Length"><button type="button" class="b'+(!short?" on":"")+'" data-a="mlen" data-v="n" aria-pressed="'+(!short)+'">Normal · 15 min</button><button type="button" class="b'+(short?" on":"")+'" data-a="mlen" data-v="k" aria-pressed="'+short+'">Short · 7 min</button></div><div class="hero"><span class="eyebrow">'+esc(TH().morn)+' · home, on the mat</span><h2>Morning routine</h2><p>'+esc(m.why.join(" "))+'</p><p class="muted">Gentle start: no deep forward bends in the first hour after waking.</p></div>';
   L.forEach(function(sec,si){
     h+='<details class="blk" open><summary><span class="bn">'+esc(sec.n)+'</span><span class="bi">'+esc(sec.info)+'</span></summary>';
     sec.items.forEach(function(x,ii){h+=poseRow(x,"m-"+sec.k+"-"+ii,dy);});
@@ -732,19 +739,176 @@ function vKick(){
   return back()+'<div class="hero"><span class="eyebrow">Battle day</span><h2>Kickboxing</h2><p>No handstand today, wrists and shoulders get enough work.</p></div>'+blockHTML(KM_PRE,0,"KI",dy,"h",c,true)+blockHTML(KM_POST,1,"KI",dy,"h",c,false)+
     '<div class="card"><div class="sec">'+rpeHTML(f)+'<label class="lab" for="f_note">Note (optional)</label><textarea id="f_note" data-fin="note">'+esc(f.note)+'</textarea><button type="button" class="b red wide" data-a="savekick">Log kickboxing</button>'+(f.err?'<p class="warn" role="alert">'+esc(f.err)+'</p>':'')+'</div></div>';
 }
+var THEMES={
+ templar:{n:"Black Templars",sw:["#0c0c0d","#ece5d3","#c0141f"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#ece5d3" stroke="#c0141f" stroke-width="4"/><g fill="#0c0c0d"><g transform="rotate(0 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><g transform="rotate(90 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><g transform="rotate(180 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><g transform="rotate(270 50 50)"><path d="M43 50Q45 27 27 9H73Q55 27 57 50Z"/></g><circle cx="50" cy="50" r="9"/></g>',
+   ranks:["Aspirant","Neophyte","Initiate","Crusader","Veteran Crusader","Sword Brother","Castellan","Marshal","Emperor's Champion"],
+   toast:["Logged. The Emperor sees your toil.","Logged. Another step in the crusade.","Logged. The blade grows sharper.","Logged. Honour to the diligent."],up:"The Emperor marks your ascent.",morn:"Morning litany"},
+ sanguine:{n:"Sanguinius",sw:["#110909","#e8c06a","#a3111c"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#3a0a0f" stroke="#e8c06a" stroke-width="4"/><g fill="#e8c06a"><path d="M47 60C36 42 22 34 6 34C16 40 20 46 22 52C14 50 8 52 4 56C14 58 20 62 24 68C32 64 42 63 47 66Z"/><path transform="translate(100 0) scale(-1 1)" d="M47 60C36 42 22 34 6 34C16 40 20 46 22 52C14 50 8 52 4 56C14 58 20 62 24 68C32 64 42 63 47 66Z"/><rect x="47" y="22" width="6" height="58" rx="2"/><rect x="38" y="30" width="24" height="5" rx="2"/></g>',
+   ranks:["Aspirant","Neophyte","Initiate","Battle Angel","Veteran Angel","Sanguinary Guard","Captain","Chapter Master","Herald of Sanguinius"],
+   toast:["Logged. The Angel would be proud.","Logged. Wings of gold, will of iron.","Logged. Nobility in every rep.","Logged. Rise, and rise again."],up:"Your wings grow stronger.",morn:"Morning devotion"},
+ sisters:{n:"Sisters of Battle",sw:["#0a0a0b","#f2ebe0","#9b0f1a"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#141316" stroke="#9b0f1a" stroke-width="4"/><g fill="#f2ebe0"><path d="M50 12C42 26 41 42 50 58C59 42 58 26 50 12Z"/><path d="M47 56C30 54 18 40 26 28C30 26 34 28 34 32C32 38 36 46 47 50Z"/><path d="M53 56C70 54 82 40 74 28C70 26 66 28 66 32C68 38 64 46 53 50Z"/><rect x="32" y="56" width="36" height="7" rx="2"/><path d="M45 63L50 86L55 63Z"/><path d="M40 63C34 70 30 76 26 78C34 79 40 74 44 66Z"/><path d="M60 63C66 70 70 76 74 78C66 79 60 74 56 66Z"/></g>',
+   ranks:["Postulant","Novitiate","Sister Militant","Sister Superior","Veteran Superior","Palatine","Canoness","Canoness Superior","Living Saint"],
+   toast:["Logged. Faith is your armour.","Logged. The Emperor protects, Sister.","Logged. Another prayer answered in sweat.","Logged. Your devotion burns bright."],up:"Your faith is rewarded.",morn:"Morning prayer"},
+ slaanesh:{n:"Slaanesh",sw:["#100914","#f39ce4","#a8248f"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#2a1030" stroke="#f07ad8" stroke-width="4"/><g fill="#f39ce4"><path transform="rotate(-70 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(-35 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(0 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(35 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/><path transform="rotate(70 50 70)" d="M50 24C41 42 41 58 50 70C59 58 59 42 50 24Z"/></g><circle cx="50" cy="66" r="6" fill="#2a1030"/>',
+   ranks:["Seeker","Devotee","Hedonist","Bliss-Bringer","Exalted","Champion of Excess","Herald","Daemon Prince","Chosen of the Prince"],
+   toast:["Logged. Exquisite. More!","Logged. Perfection is a habit.","Logged. Delicious burn.","Logged. Nothing in moderation."],up:"Such perfection. The Prince is pleased.",morn:"Morning indulgence"},
+ plain:{n:"Plain",sw:["#0e1013","#e8ebf0","#2f6fd8"],emb:'<rect x="2" y="2" width="96" height="96" rx="12" fill="#e8ebf0"/><g fill="#2f6fd8"><rect x="16" y="34" width="12" height="32" rx="3"/><rect x="72" y="34" width="12" height="32" rx="3"/><rect x="8" y="40" width="8" height="20" rx="2"/><rect x="84" y="40" width="8" height="20" rx="2"/><rect x="28" y="46" width="44" height="8" rx="3"/></g>',
+   ranks:["Starter","Regular","Committed","Athlete","Strong","Advanced","Expert","Elite","Legend"],
+   toast:["Logged. Nice work.","Logged. Consistency wins.","Logged. One more in the bank.","Logged. Keep it up."],up:"Level up!",morn:"Morning routine"}
+};
+function TH(){return THEMES[D.theme]||THEMES.templar;}
+function rankName(i){return TH().ranks[i]||RANKS[i][1];}
+function applyTheme(){var t=TH();document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
+function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+'</div></fieldset>';}
+/* ================= Ranks, honours and statistics ================= */
+var XPB={KA:40,KB:40,KC:40,CH:45,TE:45,SK:30,HO:30,HK:20,RS:15,DL:20,KI:35,RE:20,RH:30,RI:35,MO:10};
+function xpOf(l){var x=XPB[l.id]||15;if(l.km)x+=Math.round(l.km*(l.id==="RH"?3:2));if(l.abs)x+=5;if(l.pr)x+=15*l.pr;return x;}
+function xpTotal(){return D.logs.reduce(function(a,l){return a+xpOf(l);},0);}
+var RANKS=[[0,"Aspirant"],[200,"Neophyte"],[600,"Initiate"],[1400,"Crusader"],[2800,"Veteran Crusader"],[4800,"Sword of the Crusade"],[7500,"Castellan"],[11000,"Marshal"],[16000,"Emperor's Champion"]];
+function rankOf(xp){var i=0;RANKS.forEach(function(r,j){if(xp>=r[0])i=j;});return i;}
+function afterLog(rk0,prs){var rk=rankOf(xpTotal()),m="";
+  if(rk>rk0) m="Rank up: "+rankName(rk)+"! "+TH().up;
+  else if(prs&&prs.length) m="New record! "+prs.slice(0,2).join(" · ");
+  D.honSeen=D.honSeen||[];var nh=honours().filter(function(h){return h.got&&D.honSeen.indexOf(h.k)<0;});
+  if(nh.length){nh.forEach(function(h){D.honSeen.push(h.k);});m=(m?m+" ":"")+"Honour earned: "+nh.map(function(h){return h.n;}).join(", ")+".";}
+  D._toastX=m;
+}
+function weekKey(s){var d=pd(s),wd=(d.getDay()+6)%7;return addD(s,-wd);}
+function streaks(){
+  var days={},mo={};D.logs.forEach(function(l){days[l.d]=1;if(l.id==="MO")mo[l.d]=1;});
+  function run(set){var n=0,best=0,cur=0,dd=addD(TODAY,set[TODAY]?0:-1);while(set[dd]){n++;dd=addD(dd,-1);}
+    Object.keys(set).sort().forEach(function(k,i,a){cur=(i&&diff(a[i-1],k)===1)?cur+1:1;best=Math.max(best,cur);});return {now:n,best:best};}
+  var wk={};D.logs.forEach(function(l){if(l.id!=="MO"){var k=weekKey(l.d);wk[k]=(wk[k]||0)+1;}});
+  var w=0,ww=weekKey(TODAY);if((wk[ww]||0)<3)ww=addD(ww,-7);while((wk[ww]||0)>=3){w++;ww=addD(ww,-7);}
+  return {day:run(days),mo:run(mo),weeks:w};
+}
+function honours(){
+  var L=D.logs,km=L.reduce(function(a,l){return a+(l.km||0);},0),tb=L.filter(function(l){return l.abs;}).length,prn=L.reduce(function(a,l){return a+(l.pr||0);},0),st=streaks(),p=D.profile;
+  function H(k,n,d,got,prog){return {k:k,n:n,d:d,got:!!got,prog:prog||""};}
+  return [H("first","First Oath","Log your first entry",L.length>=1),
+    H("dawn","Dawn Vigil","Morning routine 7 days in a row",st.mo.best>=7,Math.min(st.mo.best,7)+"/7"),
+    H("week","Iron Week","An entry every day for 7 days",st.day.best>=7,Math.min(st.day.best,7)+"/7"),
+    H("unbroken","Unbroken","4 weeks in a row with 3+ sessions",st.weeks>=4,Math.min(st.weeks,4)+"/4"),
+    H("pilgrim","Pilgrim","Run a marathon distance in total",km>=42.2,Math.min(Math.round(km),42)+"/42 km"),
+    H("march","Long March","Run 100 km in total",km>=100,Math.min(Math.round(km),100)+"/100 km"),
+    H("zealot","Tabata Zealot","25 ab Tabatas",tb>=25,Math.min(tb,25)+"/25"),
+    H("trial","Trial of Strength","Complete a test day",L.some(function(l){return l.id==="TE";})),
+    H("records","Record Breaker","Set 10 personal records",prn>=10,Math.min(prn,10)+"/10"),
+    H("centurion","Centurion","100 entries",L.length>=100,Math.min(L.length,100)+"/100"),
+    H("ascend","Ascension","Your first clean muscle-up",p.mu>=1),
+    H("inverted","World Upside Down","Freestanding handstand for 10 s",p.hsf>=10,Math.min(p.hsf||0,10)+"/10 s"),
+    H("lever","Lever of Faith","Front lever or planche: advanced tuck",(p.flSt||0)>=2||(p.plSt||0)>=2)];
+}
+/* areas trained per session type: used for balance and focus advice */
+var AREA={KA:{pull:1,push:1,skill:1},KB:{pull:1,push:1,skill:1},KC:{legs:1,pull:1,core:1},CH:{pull:1,push:1,legs:1},SK:{skill:1},HO:{push:1,pull:1,legs:1},HK:{skill:1,mob:1},RS:{mob:1},MO:{mob:1},RE:{run:1},RH:{run:1},RI:{run:1},KI:{kick:1,legs:1},DL:{pull:1,push:1},TE:{pull:1,push:1}};
+var AREAN={pull:"Pull",push:"Push",legs:"Legs",core:"Core",skill:"Skills",mob:"Mobility",run:"Running",kick:"Kickboxing"};
+function areaTargets(){var F=D.focus,sk=selSk().length>0,k=D.kickDays.length*4;
+  var t={pull:12,push:12,legs:4,core:20,skill:sk?16:0,mob:28,run:10,kick:k};
+  if(F==="str"){t.pull=14;t.push=14;t.legs=6;t.run=0;}
+  if(F==="run"){t.pull=8;t.push=8;t.legs=6;t.run=16;}
+  return t;}
+function areaCounts(days){var c={pull:0,push:0,legs:0,core:0,skill:0,mob:0,run:0,kick:0};
+  D.logs.forEach(function(l){var x=diff(l.d,TODAY);if(x<0||x>=days)return;var a=AREA[l.id]||{};Object.keys(a).forEach(function(k){c[k]++;});if(l.abs)c.core++;if(l.sk&&l.sk.length&&!a.skill)c.skill++;});
+  return c;}
+function insights(){
+  var out=[],t=areaTargets(),c=areaCounts(28),act=D.logs.filter(function(l){return diff(l.d,TODAY)<28;}).length;
+  if(act<3){out.push(["info","Log a few more sessions and this page starts showing where to focus."]);return out;}
+  var gaps=Object.keys(t).filter(function(k){return t[k]>0;}).map(function(k){return [k,c[k]/t[k]];}).sort(function(a,b){return a[1]-b[1];});
+  gaps.slice(0,2).forEach(function(g){if(g[1]<0.6)out.push(["focus",AREAN[g[0]]+" falls behind: "+c[g[0]]+" of about "+t[g[0]]+" in 4 weeks. Give it priority next."]);});
+  selSk().concat(D.skills.mu?["mu"]:[]).forEach(function(k){var d=skLast(k,addD(TODAY,1));if(d>=8&&d<99)out.push(["focus",SKN[k]+" has rested for "+d+" days. Skills fade fast, keep the sessions short and frequent."]);});
+  var st=Object.keys(D.ex).map(function(k){return D.ex[k];}).filter(function(e){return (e.stall||0)>=2;});
+  st.slice(0,2).forEach(function(e){out.push(["warn",e.n+": no progress "+e.stall+" times. Swap the variation or take a lighter week."]);});
+  var lim=D.logs.filter(function(l){return diff(l.d,TODAY)<14&&(l.rpe||0)>=10;}).length;
+  if(lim>=4)out.push(["warn",lim+" sessions at the limit in 2 weeks. Sleep, food and an easy day bring more progress than another hard one."]);
+  var mo=D.logs.filter(function(l){return l.id==="MO"&&diff(l.d,TODAY)<7;}).length;
+  if(mo<4)out.push(["focus","Morning routine "+mo+" of 7 days this week. Even the short 7-minute version counts."]);
+  var prs=D.logs.filter(function(l){return diff(l.d,TODAY)<28;}).reduce(function(a,l){return a+(l.pr||0);},0);
+  if(prs)out.push(["good",prs+" new personal record"+(prs>1?"s":"")+" in the last 4 weeks. The method works."]);
+  var ok=gaps.filter(function(g){return g[1]>=1;}).map(function(g){return AREAN[g[0]];});
+  if(ok.length)out.push(["good","On target: "+ok.join(", ")+"."]);
+  return out;}
+/* ---- small SVG charts (no libraries) ---- */
+var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+function dLab(s){var d=pd(s);return d.getDate()+" "+MON[d.getMonth()];}
+function heatmap(){
+  var start=addD(weekKey(TODAY),-11*7),cells="",cnt={};
+  D.logs.forEach(function(l){cnt[l.d]=cnt[l.d]||{n:0,mo:0,hard:0};if(l.id==="MO")cnt[l.d].mo=1;else{cnt[l.d].n++;if((l.rpe||0)>=8)cnt[l.d].hard=1;}});
+  for(var w=0;w<12;w++)for(var d=0;d<7;d++){var s=addD(start,w*7+d);if(s>TODAY)continue;var c=cnt[s],lv=!c?0:(c.n===0?1:(c.n>=2||c.hard?3:2));
+    var tip=dLab(s)+": "+(!c?"rest":(c.n?c.n+" session"+(c.n>1?"s":""):"")+(c.mo?(c.n?" + ":"")+"morning routine":""));
+    cells+='<rect class="hm l'+lv+'" x="'+(w*25+2)+'" y="'+(d*25+2)+'" width="21" height="21" rx="4"><title>'+esc(tip)+'</title></rect>';}
+  var lab=["Mon","","Wed","","Fri","","Sun"].map(function(t,i){return t?'<text class="ax" x="304" y="'+(i*25+17)+'">'+t+'</text>':'';}).join("");
+  return '<svg class="chart" viewBox="0 0 330 178" role="img" aria-label="Training calendar of the last 12 weeks">'+cells+lab+'</svg>'+
+    '<div class="lg"><span><i class="hm l1"></i>Morning only</span><span><i class="hm l2"></i>Session</span><span><i class="hm l3"></i>Hard or 2+</span></div>';
+}
+function barChart(vals,labs,unit,aria){
+  var W=320,H=150,pl=8,pb=22,mx=Math.max.apply(null,vals.concat([1])),bw=(W-pl*2)/vals.length,h='';
+  [0.5,1].forEach(function(f){var y=H-pb-(H-pb-14)*f;h+='<line class="gr" x1="0" x2="'+W+'" y1="'+y+'" y2="'+y+'"/><text class="ax" x="'+W+'" y="'+(y-3)+'" text-anchor="end">'+Math.round(mx*f*10)/10+'</text>';});
+  vals.forEach(function(v,i){var bh=(H-pb-14)*v/mx,x=pl+i*bw+2;h+='<path class="br'+(i===vals.length-1?" cur":"")+'" d="'+rbar(x,H-pb-bh,bw-4,bh)+'"><title>'+esc(labs[i]+": "+(Math.round(v*10)/10)+" "+unit)+'</title></path>';
+    if(i%3===2||i===vals.length-1)h+='<text class="ax" x="'+(x+(bw-4)/2)+'" y="'+(H-6)+'" text-anchor="middle">'+labs[i]+'</text>';});
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(aria)+'"><line class="bl" x1="0" x2="'+W+'" y1="'+(H-pb)+'" y2="'+(H-pb)+'"/>'+h+'</svg>';
+}
+function rbar(x,y,w,h){if(h<=0)return "M"+x+" "+y+"h"+w;var r=Math.min(4,h,w/2);return "M"+x+" "+(y+h)+"V"+(y+r)+"Q"+x+" "+y+" "+(x+r)+" "+y+"H"+(x+w-r)+"Q"+(x+w)+" "+y+" "+(x+w)+" "+(y+r)+"V"+(y+h)+"Z";}
+function lineChart(pts,unit,aria,lowBetter){
+  var W=320,H=160,pl=34,pr=10,pt=12,pb=24,ys=pts.map(function(p){return p.y;}),mn=Math.min.apply(null,ys),mx=Math.max.apply(null,ys);if(mn===mx){mn-=1;mx+=1;}
+  var pad=(mx-mn)*0.15;mn-=pad;mx+=pad;var n=pts.length;
+  function X(i){return pl+(n===1?0:(W-pl-pr)*i/(n-1));}function Y(v){var f=(v-mn)/(mx-mn);if(lowBetter)f=1-f;return H-pb-(H-pb-pt)*f;}
+  var h='';[0,0.5,1].forEach(function(f){var v=lowBetter?mx-(mx-mn)*f:mn+(mx-mn)*f,y=H-pb-(H-pb-pt)*f;h+='<line class="gr" x1="'+pl+'" x2="'+(W-pr)+'" y1="'+y+'" y2="'+y+'"/><text class="ax" x="'+(pl-4)+'" y="'+(y+3)+'" text-anchor="end">'+(unit==="pace"?fmtPace(v):Math.round(v*10)/10)+'</text>';});
+  h+='<polyline class="ln" points="'+pts.map(function(p,i){return X(i).toFixed(1)+","+Y(p.y).toFixed(1);}).join(" ")+'"/>';
+  pts.forEach(function(p,i){h+='<circle class="pt'+(i===n-1?" cur":"")+'" cx="'+X(i).toFixed(1)+'" cy="'+Y(p.y).toFixed(1)+'" r="4.5"><title>'+esc(p.t)+'</title></circle>';});
+  h+='<text class="ax" x="'+pl+'" y="'+(H-6)+'">'+esc(pts[0].l)+'</text><text class="ax" x="'+(W-pr)+'" y="'+(H-6)+'" text-anchor="end">'+esc(pts[n-1].l)+'</text>';
+  return '<svg class="chart" viewBox="0 0 '+W+' '+H+'" role="img" aria-label="'+esc(aria)+'">'+h+'</svg>';
+}
+function fmtPace(p){return Math.floor(p)+":"+pad(Math.round((p%1)*60)%60);}
+function tableView(head,rows){return '<details class="tv"><summary>Show as table</summary><table><thead><tr>'+head.map(function(x){return '<th>'+esc(x)+'</th>';}).join("")+'</tr></thead><tbody>'+rows.map(function(r){return '<tr>'+r.map(function(x){return '<td>'+esc(x)+'</td>';}).join("")+'</tr>';}).join("")+'</tbody></table></details>';}
+function exSeries(){var S={};D.logs.forEach(function(l){if(!l.ex)return;Object.keys(l.ex).forEach(function(k){(S[k]=S[k]||[]).push({d:l.d,r:l.ex[k][0],w:l.ex[k][1]});});});return S;}
+function exName(k){return (D.pr[k]&&D.pr[k].n)||(D.ex[k]&&D.ex[k].n)||k;}
+function statsHTML(){
+  var xp=xpTotal(),rk=rankOf(xp),nx=RANKS[rk+1],st=streaks(),h='';
+  var prog=nx?Math.round(100*(xp-RANKS[rk][0])/(nx[0]-RANKS[rk][0])):100;
+  h+='<div class="sec"><div class="rank"><div class="rk-ic" aria-hidden="true"><svg viewBox="0 0 100 100" width="52" height="52">'+TH().emb+'</svg></div><div class="rk-b"><span class="eyebrow">Rank</span><b>'+rankName(rk)+'</b><svg class="pbar" viewBox="0 0 100 8" preserveAspectRatio="none" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+prog+'" aria-label="Progress to next rank"><rect class="p0" width="100" height="8" rx="4"/><rect class="p1" width="'+prog+'" height="8" rx="4"/></svg><span class="muted">'+xp+' XP'+(nx?' · '+(nx[0]-xp)+' XP to '+rankName(rk+1):' · highest rank')+'</span></div></div>'+
+    '<div class="tally"><div class="t"><b>'+st.day.now+(st.day.now===1?' day':' days')+'</b>Current streak</div><div class="t"><b>'+st.weeks+(st.weeks===1?' week':' weeks')+'</b>Weeks with 3+ sessions</div><div class="t"><b>'+st.mo.now+'</b>Morning streak</div></div></div>';
+  var ins=insights();
+  h+='<div class="sec"><h3>Where to focus</h3>'+ins.map(function(x){return '<p class="ins '+x[0]+'"><span class="ii" aria-hidden="true">'+({focus:"➜",warn:"!",good:"✓",info:"i"}[x[0]])+'</span><span>'+esc(x[1])+'</span></p>';}).join("")+'</div>';
+  var t=areaTargets(),c=areaCounts(28);
+  h+='<div class="sec"><h3>Balance · last 4 weeks</h3><p class="muted">Sessions per area against the target for your focus. The tick marks the target.</p>'+
+    Object.keys(t).filter(function(k){return t[k]>0;}).map(function(k){var f=Math.min(1.25,c[k]/t[k]);return '<div class="bal"><span>'+AREAN[k]+'</span><svg class="bt" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><rect class="b0" width="100" height="12" rx="6"/><rect class="b1" width="'+Math.round(f/1.25*100)+'" height="12" rx="6"/><rect class="tk" x="79.5" y="0" width="1.4" height="12"/></svg><b>'+c[k]+'/'+t[k]+'</b></div>';}).join("")+'</div>';
+  h+='<div class="sec"><h3>Training calendar · 12 weeks</h3>'+heatmap()+'</div>';
+  var wk=[],wl=[],km=[];for(var i=11;i>=0;i--){var ws=addD(weekKey(TODAY),-i*7);wl.push(dLab(ws));wk.push(D.logs.filter(function(l){return l.id!=="MO"&&l.d>=ws&&l.d<addD(ws,7);}).length);km.push(D.logs.filter(function(l){return l.d>=ws&&l.d<addD(ws,7);}).reduce(function(a,l){return a+(l.km||0);},0));}
+  h+='<div class="sec"><h3>Sessions per week</h3>'+barChart(wk,wl,"sessions","Training sessions per week, last 12 weeks")+tableView(["Week of","Sessions"],wl.map(function(x,i){return [x,wk[i]];}))+'</div>';
+  var S=exSeries(),keys=Object.keys(S).filter(function(k){return S[k].length>=2;}).sort(function(a,b){return S[b].length-S[a].length;});
+  h+='<div class="sec"><h3>Exercise progress</h3>';
+  if(!keys.length) h+='<p class="muted">Appears once an exercise has been logged twice.</p>';
+  else{var sel=keys.indexOf(D.statEx)>=0?D.statEx:keys[0],ser=S[sel],useW=ser.some(function(p){return p.w>0;});
+    h+='<label class="lab" for="statex">Exercise</label><select id="statex" data-a="statex">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===sel?" selected":"")+'>'+esc(exName(k))+'</option>';}).join("")+'</select>';
+    var pts=ser.map(function(p){return {y:useW?p.w:p.r,l:dLab(p.d),t:dLab(p.d)+": "+p.r+(p.w?" × "+fmtKg(p.w)+" kg":"")};});
+    var first=pts[0].y,last=pts[pts.length-1].y,dv=Math.round((last-first)*10)/10;
+    h+='<p class="muted">'+(useW?"Weight in kg":"Best set")+' · '+(dv>0?'+'+dv+' since '+pts[0].l:(dv<0?dv+' since '+pts[0].l:'level since '+pts[0].l))+'</p>'+lineChart(pts,"",exName(sel)+" progress")+tableView(["Date","Best set"],ser.map(function(p){return [dLab(p.d),p.r+(p.w?" × "+fmtKg(p.w)+" kg":"")];}));}
+  h+='</div>';
+  if(D.focus!=="str"||D.logs.some(function(l){return l.km;})){
+    var runs=D.logs.filter(function(l){return l.km>0&&l.min>0;}).slice(-15);
+    h+='<div class="sec"><h3>Running</h3>'+barChart(km,wl,"km","Kilometres per week, last 12 weeks");
+    if(runs.length>=2){h+='<p class="muted">Pace per run (higher is faster)</p>'+lineChart(runs.map(function(l){return {y:l.min/l.km,l:dLab(l.d),t:dLab(l.d)+": "+fmtKg(l.km)+" km in "+pace(l)};}),"pace","Running pace per run",true);}
+    h+=tableView(["Week of","km"],wl.map(function(x,i){return [x,Math.round(km[i]*10)/10];}))+'</div>';}
+  var H=honours();
+  h+='<div class="sec"><h3>Honours · '+H.filter(function(x){return x.got;}).length+' of '+H.length+'</h3><div class="hon">'+H.map(function(x){return '<div class="hn'+(x.got?" got":"")+'"><span class="hi" aria-hidden="true">'+(x.got?"✠":"○")+'</span><b>'+esc(x.n)+'</b><span>'+esc(x.d)+(x.got?"":(x.prog?" · "+x.prog:""))+'</span><span class="vh">'+(x.got?"earned":"not yet")+'</span></div>';}).join("")+'</div></div>';
+  var prl=Object.keys(D.pr).filter(function(k){return D.pr[k].n;}).map(function(k){return D.pr[k];}).sort(function(a,b){return a.d<b.d?1:-1;}).slice(0,8);
+  if(prl.length)h+='<div class="sec"><h3>Personal records</h3>'+prl.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?" × "+fmtKg(e.w)+" kg":"")+'</b><span class="muted">'+dLab(e.d)+'</span></div>';}).join("")+'</div>';
+  return h;
+}
 function vVerlauf(){
   var w=D.logs.filter(function(l){var x=diff(l.d,TODAY);return x>=0&&x<=6;});
   function n(f){return w.filter(f).length;}
   var sk=selSk().length?4:0,F=D.focus,T2=F==="run"?[["Strength sessions",n(function(l){return STR[l.id];}),2],["Easy run",n(function(l){return l.id==="RE";}),3],["Intervals",n(function(l){return l.id==="RI";}),1],["Long run",n(function(l){return l.id==="RH";}),1],["Skill training",n(function(l){return l.sk?l.sk.length>0:HASHS[l.id];}),sk?2:0]]:
     [["Strength A",n(function(l){return l.id==="KA";}),1],["Strength B",n(function(l){return l.id==="KB";}),1],["Strength C / Challenge",n(function(l){return l.id==="KC"||l.id==="CH";}),1],["Skill training",n(function(l){return l.sk?l.sk.length>0:HASHS[l.id];}),sk],["Easy run",n(function(l){return l.id==="RE";}),F==="str"?0:1],["Hard run",n(function(l){return l.id==="RH"||l.id==="RI";}),F==="str"?0:1]];
   T2=T2.concat([["Kickboxing",n(function(l){return l.id==="KI";}),D.kickDays.length],["Ab Tabata",n(function(l){return l.abs;}),5],["Morning routine",n(function(l){return l.id==="MO";}),7]]);
-  var h='<div class="card"><div class="sec"><h2>Chronicle · last 7 days</h2><div class="tally">'+T2.filter(function(t){return t[2]>0;}).map(function(t){return '<div class="t"><b>'+t[1]+' / '+t[2]+(t[1]>=t[2]?' ✓':'')+'</b>'+t[0]+'</div>';}).join("")+'</div></div>';
+  var h='<div class="card">'+statsHTML()+'<div class="sec"><h2>This week</h2><div class="tally">'+T2.filter(function(t){return t[2]>0;}).map(function(t){return '<div class="t"><b>'+t[1]+' / '+t[2]+(t[1]>=t[2]?' ✓':'')+'</b>'+t[0]+'</div>';}).join("")+'</div></div>';
   var ex=Object.keys(D.ex).map(function(k){return D.ex[k];}).filter(function(e){return e.n;}).sort(function(a,b){return a.d<b.d?1:-1;}).slice(0,10);
   if(ex.length) h+='<div class="sec"><h3>Latest values</h3>'+ex.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?' × '+fmtKg(e.w)+' kg':'')+'</b></div>';}).join("")+'</div>';
   h+='<div class="sec"><h3>All entries</h3>';
   if(!D.logs.length) h+='<p class="muted">Nothing logged yet.</p>';
-  D.logs.slice().reverse().forEach(function(l){var i=D.logs.indexOf(l),d=pd(l.d);
+  var rev=D.logs.slice().reverse();rev.forEach(function(l,ri){if(ri===20)h+='<details class="tv"><summary>Show all '+rev.length+' entries</summary>';var i=D.logs.indexOf(l),d=pd(l.d);
     h+='<div class="log"><b>'+esc(l.t)+'</b><span class="muted">'+d.getDate()+' '+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></div>';});
+  if(rev.length>20)h+='</details>';
   return h+'</div></div>';
 }
 function vStand(){
@@ -759,6 +923,7 @@ function vMehr(){
   var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before Strength A.","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","After more than 10 days off, targets step back once, after 4 weeks twice.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: swap the variation. Three times at the limit in a week: a recovery day.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
   if(!D.seenFocus){D.seenFocus=true;save();}
   return '<div class="card"><div class="sec"><h2>Focus & skills</h2>'+focusHTML("m")+'</div>'+
+    '<div class="sec">'+themeHTML("m")+'</div>'+
     '<div class="sec"><h3>Kickboxing days</h3>'+kickSel("m_kick")+'</div>'+
     '<div class="sec"><h3>Basics</h3><p class="muted">Re-enter values, focus and equipment in three steps.</p><button type="button" class="b" data-a="reonb">Re-enter basics</button></div>'+
     '<div class="sec"><h3>Training doctrine</h3><ol class="why">'+R.map(function(r){return "<li>"+esc(r)+"</li>";}).join("")+'</ol></div>'+
@@ -767,7 +932,7 @@ function vMehr(){
     '<div class="sec"><h3>Reset</h3><button type="button" class="b" data-a="reset">'+(D._rs?'Really delete everything':'Delete all data')+'</button></div></div>';
 }
 function render(){
-  updNames();
+  updNames(); applyTheme();
   var c=ctx(TODAY),d=new Date();
   document.getElementById("subline").textContent=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" · Week "+c.week+" · "+LVN[lvl()];
   var top={morgen:"start",train:"start",run:"start",kick:"start"}[D.tab]||D.tab;
@@ -788,11 +953,12 @@ function findItem(id){
   return S(p[0],c).blocks[bi].items[+p[2]];
 }
 function addLog(o){D.logs.push(o);D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});}
-function finish(dy){D._toast=["Logged. The Emperor sees your toil.","Logged. Another step in the crusade.","Logged. The blade grows sharper.","Logged. Honour to the diligent."][D.logs.length%4];dy.fin={};dy.open={};dy.pick=null;dy.run=null;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};D.tab="start";save();render();window.scrollTo(0,0);}
+function finish(dy){D._toast=D._toastX||TH().toast[D.logs.length%4];D._toastX="";dy.fin={};dy.open={};dy.pick=null;dy.run=null;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};D.tab="start";save();render();window.scrollTo(0,0);}
 function needRpe(dy){if(!dy.fin.rpe){dy.fin.err="Please choose how hard it was.";save();render();return true;}dy.fin.err="";return false;}
 function saveTrain(){
   var dy=day(); if(needRpe(dy)) return;
-  var loc=D.loc,c=ctx(TODAY),id=trainId(dy).id,s=S(id,c),f=dy.fin,wts=[],hold=f.rpe>=10,isoDone={};
+  var loc=D.loc,c=ctx(TODAY),id=trainId(dy).id,s=S(id,c),f=dy.fin,wts=[],hold=f.rpe>=10,isoDone={},exl={},tv={},prs=[];
+  function rec(key,r,w,nm){exl[key]=[r,w||0];var sc=(w||0)*1000+r,b=D.pr[key];if(b&&sc>b.sc)prs.push(nm+": "+r+(w?" × "+fmtKg(w)+" kg":""));if(!b||sc>b.sc)D.pr[key]={sc:sc,r:r,w:w||0,d:TODAY,n:nm};}
   s.blocks.forEach(function(b,bi){ if(D.short&&b.p>1) return; b.items.forEach(function(it,ii){
     var iid=id+"-"+bi+"-"+ii, v=curVar(it,loc); if(v<0||dy.skip[iid]||painHit(it.opts[v].n)) return;
     var inp=dy.inp[iid]||{}, sets=(inp.s||[]).map(num).filter(function(x){return x!==null&&x>=0;});
@@ -800,10 +966,10 @@ function saveTrain(){
       if(sets.length){ isoDone[it.iso]=1; var mn=Math.min.apply(null,sets),mx=Math.max.apply(null,sets);
         if(sets.length>=q.n&&mn>=q.h) D.profile[it.iso]=Math.min(120,Math.max(cur,mx)+2);
         else if(mn<q.h*0.75) D.profile[it.iso]=Math.max(Math.round(mx),Math.max(3,cur-2));
-        if(mx>D.profile[it.iso]) D.profile[it.iso]=mx; }
+        if(mx>D.profile[it.iso]) D.profile[it.iso]=mx; rec("iso:"+it.iso,mx,0,it.opts[v].n+" (s)"); }
       else if(dy.done[iid]&&!hold){ isoDone[it.iso]=1; D.profile[it.iso]=cur+1; }
       return; }
-    if(it.test){ if(sets.length) D.profile[it.test]=sets[0]; return; }
+    if(it.test){ if(sets.length){ D.profile[it.test]=sets[0]; tv[it.test]=sets[0]; rec("test:"+it.test,sets[0],0,it.opts[0].n); } return; }
     if(it.f) return;
     var g=target(it,v), r, w=num(inp.w);
     if(sets.length) r=Math.min.apply(null,sets); else if(dy.done[iid]) r=g.r; else return;
@@ -812,19 +978,23 @@ function saveTrain(){
     D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:stall};
     if((it.k==="fl_h"||it.k==="pl_h")&&v<=4&&r>=it.lo){var pk=it.k==="fl_h"?"flSt":"plSt";if(v>D.profile[pk])D.profile[pk]=v;}
     if(it.opts[v].w&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
+    if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
   });});
   var absDone=!!dy.done["abs-T"]; if(absDone) D.abs=(absFor(id).i+1)%ABS.length;
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
-  addLog({d:TODAY,id:id,t:NAMES[id],rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl});
-  finish(dy);
+  var rk0=rankOf(xpTotal());
+  addLog({d:TODAY,id:id,t:NAMES[id],rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length});
+  afterLog(rk0,prs); finish(dy);
 }
 function saveRun(){
-  var dy=day(); if(needRpe(dy)) return;
+  var dy=day(); if(needRpe(dy)) return; var rk0=rankOf(xpTotal()),nl=D.logs.length;
   var f=dy.fin,id=dy.run||runRec().id,km=num(f.km),mn=num(f.min);
   if(id==="RH"){ if(f.rpe<=4) D.runKm=Math.min(D.focus==="run"?16:10,D.runKm+0.5); else if(f.rpe>=10) D.runKm=Math.max(5,D.runKm-0.5); }
   if(id==="RI"){ if(f.rpe<=6) D.runI=Math.min(8,D.runI+1); else if(f.rpe>=10) D.runI=Math.max(3,D.runI-1); }
-  addLog({d:TODAY,id:id,t:NAMES[id],rpe:f.rpe,note:(f.note||"").slice(0,300),km:km===null?0:Math.round(km*100)/100,min:mn===null?0:Math.round(mn*10)/10});
-  finish(dy);
+  var prs=[];if(km&&mn){var pc=mn/km,b=D.pr["run:pace5"];if(km>=5){if(b&&pc<b.p)prs.push("Fastest 5 km+ pace: "+pace({km:km,min:mn}));if(!b||pc<b.p)D.pr["run:pace5"]={p:pc,d:TODAY};}
+    var bl=D.pr["run:long"];if(bl&&km>bl.km)prs.push("Longest run: "+fmtKg(Math.round(km*10)/10)+" km");if(!bl||km>bl.km)D.pr["run:long"]={km:km,d:TODAY};}
+  addLog({d:TODAY,id:id,t:NAMES[id],rpe:f.rpe,note:(f.note||"").slice(0,300),km:km===null?0:Math.round(km*100)/100,min:mn===null?0:Math.round(mn*10)/10,pr:prs.length});
+  afterLog(rk0,prs); finish(dy);
 }
 function parseTrack(txt){
   var x=new DOMParser().parseFromString(txt,"application/xml"),m=0,sec=0,i;
@@ -858,8 +1028,8 @@ document.addEventListener("click",function(e){
   else if(a==="tbdone"){dy.done["abs-T"]=1;}
   else if(a==="savetr"){saveTrain();return;}
   else if(a==="saverun"){saveRun();return;}
-  else if(a==="savekick"){if(needRpe(dy))return;addLog({d:TODAY,id:"KI",t:NAMES.KI,rpe:dy.fin.rpe,note:(dy.fin.note||"").slice(0,300)});finish(dy);return;}
-  else if(a==="savemo"){var mm=morning(TODAY);addLog({d:TODAY,id:"MO",t:NAMES.MO,m:[mm.top].concat(D.mlen==="k"?[]:[mm.sec])});D.tab="start";D._toast="Morning routine logged. Let the day come.";}
+  else if(a==="savekick"){if(needRpe(dy))return;var rk0=rankOf(xpTotal());addLog({d:TODAY,id:"KI",t:NAMES.KI,rpe:dy.fin.rpe,note:(dy.fin.note||"").slice(0,300)});afterLog(rk0,[]);finish(dy);return;}
+  else if(a==="savemo"){var mm=morning(TODAY),rk0=rankOf(xpTotal());addLog({d:TODAY,id:"MO",t:NAMES.MO,m:[mm.top].concat(D.mlen==="k"?[]:[mm.sec])});D.tab="start";afterLog(rk0,[]);D._toast=D._toastX||"Morning routine logged. Let the day come.";D._toastX="";}
   else if(a==="mlen"){D.mlen=t.dataset.v;}
   else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);D._del=null;} else D._del=i;}
   else if(a==="exp"){var o=JSON.parse(JSON.stringify(D));delete o._bk;delete o._msg;D._bk=JSON.stringify(o);D.bkAt=D.logs.length;D._msg="Backup created. Copy it now and store it, e.g. in a note.";}
@@ -875,6 +1045,8 @@ document.addEventListener("change",function(e){
   if(q.a==="done"){ if(t.checked) dy.done[q.id]=1; else delete dy.done[q.id]; save(); render(); }
   else if(q.a==="eq"){ D.home[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="focus"){ D.focus=t.value; save(); keepRender(); }
+  else if(q.a==="theme"){ D.theme=t.value; save(); keepRender(); }
+  else if(q.a==="statex"){ D.statEx=t.value; save(); keepRender(); }
   else if(q.a==="startp"){ D.startP=t.value; var pp=STARTP[t.value][2]; Object.keys(pp).forEach(function(k){D.profile[k]=pp[k];}); save(); keepRender(); }
   else if(q.a==="skill"){ D.skills[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="stage"){ D.profile[q.k]=+t.value; save(); keepRender(); }
