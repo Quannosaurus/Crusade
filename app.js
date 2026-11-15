@@ -90,7 +90,7 @@ function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
 function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
 function diff(a,b){return Math.round((pd(b)-pd(a))/864e5);}
 var TODAY=ds(new Date());
-function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:10,dips:15,push:25,expl:5,negmu:5,mu:0,hang:45,tuck:30,lsit:10,hollow:90,hsw:30,hsf:0,pike:12,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:7,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[2,5],focus:"bal",skills:{hs:true,mu:true,ls:true,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false},bkAt:0,home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
+function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:7,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[2,5],focus:"bal",startP:"s1",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false},bkAt:0,home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
     var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
@@ -99,7 +99,7 @@ function load(){
   }catch(e){memOnly=true;}
   return fresh();}
 var D=load();
-(function(){var f=fresh();Object.keys(f).forEach(function(k){if(D[k]==null){D[k]=f[k];if(k==="focus")D.seenFocus=false;}});Object.keys(f.profile).forEach(function(k){if(D.profile[k]==null)D.profile[k]=f.profile[k];});Object.keys(f.skills).forEach(function(k){if(D.skills[k]==null)D.skills[k]=f.skills[k];});})();
+(function(){var f=fresh();if(D.skills==null&&D.onb)D.skills={hs:true,mu:true,ls:true,fl:false,pl:false};Object.keys(f).forEach(function(k){if(D[k]==null){D[k]=f[k];if(k==="focus")D.seenFocus=false;}});Object.keys(f.profile).forEach(function(k){if(D.profile[k]==null)D.profile[k]=f.profile[k];});Object.keys(f.skills).forEach(function(k){if(D.skills[k]==null)D.skills[k]=f.skills[k];});})();
 (function(){var cut=addD(TODAY,-14);Object.keys(D.days||{}).forEach(function(k){if(k<cut)delete D.days[k];});})();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){memOnly=true;}}
 function day(s){s=s||TODAY;if(!D.days[s])D.days[s]={done:{},inp:{},skip:{},pick:null,run:null,fin:{},noKick:false};var d=D.days[s];d.skip=d.skip||{};return d;}
@@ -251,6 +251,7 @@ function postBlocks(id,bl){var sk=D.skills,out=[];
     var nb={};Object.keys(b).forEach(function(k){nb[k]=b[k];});nb.items=it;
     if(!sk.ls&&b.name==="L-sit & grip") nb.name="Grip & hang";
     if(/^Handstand/.test(b.name)&&!nb.skill) nb.skill="hs";
+    if(b.name==="Kickboxing power"&&!D.kickDays.length){nb.name="Power & core";nb.items=nb.items.filter(function(x){return !/Neck/.test(x.opts[0].n);});}
     if(!sk.ls&&b.name==="L-sit & support") nb.name="Support";
     out.push(nb);});
   if((id==="HO"||id==="HK")){var ex=[];
@@ -628,15 +629,27 @@ function focusHTML(pre){
 function stageSel(pre,k,lab,names){return '<div class="row sub2"><label class="lab" for="'+pre+'_'+k+'">'+lab+'</label><select id="'+pre+'_'+k+'" data-a="stage" data-k="'+k+'">'+names.map(function(n,i){return '<option value="'+i+'"'+((D.profile[k]||0)===i?" selected":"")+'>'+n+(i===0?" (entry)":"")+'</option>';}).join("")+'</select></div>';}
 function profGrid(list,pre){var p=D.profile;return '<div class="grid2">'+list.map(function(x){return '<label for="'+pre+x[0]+'">'+x[1]+'</label><input type="number" id="'+pre+x[0]+'" inputmode="numeric" min="0" data-prof="'+x[0]+'" value="'+Math.round(p[x[0]]*10)/10+'">';}).join("")+'</div>';}
 function lvlNote(){var L=lvl();return 'Your level: <b>'+LVN[L]+'</b>'+(L===0?' · Build the pull-up and dip base first':(L===2?' · Muscle-ups get built up':' · Building toward the muscle-up'));}
+var STARTP={s0:["Just starting","No pull-ups yet, a few push-ups. Totally fine: the app starts gently.",{pull:0,dips:0,push:5,expl:0,mu:0,hsw:0,hsf:0,pike:0,tuck:5,lsit:0,hang:15}],
+  s1:["Some training","A few pull-ups and push-ups, some gym experience.",{pull:5,dips:8,push:15,expl:2,mu:0,hsw:20,hsf:0,pike:6,tuck:15,lsit:0,hang:30}],
+  s2:["Experienced","Solid pull-ups and dips, working on skills.",{pull:12,dips:20,push:30,expl:6,mu:2,hsw:45,hsf:5,pike:12,tuck:30,lsit:10,hang:60}]};
 function vOnb(){
-  var st=D.obStep||0,T=["Enter your basics","Choose your doctrine","Equipment & battle days"],h='';
+  var st=D.obStep||0,T=["Choose your path","Your numbers","Equipment & training days"],h='',sk=D.skills;
   h+='<section class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgt"><div class="dlgh"><span class="eyebrow">Oath of induction · step '+(st+1)+' of 3</span><h2 id="dlgt" tabindex="-1">'+T[st]+'</h2><div class="steps" aria-hidden="true">'+[0,1,2].map(function(i){return '<i class="'+(i<=st?"on":"")+'"></i>';}).join("")+'</div></div><div class="dlgb">';
-  if(st===0) h+='<p>Welcome to the crusade, brother. Enter once what you can do today. Rough numbers are fine. Anything you cannot do yet: 0.</p>'+
-    '<h3>Pull & support · reps</h3>'+profGrid([["pull","Clean pull-ups"],["dips","Parallel bar dips"],["push","Push-ups"],["expl","Explosive chest-to-bar pull-ups"],["mu","Clean muscle-ups"],["pike","Pike Push-Ups"]],"o_")+
-    '<h3>Holds · seconds</h3>'+profGrid([["hsw","Handstand, chest to wall"],["hsf","Freestanding handstand"],["tuck","Tuck L-Sit"],["lsit","Straight-leg L-sit"],["hang","Active Hang"]],"o_")+
-    '<p class="muted" id="lvlnote" role="status">'+lvlNote()+'</p>';
-  if(st===1) h+='<p>Where does your crusade lead? You can change this any time under “More”.</p>'+focusHTML("o");
-  if(st===2) h+='<p>Almost done. When is kickboxing class, and what do you have at home?</p><h3>Kickboxing days</h3>'+kickSel("o_kick")+
+  if(st===0){
+    h+='<p>Welcome to the crusade. First: where do you start, and what do you want to work on? Everything can be changed later under “More”.</p>';
+    h+='<fieldset class="fs"><legend>Where do you start?</legend>'+Object.keys(STARTP).map(function(k){var x=STARTP[k];return '<label class="optc"><input type="radio" name="o_start" value="'+k+'" data-a="startp"'+(D.startP===k?" checked":"")+'><span><b>'+x[0]+'</b><span class="muted">'+x[1]+'</span></span></label>';}).join("")+'</fieldset>';
+    h+=focusHTML("o");
+  }
+  if(st===1){
+    var rep=[["push","Push-ups (knees count too)"],["pull","Clean pull-ups"],["dips","Dips"]],hold=[["hang","Hanging from a bar (seconds)"]];
+    if(sk.mu){rep.push(["expl","Explosive chest-to-bar pull-ups"]);rep.push(["mu","Clean muscle-ups"]);}
+    if(sk.hs){rep.push(["pike","Pike push-ups"]);hold.push(["hsw","Handstand, chest to wall"]);hold.push(["hsf","Freestanding handstand"]);}
+    if(sk.ls){hold.push(["tuck","Tuck L-sit"]);hold.push(["lsit","Straight-leg L-sit"]);}
+    h+='<p>Rough numbers are fine. Your starting point already filled them in, adjust if you know better. Can’t do something yet? Leave it at 0: that is where most people begin, and the app picks easier variations for you.</p>'+
+      '<h3>Reps</h3>'+profGrid(rep,"o_")+'<h3>Holds · seconds</h3>'+profGrid(hold,"o_")+
+      '<p class="muted" id="lvlnote" role="status">'+lvlNote()+'</p>';
+  }
+  if(st===2) h+='<p>Almost done. Do you have a fixed kickboxing class, and what do you have at home?</p><h3>Kickboxing days</h3>'+kickSel("o_kick")+
     '<h3>At home</h3><p class="muted">The yoga mat is always there.</p>'+Object.keys(EQ).map(function(k){return '<label class="chk"><input type="checkbox" data-a="eq" data-k="'+k+'"'+(D.home[k]?" checked":"")+'>'+EQ[k]+'</label>';}).join("")+
     '<div class="sum"><b>Your crusade</b><span>'+LVN[lvl()]+' · '+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · '+(["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", ")||"no skills")+'</span></div>';
   h+='</div><div class="dlgf">'+(st>0?'<button type="button" class="b" data-a="obback">Back</button>':'<span></span>')+(st<2?'<button type="button" class="b red" data-a="obnext">Next</button>':'<button type="button" class="b red" data-a="onb">Begin the crusade</button>')+'</div></section>';
@@ -760,7 +773,7 @@ function render(){
   var top={morgen:"start",train:"start",run:"start",kick:"start"}[D.tab]||D.tab;
   document.getElementById("nav").innerHTML=D.onb?TABS.map(function(t){return '<button type="button" data-tab="'+t[0]+'" class="'+(top===t[0]?"on":"")+'"'+(top===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>';}).join(""):"";
   document.body.className=D.onb?(D.tab==="train"?"train":""):"ob";
-  if(!D.onb) document.getElementById("subline").textContent="Induction of a new brother";
+  if(!D.onb) document.getElementById("subline").textContent="Induction of a new recruit";
   rendering=true;
   app.innerHTML=D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,verlauf:vVerlauf,stand:vStand,mehr:vMehr}[D.tab]||vStart)()):vOnb();
   rendering=false;
@@ -862,6 +875,7 @@ document.addEventListener("change",function(e){
   if(q.a==="done"){ if(t.checked) dy.done[q.id]=1; else delete dy.done[q.id]; save(); render(); }
   else if(q.a==="eq"){ D.home[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="focus"){ D.focus=t.value; save(); keepRender(); }
+  else if(q.a==="startp"){ D.startP=t.value; var pp=STARTP[t.value][2]; Object.keys(pp).forEach(function(k){D.profile[k]=pp[k];}); save(); keepRender(); }
   else if(q.a==="skill"){ D.skills[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="stage"){ D.profile[q.k]=+t.value; save(); keepRender(); }
   else if(q.a==="pain"){ D.pain[q.k]=t.checked; save(); render(); }
