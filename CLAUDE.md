@@ -53,6 +53,8 @@ Vorschläge: <Folgeaufträge, oder "keine">
 
 ## Core concepts (where to find what in `app.js`)
 - **Sessions:** `S0(id,ctx)` builds the blocks, `S()` wraps them and passes them to `postBlocks()` (skill rotation, filters, emphasis block `EMB`, favourites `FAVB`, cool-down `COOL`).
+  - Legs ≥ 2× per training week (A-009): `ctx().legB` adds `LEGMINI` to KA/KB/CH; logs carry `lg` (`legSets`/`legLog`). Lower/glute emphasis: fixed anchor per session (`ANCH`, `it.anc`), CH no longer replaces KC.
+  - Duration (A-010): `S()` ends with `capDur()` → `s.min` (`estMin`), `s.cut`, `s.ab` (Tabata or null). Over `DURMAX` 90 min it trims in a fixed order (favourites, emphasis, ab block, then rounds/accessory blocks); warm-up, cool-down, anchor and leg block stay. Leg days get `LEGWARM()`; heavy lifts (`HEAVY`) show display-only warm-up sets (`wuSets`).
   - IDs: KA/KB/KC (gym strength), CH, SK, RS, DL, TE, HO/HK (home), RE/RH/RI (running), KI (kickboxing), MO (morning).
 - **Exercise types:**
   - `P` progression, `F` fixed, `I` iso hold, `T` test.
