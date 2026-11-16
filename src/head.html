@@ -203,7 +203,7 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .chart{width:100%;height:auto;display:block}
 .chart .hm{fill:var(--panel2)}.chart .hm.l1{fill:var(--hm1)}.chart .hm.l2{fill:var(--hm2)}.chart .hm.l3{fill:var(--hm3)}
 .chart .ax{fill:var(--muted);font-size:10px;font-family:var(--body)}
-.chart .gr{stroke:var(--line);stroke-width:1}.chart .bl{stroke:var(--edge);stroke-width:1}
+.chart .gr{stroke:var(--line);stroke-width:1}.chart .rf{stroke:var(--gold-t,var(--bone));stroke-width:1.5;stroke-dasharray:5 4}.chart .bl{stroke:var(--edge);stroke-width:1}
 .chart .br{fill:var(--muted)}.chart .br.cur{fill:var(--bone)}
 .chart .ln{fill:none;stroke:var(--bone);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
 .chart .pt{fill:var(--bone);stroke:var(--panel);stroke-width:2}.chart .pt.cur{fill:var(--acc-l)}
@@ -273,6 +273,8 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .wkf{margin-top:8px}
 .kitq{margin:8px 0 4px;padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}.kitq .q{margin:0 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.xrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-top:1px solid var(--line)}.xrow:first-of-type{border-top:0}.xrow b{display:block}.xrow p{margin:2px 0 0}.xrow .b{flex:0 0 auto;min-width:64px}
+input.dur{max-width:9rem}
 .chip{padding:9px 12px;border-radius:999px;border:1px solid var(--edge);background:var(--panel2);color:var(--bone);font:inherit;font-size:.9rem;cursor:pointer;min-height:40px}
 .chip.on{background:var(--tint);border-color:var(--red);color:var(--bone);font-weight:600}.chip.on::before{content:"✓ ";color:var(--acc-t)}
 /* Love theme polish (A-020): theme-coloured finish message, done states in warm gold instead of green, soft accents. */
