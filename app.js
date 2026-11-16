@@ -146,8 +146,13 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
   if(EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90;}).slice(0,20); if(THEMES[n.theme])b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
   if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
   if(Array.isArray(n.kit))b.kit=n.kit.filter(function(x){return typeof x==="string"&&"kbdsr".indexOf(x)>=0&&x.length===1;}).filter(function(x,i,a){return a.indexOf(x)===i;});
-  if(n.vr&&typeof n.vr==="object")Object.keys(n.vr).slice(0,300).forEach(function(k){if(/^[a-z0-9_]+$/.test(k))b.vr[k]=Math.max(0,Math.min(20,Math.floor(numv(n.vr[k]))));});
+  if(n.vr&&typeof n.vr==="object")Object.keys(n.vr).slice(0,300).forEach(function(k){if(vrKeyOK(k))b.vr[k]=Math.max(0,Math.min(20,Math.floor(numv(n.vr[k]))));});
   return b;}
+/* Variant choice keys (A-022): "<loc>|<key>" with loc g gym, h home, m Field kit and key = vkey(it): an item key
+   (also mx_/fav_ prefixed), an iso/test key, or "f:"+name of a fixed item. Bare keys of the old form stay accepted.
+   Prototype names are refused in any part. */
+var VRK=/^(?:[ghm]\|)?(?:[a-z0-9_]{1,60}|f:[A-Za-z0-9 '\u2019(),.\/:+&\u00b0\u00d7\u2013-]{1,90})$/;
+function vrKeyOK(k){return typeof k==="string"&&VRK.test(k)&&!/(^|[|:])(__proto__|constructor|prototype)$/.test(k)&&k.indexOf("__proto__")<0;}
 /* Day progress (A-014): today's ticks, entries and choices, last 14 days, every value type-checked. */
 function cleanDays(n){var out={},DS=/^\d{4}-\d{2}-\d{2}$/,K=/^[A-Za-z0-9_:#-]{1,40}$/,cut=addD(TODAY,-14);if(!n||typeof n!=="object")return out;
   function sv(v,m){return typeof v==="string"?v.slice(0,m):(typeof v==="number"&&isFinite(v)?v:"");}

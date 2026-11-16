@@ -21,7 +21,7 @@ Tests marked as **report** pass if they run without crashing; read their output 
 
 - Line 1 of every test file declares its name: `// @name <kebab-case-name>` (English, short, unique).
 - `// @report` in line 2 marks a manual report.
-- Numbers are stable. A new test takes the next free number above the highest one; gaps are never refilled.
+- Numbers are stable. A new test takes the number the control station assigned, otherwise the next free number above the highest one and outside the reserved list; retired gaps are never refilled.
 - Every test must be listed in the table below (checked by t19 suite-naming).
 
 ## Tests
@@ -53,6 +53,7 @@ Tests marked as **report** pass if they run without crashing; read their output 
 | t27 | week-preview | t27.js | A-015: 6-week simulation of the 3 audit profiles: the preview for today equals today's recommendation, kickboxing days and the day-before rule (no Strength C/hard run), legs ≥ 2 per week shown, the forecast for tomorrow comes true when followed, no state change (kz_app_v3, memory, TODAY, names), logged day marked done; EMOM/AMRAP explanations, favourites unchanged; Playwright 390×844: 7-day strip, tap detail with duration, render time, screenshot |
 | t28 | minimal-kit | t28.js | A-019: Field kit for the 3 audit profiles × Strength A/B/C × 6 kits (fresh week and with history): "Nothing" bodyweight only, "Pull-up bar" adds bar pulls, every muscle group of the gym session covered, anchor and leg block kept, estimate 60–90 min; 2 taps with a remembered kit, options and preselection, hero mark, week preview unaffected, logging under the kit (leg session counts, gym record untouched, progression per variant), off the next day, combined with Limited time, backup round trip and junk refused, old backup; Playwright 390×844 screenshots |
 | t29 | love-finish | t29.js | A-020: finish sentence pick always differs from the daily note and is fixed per day; unlocked love theme shows exactly one sentence after a finished workout (from the encrypted notes, not the daily note, once, not stored); locked love theme or another theme: nothing new; no fixture plaintext in sources/build/localStorage, love file and tool unchanged; WCAG AA contrast of every visible text in the love theme (start + training view); old backup; Playwright 390×844 screenshots |
+| t39 | import-keys | t39.js | A-022: variant choices (`D.vr`, keys `<g|h|m>|<key>` incl. mx_/fav_/iso and `f:<name>`) set by taps in gym, home and Field kit survive file and text round trips into fresh storage identically and show the same variants; crafted keys (`__proto__`, `g|__proto__`, constructor, overlong, wrong prefix, markup) refused, values 0–20, max 300, no prototype pollution; ex/pr/kitD/fav/log keys kept, junk refused; old backups (no vr, bare old keys) load |
 
 ## Retired numbers
 
@@ -64,3 +65,20 @@ These numbers are not used and must not be reused.
 | t02 | Retired before the repo was created; purpose not recorded |
 | t10 | Retired before the repo was created; purpose not recorded |
 | t17 | Dropped before the repo was created; purpose not recorded |
+
+## Reserved numbers
+
+Assigned by the control station to planned orders. A reserved number may stay a gap until its test exists; the row goes when the test is added (checked by t19).
+
+| Number | Order |
+|---|---|
+| t30 | P-1 goals I |
+| t31 | P-2 goals II |
+| t32 | P-3 Skill Trial |
+| t33 | P-4 total load |
+| t34 | P-6 run control |
+| t35 | P-5 progression |
+| t36 | P-7 pause and injury mode |
+| t37 | P-8 daily form tip |
+| t38 | A-021 add exercise, easy run |
+| t40 | A-021 never suggest, backlog |
