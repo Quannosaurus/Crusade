@@ -362,7 +362,7 @@ function loadStat(){var ws=weekKey(TODAY),cur=weekLoad(ws),prev=[];
   return {cur:Math.round(cur),avg:Math.round(avg),n:prev.length,lim:lim};}
 var OAS=["Hiking","Dancing","Cycling","Swimming","Ball sports"];
 function homeB(){return D.logs.filter(function(l){return l.id==="HO";}).length%2===1;}
-function updNames(){NAMES.HO=homeB()?"Home strength B":"Home strength A";NAMES.KA=D.skills.mu?"Strength A: Muscle-up":"Strength A: Pull & push";}
+function updNames(){var lm=longMode();NAMES.RH=lm?"Long run":"Hard run";WKS.RH=NAMES.RH;RUNT.RH=lm?"Long":"Hard";NAMES.HO=homeB()?"Home strength B":"Home strength A";NAMES.KA=D.skills.mu?"Strength A: Muscle-up":"Strength A: Pull & push";}
 function favDef(b){b.items.forEach(function(it){if(it.f||it.test||it.iso)return;var a=avail(it,LOC());for(var j=0;j<it.opts.length;j++){if((D.fav||[]).indexOf(it.opts[j].n)>=0&&a.indexOf(j)>=0){it.def=(function(v){return function(){return v;};})(j);break;}}});}
 function postBlocks(id,bl){var sk=D.skills,out=[];
   bl.forEach(function(b){
@@ -715,7 +715,7 @@ function hist(s){
   h.lim7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&(l.rpe||0)>=10&&HARD[l.id];}).length;
   h.skN=D.logs.filter(function(l){var x=diff(l.d,s);return x>=0&&x<=6&&(l.sk?l.sk.length>0:!!HASHS[l.id]);}).length;
   h.skT=selSk().length?(gSkill()?5:4):0; h.hardR=Math.min(h.RH,h.RI);
-  h.run=Math.min(h.RE,h.RH,h.RI);
+  h.run=Math.min(h.RE,h.RH,h.RI);h.kmOK=kmRoom(s)>=2;
   var td=onDay(s); h.ranToday=td.some(isRun); h.strToday=td.some(function(l){return STR[l.id];});
   var first=D.logs.filter(isTrain)[0], days={};
   D.logs.forEach(function(l){var x=diff(l.d,s);if(isTrain(l)&&x>=1&&x<=14)days[l.d]=1;});
@@ -736,11 +736,11 @@ function skPick(h,why){return {btn:"train",id:"SK",why:why+" Today technique: "+
 var SKN={hs:"Handstand",mu:"Muscle-Up",ls:"L-Sit",fl:"Front Lever",pl:"Planche"};
 function easyPick(h,why){
   var F=D.focus;
-  if(gRun()&&F==="str"&&h.runs7<2&&h.run>=1&&!h.rhY&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today an easy run for your goal."};
-  if(F==="run"&&h.runs7<5&&h.run>=1&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today just an easy run, very relaxed."};
-  if(F==="bal"&&h.runs7<2&&h.run>=1&&!h.rhY&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today just an easy run."};
+  if(gRun()&&F==="str"&&h.runs7<2&&h.run>=1&&!h.rhY&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:why+" Today an easy run for your goal."};
+  if(F==="run"&&h.runs7<5&&h.run>=1&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:why+" Today just an easy run, very relaxed."};
+  if(F==="bal"&&h.runs7<2&&h.run>=1&&!h.rhY&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:why+" Today just an easy run."};
   if(h.skN<h.skT) return skPick(h,why);
-  if(F!=="str"&&h.runs7<3&&h.run>=2&&!h.rhY&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today just an easy run."};
+  if(F!=="str"&&h.runs7<3&&h.run>=2&&!h.rhY&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:why+" Today just an easy run."};
   return {btn:"train",id:"RS",why:why+" Today recovery and mobility."};
 }
 /* Skill Trial due (A-024): 13 days since the last one (deload days not counted) and 2 weeks of strength history. */
@@ -769,7 +769,7 @@ function recAll(s,noKick){
   if(c.cyc===6&&!gNear(s)){
     if(strOK&&h.DL>=6&&h.TE>=6) return {btn:"train",id:"DL",why:"Week "+c.week+" is a deload week."};
     if(strOK&&h.TE>=6&&h.DL>=2) return {btn:"train",id:"TE",why:"Deload done, now test your bests."};
-    if((F!=="str"||gRun())&&h.RE>=2&&!h.ranToday) return {btn:"run",id:"RE",why:"Deload week: easy running only."};
+    if((F!=="str"||gRun())&&h.RE>=2&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:"Deload week: easy running only."};
     return easyPick(h,"Deload week.");
   }
   var C=[],W={bal:{KA:10,KB:9,C:8,RH:7,RE:6,RI:0},str:{KA:10,KB:9,C:9,RH:0,RE:0,RI:0},run:{KA:7,KB:6,C:7,RH:8,RE:9,RI:8}}[F]||{},mS=F==="str"?4:6;
@@ -791,14 +791,21 @@ function recAll(s,noKick){
   add(chAB==="KA"?"CH":"KA","train",W.KA,chAB==="KA"?Math.max(h.KA,chS):h.KA,strOK&&!h.ranToday,chAB==="KA"?chW:"Strength A "+ago(h.KA)+".",mS);
   add(chAB==="KB"?"CH":"KB","train",W.KB,chAB==="KB"?Math.max(h.KB,chS):h.KB,strOK,chAB==="KB"?chW:"Strength B "+ago(h.KB)+".",mS);
   add("KC","train",W.C,h.KC,strOK&&!kickT&&!h.oaY&&!(F==="run"&&h.hardR<=1),"Legs and full body "+ago(h.KC)+".",mS);
-  add("RH","run",W.RH,h.RH,hardOK,(F==="run"||gr?"Long run ":"Hard run ")+ago(h.RH)+".");
-  add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2,"Intervals "+ago(h.RI)+".",5);
-  add("RE","run",W.RE,h.RE,!h.ranToday&&h.runs7<(F==="run"?5:3),"Easy run "+ago(h.RE)+".",F==="run"?2:3);
-  if(gr&&h.runs7<2&&!h.ranToday&&h.run>=2&&!C.some(function(x){return x.btn==="run";})&&!strOK) C.push({id:"RE",btn:"run",sc:0.1,why:"Your goal needs 2 runs a week. Today an easy one."});
+  var h3=hard3OK(s),lm=longMode(),kmOK=h.kmOK;if(!kmOK)hardOK=false;
+  add("RH","run",W.RH,h.RH,hardOK&&(lm||h3),(lm?"Long run ":"Hard run ")+ago(h.RH)+".");
+  add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2&&h3,"Intervals "+ago(h.RI)+".",5);
+  add("RE","run",W.RE,h.RE,kmOK&&!h.ranToday&&h.runs7<(F==="run"?5:3),"Easy run "+ago(h.RE)+".",F==="run"?2:3);
+  if(gr&&h.kmOK&&h.runs7<2&&!h.ranToday&&h.run>=2&&!C.some(function(x){return x.btn==="run";})&&!strOK) C.push({id:"RE",btn:"run",sc:0.1,why:"Your goal needs 2 runs a week. Today an easy one."});
+  /* Week guard (P-6): run steering may push strength out at the end of a training week. On its last 2 days a still
+     missing leg session (≥ 2 per week) or, with lower/glutes, a missing Strength C gets priority over a run; in long-run
+     mode a missing long run gets priority too. */
+  var dLeft=6-Math.floor(Math.max(0,diff(D.start,s)))%7,w0=blkStart(s),kcW=D.logs.some(function(l){return l.id==="KC"&&l.d>=w0&&l.d<s;});
+  var rhW=D.logs.some(function(l){return l.id==="RH"&&l.d>=w0&&l.d<s;});
+  if(dLeft<=1&&!(c.cyc===6))C.forEach(function(x){if(x.id==="RH"&&longMode()&&!rhW&&!lowE)x.sc*=1.6;if(x.btn!=="train")return;if((lowE&&x.id==="KC"&&!kcW)||(!lowE&&h.legW<2&&{KA:1,KB:1,CH:1,KC:1}[x.id]))x.sc*=1.5;});
   C.sort(function(a,b){return b.sc-a.sc;});
   if(C.length){var w=C[0];return {btn:w.btn,id:w.id,why:w.why};}
   if(h.skN<h.skT) return skPick(h,"Weekly goals are met. Skill training only "+h.skN+"× in 7 days, the goal is "+h.skT+".");
-  if(F!=="str"&&h.runs7<3&&h.run>=2&&!h.ranToday) return {btn:"run",id:"RE",why:"Third run of the week, easy."};
+  if(F!=="str"&&h.runs7<3&&h.run>=2&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:"Third run of the week, easy."};
   return {btn:"train",id:"RS",why:"All weekly goals are met. Today mobility."};
 }
 function recTrain(s,loc,noKick){
@@ -1223,7 +1230,7 @@ var WDN=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"];
 function wkKey(){var l=D.logs[D.logs.length-1],dy=D.days[TODAY]||{};return [TODAY,D.logs.length,l?l.d+l.id+(l.rpe||0):"",D.focus,D.emph,D.loc,D.short,D.start,D.kickDays.join(),JSON.stringify(D.skills),(D.fav||[]).join(),nev().join(),JSON.stringify(D.home),!!dy.noKick,lvl()].join("|");}
 function wkLog(id,s,c){var o={d:TODAY,id:id,t:NAMES[id],rpe:id==="RS"?4:6,sim:1};
   if(c&&!isRun(o)&&id!=="KI"){var ss=S(id,c),sk=[];ss.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&sk.indexOf(b.skill)<0)sk.push(b.skill);if(b.mu&&sk.indexOf("mu")<0)sk.push("mu");});o.lg=legSets(ss,c,id)>=6?1:0;o.sk=sk;o._min=ss.min;o._goal=ss.goal;}
-  if(isRun(o)){o.km=D.runKm;o.min=Math.round(D.runKm*6.5);}
+  if(isRun(o)){o.km=runPlan(id).km;o.min=Math.round(o.km*6.5);}
   return o;}
 function weekPlan(){var k=wkKey();if(WK.plan&&WK.key===k)return WK.plan;
   var D0=D,T0=TODAY,out=[];
@@ -1303,11 +1310,33 @@ function vTrain(){
 }
 function runRec(){var h0=hist(TODAY),a=recAll(TODAY,true);if(a.btn==="run")return a;
   var hardOK=!h0.kcY&&!h0.rhY&&!h0.oaY&&!isKick(addD(TODAY,1))&&!(isKick(TODAY)&&!day().noKick);
-  if(hardOK&&D.focus==="run"&&h0.RI>=5&&h0.RH>=2&&cap(h0.RI)>=cap(h0.RH)) return {id:"RI",why:"Intervals "+ago(h0.RI)+"."};
-  return (hardOK&&cap(h0.RH)>=cap(h0.RE)&&h0.RH>=6)?{id:"RH",why:NAMES.RH+" "+ago(h0.RH)+"."}:{id:"RE",why:"Easy run "+ago(h0.RE)+"."};}
+  var h3=hard3OK(TODAY);
+  if(hardOK&&h3&&D.focus==="run"&&h0.RI>=5&&h0.RH>=2&&cap(h0.RI)>=cap(h0.RH)) return {id:"RI",why:"Intervals "+ago(h0.RI)+"."};
+  return (hardOK&&(h3||longMode())&&cap(h0.RH)>=cap(h0.RE)&&h0.RH>=6)?{id:"RH",why:NAMES.RH+" "+ago(h0.RH)+"."}:{id:"RE",why:"Easy run "+ago(h0.RE)+"."};}
 var RUNT={RE:"Easy",RI:"Intervals",RH:"Hard"};
-function runInfo(id){var R=D.focus==="run";
+/* Run steering (P-6). Long-run mode (focus run or a run goal): the hard run becomes a true long run, easy, +10 % after an
+   easy rating. Hard = intervals, and the hard run outside long-run mode; at most every 3rd run is hard (hard3OK). Planned
+   distance (runPlan): base per type, half in the goal taper (gTaper, the 7 days before the date), and capped so the week's km
+   stay ≤ 130 % of the 4-week average (weeks with runs only). Extra easy runs and logged past runs count via their km. */
+function longMode(){return D.focus==="run"||!!gRun();}
+function hardRunL(l){return l.id==="RI"||(l.id==="RH"&&!longMode());}
+function hard3OK(s){var r=D.logs.filter(function(l){return isRun(l)&&l.d<=s;}).slice(-2);return !r.some(hardRunL);}
+function weekKm(ws){var z=addD(ws,7);return D.logs.reduce(function(a,l){return l.d>=ws&&l.d<z?a+(l.km||0):a;},0);}
+function kmStat(s){s=s||TODAY;var ws=weekKey(s),cur=weekKm(ws),prev=[];
+  for(var i=1;i<=12&&prev.length<4;i++){var w=addD(ws,-7*i),z=addD(w,7);if(D.logs.some(function(l){return l.d>=w&&l.d<z&&isRun(l);}))prev.push(weekKm(w));}
+  return {cur:Math.round(cur*10)/10,avg:prev.length?Math.round(prev.reduce(function(a,x){return a+x;},0)/prev.length*10)/10:0,n:prev.length};}
+function runBase(id){var R=D.focus==="run";if(id==="RH")return D.runKm;if(id==="RI")return Math.round((4+D.runI*0.8)*2)/2;return R?6:(D.runKm<6?4:5);}
+function kmRoom(s){var st=kmStat(s);return st.n>=2&&st.avg>0&&!(gRun()&&D.goal.d===s)?Math.floor((1.3*st.avg-st.cur)*2)/2:Infinity;}
+function runPlan(id,s){s=s||TODAY;var km=runBase(id),why="";
+  if(gRun()&&gTaper(s)&&D.goal.d!==s){km=Math.max(2,Math.round(km*0.5*2)/2);why="taper";}
+  var room=kmRoom(s);if(km>room){km=Math.max(Math.min(km,2),room);why=why||"cap";}
+  return {km:km,why:why};}
+function runInfo(id){var R=D.focus==="run",rp=runPlan(id),tx=rp.why==="taper"?" Taper week: about half the distance, keep it easy and stay fresh.":(rp.why==="cap"?" Shorter today: your weekly kilometres stay within 30 % of the last weeks.":"");
+  var ri=runInfo0(id,R,rp);if(tx&&!(id==="RH"&&gRun()&&D.goal.d===TODAY))ri={h:ri.h,p:ri.p+tx};return ri;}
+function runInfo0(id,R,rp){
   if(id==="RH"&&gRun()&&D.goal.d===TODAY) return {h:"Goal day: "+goalName(D.goal),p:"Your test. Warm up with 10 min easy jogging, start calmly and find your pace after the first kilometre. Drink, eat lightly 2–3 h before."};
+  if(rp.why&&id!=="RI") return id==="RE"||longMode()?{h:fmtKg(rp.km)+" km "+(id==="RH"?"long, easy":"easy"),p:"Easy enough that you can speak in full sentences."}:{h:fmtKg(rp.km)+" km steady",p:"Steady, not to the limit. 5 min warm-up jog, no strength training afterwards."};
+  if(id==="RH"&&longMode()) return {h:fmtKg(rp.km)+" km long run",p:"Your long run: easy all the way, you can talk in full sentences. Walk briefly to drink. Rated easy, the next one is 10 % longer. No strength training afterwards."};
   if(id==="RE"&&D.runKm<6&&!R) return {h:"20–30 min easy",p:"Easy enough to talk. Walking breaks are completely fine: e.g. 3 min jog, 1 min walk. Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RE") return {h:R?"30–45 min easy":"5 km easy",p:(R?"30–45 min. ":"30–35 min. ")+"Easy enough that you can speak in full sentences."+(R?" At the end 4–6 strides of 20 s: build speed smoothly, walk back.":"")+" Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RI") return {h:D.runI+" × 3 min fast",p:"10 min warm-up jog. Then "+D.runI+" × 3 min fast with 2 min jogging in between. 10 min cool-down jog. Fast means: only single words possible, but every rep equally quick. No strength training afterwards."};
@@ -1545,6 +1574,7 @@ function insights(){
   st.slice(0,2).forEach(function(e){out.push(["warn",e.n+": no progress "+e.stall+" times. Swap the variation or take a lighter week."]);});
   var lim=D.logs.filter(function(l){return diff(l.d,TODAY)<14&&(l.rpe||0)>=10;}).length;
   if(lim>=4)out.push(["warn",lim+" sessions at the limit in 2 weeks. Sleep, food and an easy day bring more progress than another hard one."]);
+  var ks=kmStat();if(ks.n>=2&&ks.avg>0&&ks.cur>1.3*ks.avg)out.push(["info","Running "+fmtKg(ks.cur)+" km this week, more than 30 % above your 4-week average of "+fmtKg(ks.avg)+" km. Keep the next runs easy."]);
   var ls=loadStat();if(ls.n>=2&&ls.avg>0&&ls.cur>1.5*ls.avg)out.push([ls.lim>=2?"warn":"info","Load this week "+ls.cur+", "+(Math.round(ls.cur/ls.avg*10)/10)+"× your 4-week average"+(ls.lim>=2?", with "+ls.lim+" sessions at the limit":"")+". Plan an easy day before the next hard one."]);
   var mo=D.logs.filter(function(l){return l.id==="MO"&&diff(l.d,TODAY)<7;}).length;
   if(mo<4)out.push(["focus","Morning routine "+mo+" of 7 days this week. Even the short 7-minute version counts."]);
@@ -1615,7 +1645,8 @@ function statsHTML(){
   h+='</div>';
   if(D.focus!=="str"||D.logs.some(function(l){return l.km;})){
     var runs=D.logs.filter(function(l){return l.km>0&&l.min>0;}).slice(-15);
-    h+='<div class="sec"><h3>Running</h3>'+barChart(km,wl,"km","Kilometres per week, last 12 weeks");
+    var kst=kmStat(),r28=D.logs.filter(function(l){return isRun(l)&&diff(l.d,TODAY)<28&&diff(l.d,TODAY)>=0;}),ez=r28.filter(function(l){return !hardRunL(l);}).length;
+    h+='<div class="sec"><h3>Running</h3><p class="muted">This week '+fmtKg(kst.cur)+' km'+(kst.n?' · 4-week average '+fmtKg(kst.avg)+' km (dashed line)':'')+(r28.length?' · easy share '+Math.round(100*ez/r28.length)+' % of '+r28.length+' runs in 4 weeks':'')+'.</p>'+barChart(km,wl,"km","Kilometres per week, last 12 weeks",kst.avg);
     if(runs.length>=2){h+='<p class="muted">Pace per run (higher is faster)</p>'+lineChart(runs.map(function(l){return {y:l.min/l.km,l:dLab(l.d),t:dLab(l.d)+": "+fmtKg(l.km)+" km in "+pace(l)};}),"pace","Running pace per run",true);}
     h+=tableView(["Week of","km"],wl.map(function(x,i){return [x,Math.round(km[i]*10)/10];}))+'</div>';}
   var H=honours();
@@ -1810,7 +1841,8 @@ function runTimes(km,mn,d){[5,10].forEach(function(x){if(km>=x&&mn>0){var t=Math
 function saveRun(){
   var dy=day(); if(needRpe(dy)) return; var rk0=rankOf(xpTotal()),nl=D.logs.length;
   var f=dy.fin,id=dy.run||runRec().id,km=num(f.km),mn=num(f.min);
-  if(id==="RH"){ if(f.rpe<=4) D.runKm=Math.min(D.focus==="run"?16:10,D.runKm+0.5); else if(f.rpe>=10) D.runKm=Math.max(5,D.runKm-0.5); }
+  if(id==="RH"&&longMode()&&!(gRun()&&gTaper(TODAY))){var cp=Math.max(D.focus==="run"?16:10,gRun()?Math.min(24,GOALS[gRun()].km+2):0);if(f.rpe<=4)D.runKm=Math.min(cp,Math.max(D.runKm+0.5,Math.round(D.runKm*1.1*2)/2));else if(f.rpe>=10)D.runKm=Math.max(5,D.runKm-0.5);}
+  else if(id==="RH"){ if(f.rpe<=4) D.runKm=Math.min(D.focus==="run"?16:10,D.runKm+0.5); else if(f.rpe>=10) D.runKm=Math.max(5,D.runKm-0.5); }
   if(id==="RI"){ if(f.rpe<=6) D.runI=Math.min(8,D.runI+1); else if(f.rpe>=10) D.runI=Math.max(3,D.runI-1); }
   var prs=[];if(km&&mn){var pc=mn/km,b=D.pr["run:pace5"];if(km>=5){if(b&&pc<b.p)prs.push("Fastest 5 km+ pace: "+pace({km:km,min:mn}));if(!b||pc<b.p)D.pr["run:pace5"]={p:pc,d:TODAY};}
     runTimes(km,mn,TODAY);var bl=D.pr["run:long"];if(bl&&km>bl.km)prs.push("Longest run: "+fmtKg(Math.round(km*10)/10)+" km");if(!bl||km>bl.km)D.pr["run:long"]={km:km,d:TODAY};}
@@ -1987,5 +2019,5 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
