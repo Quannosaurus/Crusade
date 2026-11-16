@@ -52,7 +52,9 @@ let sk=A.$$('[data-a=skip]').find(b=>/Straight bar dips/.test(b.closest('.exb').
 let hs=A.$$('input[data-set]').filter(i=>/Chest-to-wall/.test(i.closest('.exb').textContent));console.log('Handstand Kästchen:',hs.length);hs.forEach(e=>A.set(e,'22'));
 // pain
 A.$('details.opt').open=true;A.set('input[data-a=pain][data-k=w]',true);let pw=A.$('input[data-a=pain][data-k=w]');pw.checked=true;pw.dispatchEvent(new A.w.Event('change',{bubbles:true}));
-if(!/Wrist rehab/.test(A.txt()))issue('Schonungsblock fehlt');if(!/Skipped because of pain/.test(A.txt()))issue('Betroffene Übungen werden nicht geschont');
+if(!/Wrist rehab/.test(A.txt()))issue('Schonungsblock fehlt');// A-027: affected exercises are filtered before the design (pain-free variant, replacement with hint, or gone), so none is shown
+{const shown=A.$$('.ex .n').map(x=>x.textContent);const hit=shown.filter(n=>/Handstand|Push-up|Pike|Planche|Frogstand|Crow|Wall Walk|Wrist prep|Bail/i.test(n)&&!A.$$('.blk').some(b=>/rehab/i.test(b.textContent)&&b.textContent.includes(n)));
+ if(hit.length)issue('Betroffene Übungen werden nicht geschont: '+hit.join(', '));if(!/pain-free choice/.test(A.txt())&&!A.$$('.nxn').length)console.log('(keine Ersatzübung nötig)');}
 console.log('Geschont:',A.$$('.ex.skip .n').map(x=>x.textContent).join(', '));
 pw=A.$('input[data-a=pain][data-k=w]');pw.checked=false;pw.dispatchEvent(new A.w.Event('change',{bubbles:true}));
 // save without rpe

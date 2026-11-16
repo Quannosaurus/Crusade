@@ -19,6 +19,8 @@ const PROF=[
 ];
 // independent of the app's own classifier: words that mean equipment
 const GEAR=/cable|machine|barbell|dumbbell|kettlebell|\bband|\bring|smith|weighted|vest|pull-up|chin-up|hanging|\bhang\b|bench|chair|\bbox\b|sofa|table|parallettes|parallel bar|\bdips\b|lat pulldown|leg press|rowing|jump rope|false grip|ez-bar|landmine|on a step|bar curls|bar\/rings|bodyweight rows|explosive rows|l-rows|frenchie|nordic|copenhagen|bulgarian|step-ups?\b|dragon flag/i;
+// A-027: muscle groups come from the fixed doctrine table of t45 (tests/fixtures/pattern-table.js), not from the app's kitGroup.
+const TBL=require('./fixtures/pattern-table.js');
 const BAR=/pull-up|chin-up|hang|on bar|bar\/rings|bodyweight rows|explosive rows|l-rows|frenchie/i;
 function setup(k,p){const D=k.D();Object.assign(D.profile,p.prof);D.focus=p.focus;D.emph=p.emph;D.skills={hs:!!p.skills.hs,mu:!!p.skills.mu,ls:false,fl:false,pl:false};
   D.kickDays=p.kick;D.loc='g';D.onb=true;D.seenFocus=true;D.seenFav=true;D.fav=p.fav.slice();D.short=false;}
@@ -28,12 +30,12 @@ PROF.forEach(p=>{const {k,errs}=boot();setup(k,p);const D=k.D(),T=k.today();
   [0,3].forEach(lw=>{ // fresh week (leg block needed) and a week with history
     D.logs=[];D.start=addD(T,-7*lw-3);if(lw){for(let i=lw;i>=1;i--){D.logs.push({d:addD(T,-7*i),id:'KC',t:'KC',rpe:6,lg:1},{d:addD(T,-7*i+2),id:'KA',t:'KA',rpe:6,lg:1});}}
     ['KA','KB','KC'].forEach(id=>{const c=k.ctx(T);k.day().kit=false;const g=k.S(id,c),gv=vis(k,g,'g').filter(x=>!x.b.warm&&!x.b.cool);
-      const gGroups=new Set(gv.map(x=>k.kitGroup(x.it)));const gLeg=g.blocks.some(b=>b.legs),gAnc=gv.some(x=>x.it.anc);
+      const gGroups=new Set(gv.filter(x=>x.it.k).map(x=>TBL.group(x.it.k,x.n)));if(gv.some(x=>x.it.k&&TBL.group(x.it.k,x.n)===undefined))issue(p.n+' '+id+': key missing in the pattern table: '+gv.filter(x=>x.it.k&&TBL.group(x.it.k,x.n)===undefined).map(x=>x.it.k).join());const gLeg=g.blocks.some(b=>b.legs),gAnc=gv.some(x=>x.it.anc);
       KITS.forEach(([kn,kit])=>{D.kit=kit;k.day().kit=true;if(!k.kitOn()||k.LOC()!=='m')issue('kit not active');
         checked++;const s=k.S(id,c),sv=vis(k,s,'m').filter(x=>!x.b.warm&&!x.b.cool),tag=p.n+' '+id+' ['+kn+']'+(lw?' wk'+lw:'');
         if(kn==='Nothing'){sv.concat(vis(k,s,'m').filter(x=>x.b.warm||x.b.cool)).forEach(x=>{if(GEAR.test(x.n))issue(tag+': equipment exercise "'+x.n+'"');});}
         if(kn==='Pull-up bar'&&!sv.some(x=>BAR.test(x.n)))issue(tag+': no pull on the bar');
-        const sGroups=new Set(sv.map(x=>x.it.kx||k.kitGroup(x.it)));gGroups.forEach(gr=>{if(!sGroups.has(gr))issue(tag+': muscle group "'+gr+'" not covered');});
+        const sGroups=new Set(sv.filter(x=>x.it.k).map(x=>x.it.kx||TBL.group(x.it.k,x.n)));gGroups.forEach(gr=>{if(!sGroups.has(gr))issue(tag+': muscle group "'+gr+'" not covered');});
         if(gLeg&&!s.blocks.some(b=>b.legs&&vis(k,{blocks:[b]},'m').length))issue(tag+': leg block lost');
         if(gAnc&&!sv.some(x=>x.it.anc))issue(tag+': anchor lost');
         if(s.min<60||s.min>90)issue(tag+': estimate '+s.min+' min');

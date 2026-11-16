@@ -253,9 +253,10 @@ function kitReq(o){var n=o.n.toLowerCase(),r=o.req.replace(/w/g,"");
 function kitCan(o){var r=kitReq(o),k=D.kit||[];for(var i=0;i<r.length;i++){var ch=r[i];
     if(ch==="g")return false;if(ch==="p"){if(k.indexOf("s")<0)return false;continue;}if(ch==="x"){if(k.indexOf("k")<0&&k.indexOf("r")<0)return false;continue;}
     if(k.indexOf(ch)<0)return false;}return true;}
-function kitGroup(it){var n=it.opts.map(function(o){return o.n;}).join(" ").toLowerCase();
+function kitGroup(it){var p=it.k?itPat(it,curVar(it,D.loc==="h"?"h":"g")):"";if(!p&&it.k){var k0=patKey(it.k);p=own(PATK,k0)&&!/^(u_cur)$/.test(k0)?PATK[k0]:"";}if(p)return PGRP[p];
+  var n=it.opts.map(function(o){return o.n;}).join(" ").toLowerCase();
   if(/wrist|reverse curl/.test(n))return "fore";
-  if(/face pull|external rotation|y-raise|y-t-w|reverse butterfly|reverse fl|lateral raise|serratus|pull-apart|t-raise/.test(n))return "shoulder";
+  if(/face pull|external rotation|y-raise|y-t-w|reverse butterfly|reverse fl|lateral raise|serratus|scapula|pull-apart|t-raise/.test(n))return "shoulder";
   if(/calf|tibialis/.test(n))return "calf";
   if(/abduct|band walk|hydrant|side-lying leg raise|copenhagen|adductor/.test(n))return "hipab";
   if(/hyperext|back extension|good morning|deadlift|leg curl|nordic|hip thrust|bridge|swing|kickback|frog pump|pull-through|hip extension/.test(n))return "hip";
@@ -280,7 +281,7 @@ function kitApply(s){var used={};
   s.blocks.forEach(function(b){b.items.forEach(function(it){var v=curVar(it,"m");if(v>=0)used[it.opts[v].n]=1;});});
   s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.map(function(it){if(it.test||it.iso||curVar(it,"m")>=0)return it;
     var g=kitGroup(it),n={};Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=KPOOL[g].map(O);delete n.lv;delete n.def;n.kx=g;if(n.k)n.k="mx_"+it.k;
-    var a=avail(n,"m"),pick=a.filter(function(i){return !used[n.opts[i].n];})[0];if(pick==null)pick=a[0];
+    var a=avail(n,"m"),fr=a.filter(function(i){return !used[n.opts[i].n];}),pick=fr.filter(function(i){return poolPat(g,n.opts[i].n)===GRPP[g];})[0];if(pick==null)pick=fr[0];if(pick==null)pick=a[0];
     if(pick!=null){used[n.opts[pick].n]=1;n.def=(function(v){return function(){return v;};})(pick);}
     if(!n.f&&/^(reps|each side)$/.test(n.unit||"")){n.lo=Math.max(n.lo,8);n.hi=Math.max(n.hi,15);n.up="slower or a harder variation";}
     if(it.c&&!n.f)n.c="";return n;});});}
@@ -297,6 +298,8 @@ function O(s){var p=s.split("|");return {n:p[0],req:p[1]||"",w:p[2]==="w"};}
 /* P: Übung mit Steigerung · lv=[Startvariante Basis, Startvariante Profi] */
 function P(k,lo,hi,unit,cue,opts,up,sets,lv){return {k:k,lo:lo,hi:hi,unit:unit,c:cue||"",opts:opts.map(O),up:up||"",sets:sets||0,lv:lv||null};}
 function F(dose,cue,opts){return {f:dose,c:cue||"",opts:opts.map(O)};}
+/* A-027: a fixed item with real load counts for its pattern with fv sets (volume only; never cut by the set band). */
+function FL(it,p,n){it.fp=p;it.fv=n;return it;}
 /* I: Halteübung, Zeiten aus deinem Maximalwert, passt den Maximalwert selbst an */
 function I(key,cue,opts){return {iso:key,c:cue||"",opts:opts.map(O)};}
 /* T: Testwert, schreibt direkt in deinen Stand */
@@ -306,7 +309,8 @@ var LVN=["Basic","Intermediate","Advanced"];
 function can(o,loc){if(loc==="g")return true;if(loc==="m")return kitCan(o);for(var i=0;i<o.req.length;i++){var ch=o.req[i];if(ch==="g"||!D.home[ch])return false;}return true;}
 function avail(it,loc){var a=[];it.opts.forEach(function(o,i){if(can(o,loc))a.push(i);});
   if(it.gone)return [];if(it.fx!=null)return a.indexOf(it.fx)>=0?[it.fx]:[];
-  if(!it.add&&nev().length){var b=a.filter(function(i){return !isNever(it.opts[i].n);});if(b.length)return b;}
+  if(!it.add&&nev().length){var b=a.filter(function(i){return !isNever(it.opts[i].n);});if(b.length)a=b;}
+  if(painAny()){var pf=a.filter(function(i){return !painHit(it.opts[i].n);});if(pf.length)a=pf;}
   return a;}
 /* Never suggest (A-021): excluded exercise names, kept for good until brought back under More. A variant on the list drops out
    of every choice while the item has another variant; an item with nothing else left is replaced by neverApply(). Additions
@@ -372,7 +376,7 @@ function MUB(){var L=lvl(),mu=D.profile.mu;
   if(L===2) return {mu:1,name:"Muscle-Up",info:"fresh, 2–3 min rest · clean reps only",p:1,rest:150,items:[
     P("mu_pro",Math.max(2,Math.round(mu*0.5)),Math.max(4,mu),"reps","Strict, no kipping, deep dip at the top",["Strict muscle-ups (high bar, e.g. park)|k","Ring-Muscle-Ups|r","Weighted vest muscle-ups|k|w","Weighted explosive pull-ups (gym substitute)|g|w"],"add a vest","4")]};
   return {mu:1,name:"Muscle-Up-Skill",info:"fresh, 2–3 min rest · stop when technique gets sloppy",p:1,rest:150,items:[
-    F(mu>=1?"EMOM 10 × 1–2":"5 × 1–2","Pull explosively to the hips, elbows fast forward",["Transition on a Smith machine, low bar, feet on floor|g","Explosive chest-to-bar pull-ups|k","Band-assisted muscle-up on a high bar|kb","Ring muscle-up with foot assist|r"])]};}
+    FL(F(mu>=1?"EMOM 10 × 1–2":"5 × 1–2","Pull explosively to the hips, elbows fast forward",["Transition on a Smith machine, low bar, feet on floor|g","Explosive chest-to-bar pull-ups|k","Band-assisted muscle-up on a high bar|kb","Ring muscle-up with foot assist|r"]),"pull",mu>=1?2:1)]};}
 function SHOULDER(p,rot){return {sh:1,name:"Shoulder stability",info:"Back to back · 60 s rest after the round",p:p||3,rest:60,rounds:[2,2],items:[
   rot?P("sh_y",12,15,"reps","Lower traps, thumbs up",["Prone Y-Raises","Cable Y-raises|g|w","Reverse Butterfly|g|w"],"add weight","2"):P("sh_fp",10,15,"reps","Elbows high, hands next to the head",["Cable face pulls|g|w","Band face pulls|b","Reverse Butterfly|g|w"],"more weight","2"),
   P("sh_er",10,15,"each side","Rotator cuff, elbow at your side",["Cable external rotation|g|w","Band external rotation|b","Side-lying dumbbell external rotation|d|w"],"more weight","2"),
@@ -424,7 +428,11 @@ function EMB(id,pres){var e=emph();var cfg={lower:[GLUTES,"Lower body focus","Gl
   var big=(e==="lower"||e==="glutes")?id==="KC":(e==="upper"&&(id==="KA"||id==="KB"));
   var cnt=D.logs.filter(function(l){return l.id===id;}).length,n=Math.min(big?3:2,all.length),out=[];
   if(ANCH[e]&&all.length){var anc=null;(ANCH[e][id]||[]).some(function(k){anc=all.filter(function(it){return it.k===k;})[0]||null;return !!anc;});if(!anc)anc=all[0];
-    anc.anc=1;out.push(anc);var rest=all.filter(function(it){return it!==anc;});if(rest.length)out.push(rest[cnt%rest.length]);}
+    anc.anc=1;out.push(anc);var rest=all.filter(function(it){return it!==anc;});
+    /* A-027: the second exercise takes its turn among the emphasis patterns with the most room in the 7-day band (e.g. legs once
+       calf raises no longer count); pattern-free accessory comes when the emphasis patterns are full. */
+    if(rest.length){var rot=rest.slice(cnt%rest.length).concat(rest.slice(0,cnt%rest.length)),t7=vs7(TODAY),sc=function(it){var p=itPat(it);if(!t7.on)return 0;if(!p)return 1.5;if((EMPAT[e]||[]).indexOf(p)<0)return 1.8;var hi=vBand(p)[1];return t7[p]+3<=hi?t7[p]/hi:2;},bi=0;
+      rot.forEach(function(it,q){if(sc(it)<sc(rot[bi]))bi=q;});out.push(rot[bi]);}}
   else for(var i=0;i<n;i++)out.push(all[(cnt*n+i)%all.length]);
   var more=all.filter(function(it){return out.indexOf(it)<0;});more=more.slice(cnt%(more.length||1)).concat(more.slice(0,cnt%(more.length||1)));
   return out.length?{name:cfg[1],info:cfg[2]+" · your emphasis · 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,items:out,more:more}:null;}
@@ -463,13 +471,23 @@ var REHAB={
   h:{name:"Hip rehab",items:[F("3 × 10","Lying on the side, small range, pelvis still",["Clamshells"]),F("3 × 10 s","Lying, knees bent, squeeze a pillow between them",["Pillow squeeze"]),F("2 × 30 s each side","Gentle, no pinch at the front of the hip",["Supine figure-four stretch"])]}
 };
 var PAINN={w:"Wrist",s:"Shoulder",e:"Elbow",k:"Knee",b:"Lower back",a:"Ankle",h:"Hip"};
-var PAINRX={w:/Handstand|Push-up|Shoulder taps|Bail|wrist|Frog stand|Wall Walk|Pike|Frogstand|Crow|Planche|Push-Up|Liegestütz|Dips|Handgelenk|Heel Pulls|Schulter-Taps|Aussteigen|Victorian|L-Sit/i,
-  s:/German Hang|Shoulder press|shoulder press|Overhead|Shoulder taps|Bail|Dips|Handstand|Wall Walk|Skin the Cat|Dislocates|Muscle-Up|Transition|Pike|Schulterdrücken|Schulterpresse|Landmine Press|HSPU|Überkopf|Heel Pulls|Schulter-Taps|Aussteigen/i,
-  k:/squat|lunge|step-up|pistol|leg press|box jump|jumping|jump rope|skipping|cossack|leg curl|nordic|wall sit|horse stance|leg extension|sumo/i,
-  b:/deadlift|good morning|swing|back extension|hyperextension|superman|pull-through|bent-over|t-bar|woodchopper|rotational|rotation|leg raises|knee raises|barbell back squat|rowing machine|jefferson/i,
-  a:/jump|skipping|hop|calf raise|pistol|lunge|step-up|sprint|tibialis|cossack/i,
-  h:/hip thrust|glute bridge|kickback|abduct|hydrant|side-lying leg raise|copenhagen|adductor|cossack|split squat|lunge|sumo|frog|hip flexor|leg raises|horse stance|90\/90|pigeon/i,
-  e:/Muscle-up|muscle-up|pull-ups|Pull-ups|pulldown|curls|triceps|Triceps|chin-ups|Transition|False-Grip|Curls|Explosive|Frenchie|Klimmzüge|Chin-Ups|Pull-Ups|Latzug|Dips|French Press|Trizeps/i};
+/* A-027 (N-2): word boundaries, so a name only hits its own region: Woodchopper is no hop, external rotation and
+   march in place are no loaded back rotation/swing, Frogstand/Crow no hip opener, side plank dips no dips. */
+var PAINRX={w:/\b(?:handstands?|(?:chest|back)-to-wall|push-ups?|shoulder taps|bail|frog ?stand|wall walks?|pike|crow|planche|(?<!plank )dips|l-sit|heel pulls|victorian|wrist (?:prep|curls?|flexor)|hspu)\b|liegestütz|handgelenk|schulter-taps|aussteigen/i,
+  s:/\b(?:german hang|(?:chest|back)-to-wall|shoulder press|overhead|shoulder taps|bail|(?<!plank )dips|handstands?|wall walks?|skin the cat|dislocates|muscle-ups?|transitions?|pike|landmine press|hspu|heel pulls)\b|schulterdrücken|schulterpresse|überkopf|schulter-taps|aussteigen/i,
+  k:/\b(?:squats?|lunges?|step-ups?|pistol|leg press|box jumps?|jumping|jump rope|skipping|cossack|leg curls?|nordic|wall sit|horse stance|leg extensions?|sumo)\b/i,
+  b:/\b(?:deadlifts?|good mornings?|kettlebell swings?|back extensions?|hyperextensions?|superman|pull-through|bent-over|t-bar|woodchoppers?|rotational|landmine rotation|(?<!side-lying )leg raises|knee raises|barbell back squat|rowing machine|jefferson)\b/i,
+  a:/\b(?:jumps?|jumping|skipping|hops?|hopping|calf raises?|pistol|lunges?|step-ups?|sprints?|tibialis|cossack)\b/i,
+  h:/\b(?:hip thrusts?|glute bridges?|kickbacks?|abduction|abductor|hydrants?|side-lying leg raises|copenhagen|adductors?|cossack|split squats?|lunges?|sumo|frog(?! ?stand)|hip flexor|leg raises|horse stance|90\/90|pigeon)\b/i,
+  e:/\b(?:muscle-ups?|pull-ups?|pulldowns?|(?<!nordic |leg )curls?|triceps|chin-ups?|transitions?|false-grip|explosive|frenchie|(?<!plank )dips|french press)\b|klimmzüge|latzug|trizeps/i};
+/* A-027: the pain filter works on whole sessions too. Knee, ankle or hip: no Strength C, no leg block on upper-body days,
+   no run goal day; shoulder, elbow or wrist: no Skill Trial or test (postponed); knee or ankle: kickboxing only with a hint. */
+var PAINU={k:{kc:1,leg:1,rgoal:1,kick:1},a:{kc:1,leg:1,rgoal:1,kick:1},h:{kc:1,leg:1,rgoal:1},s:{test:1},e:{test:1},w:{test:1}};
+function painU(f){var p=D.pain||{};return Object.keys(PAINU).some(function(k){return p[k]===true&&PAINU[k][f];});}
+function painAny(){var p=D.pain||{};return Object.keys(PAINRX).some(function(k){return p[k]===true;});}
+/* Central check for every list the app suggests: an item (some fitting variant is pain-free) or a name. */
+function painOK(x,loc){if(typeof x==="string")return !painHit(x);if(!x||!x.opts)return true;var v=curVar(x,loc||LOC());return v<0||!painHit(x.opts[v].n);}
+
 
 /* ================= Einheiten ================= */
 var NAMES={KA:"Strength A: Muscle-up",KB:"Strength B: Volume",KC:"Strength C: Full body & legs",CH:"Skill Trial",SK:"Skill session",RS:"Recovery & kick mobility",DL:"Deload",TE:"Test",HO:"Home strength",HK:"Home skills",RE:"Easy run",RH:"Hard run",RI:"Interval run",KI:"Kickboxing",MO:"Morning routine",OA:"Other activity"};
@@ -533,6 +551,7 @@ function S(id,c){
   if(legDay(id)) s.blocks.forEach(function(b){if(b.warm){b.items=b.items.concat(LEGWARM());b.min=11;b.info="approx. 11 min · hips, knees and ankles too";}});
   if(kitOn()) kitApply(s);
   neverApply(s);
+  painApply(s);
   if(D.short) shortLegs(s,c);
   design(s,id,c);
   var adb=ADDIDS[id]&&ADDB();
@@ -546,10 +565,28 @@ function neverApply(s){if(!nev().length)return;var loc=LOC(),used={},cat=null;
   s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.map(function(it){if(it.f||it.test||it.iso||it.add)return it;var v=curVar(it,loc);if(v<0||!isNever(it.opts[v].n))return it;
     if(it.gx){it.nh=1;return it;}
     var g=kitGroup(it),n={},pick=null;cat=cat||favCatalog();
-    Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
+    Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||painHit(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
     if(pick){Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});n.fx=pick.v;}
-    else{Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=KPOOL[g].map(O);if(n.k)n.k="mx_"+String(n.k).replace(/^(mx_)+/,"");var a=avail(n,loc).filter(function(i){return !used[n.opts[i].n]&&!isNever(n.opts[i].n);});if(!a.length)return it;n.fx=a[0];n.kx=g;}
+    else{Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=KPOOL[g].map(O);if(n.k)n.k="mx_"+String(n.k).replace(/^(mx_)+/,"");var a=avail(n,loc).filter(function(i){return !used[n.opts[i].n]&&!isNever(n.opts[i].n)&&!painHit(n.opts[i].n);});if(!a.length)return it;a.sort(function(x,y){return (poolPat(g,n.opts[x].n)===GRPP[g]?0:1)-(poolPat(g,n.opts[y].n)===GRPP[g]?0:1);});n.fx=a[0];n.kx=g;}
     delete n.def;delete n.lv;n.nx=it.opts[v].n;if(it.anc)n.anc=it.anc;used[n.opts[n.fx].n]=1;return n;});});}
+/* A-027 (M-1): the pain filter acts before design(), so duration, the 60 min floor and the variants are right. An item
+   with a pain-free variant already gets it (avail); one without gets an exercise of the same muscle group (pattern from
+   PATK, else kitGroup) from the catalogue, else the Field kit pool; with nothing pain-free it goes. Warm-up, cool-down,
+   fixed, hold and test items only go. Additions keep their hint; rehab blocks are never filtered. */
+/* A block rebuilt inside design() (standard skill form) goes through the same filter. */
+function painFix(s){painApply(s);}
+function painApply(s){if(!painAny())return;var loc=LOC(),used={},cat=null;
+  s.blocks.forEach(function(b){b.items.forEach(function(it){var v=curVar(it,loc);if(v>=0)used[it.opts[v].n]=1;});});
+  s.blocks.forEach(function(b){if(b.rehab||b.add)return;if(b.more)b.more=b.more.filter(function(m){return painOK(m,loc);});
+    b.items=b.items.map(function(it){var v=curVar(it,loc);if(v<0||!painHit(it.opts[v].n))return it;
+      if(b.warm||b.cool||it.f||it.iso||it.test||it.add)return null;
+      var g=kitGroup(it),n={},pick=null;cat=cat||favCatalog();
+      Object.keys(cat).some(function(nm){var x=cat[nm];if(painHit(nm)||isNever(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
+      if(pick){Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});n.fx=pick.v;}
+      else{Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=KPOOL[g].map(O);if(n.k)n.k="mx_"+String(n.k).replace(/^(mx_)+/,"");var a=avail(n,loc).filter(function(i){return !used[n.opts[i].n]&&!painHit(n.opts[i].n)&&!isNever(n.opts[i].n);});if(!a.length)return null;
+        a.sort(function(x,y){return (poolPat(g,n.opts[x].n)===GRPP[g]?0:1)-(poolPat(g,n.opts[y].n)===GRPP[g]?0:1);});n.fx=a[0];n.kx=g;}
+      delete n.def;delete n.lv;delete n.nx;n.px=it.opts[v].n;n.pxk=it.k||"";if(it.anc)n.anc=it.anc;if(it.gx)n.gx=it.gx;used[n.opts[n.fx].n]=1;return n;}).filter(Boolean);});
+  s.blocks=s.blocks.filter(function(b){return b.items.length||b.warm||b.cool||b.rehab||b.add;});}
 /* Additions (A-021): "+ Add exercise" puts catalogue exercises into today's session, in the block "Your additions" before the
    cool-down. They live in the day progress (day().add), so they survive a reload and are gone the next day. design() never
    touches them, the header shows the new duration (may exceed 90 min); only the pain filter hides one (with its hint).
@@ -611,7 +648,7 @@ function design(s,id,c){s.ab=absFor(id);
   var free=function(b){return !b.warm&&!b.cool&&!b.legs&&!b.lowb&&!b.fav&&!b.sh&&!b.acc&&!b.gx;};
   var trim=[
     /* P-5: an extra round from the set band only fits inside 90 min, so it is the first thing to give way. */
-    function(){var ch=false;s.blocks.forEach(function(b){if(b.rounds&&!b.vb0&&b.tr==null&&volBias(b)>0){var r1=rounds(b,c,id);b.vb0=1;if(rounds(b,c,id)<r1)ch=true;}});return ch;},
+    function(){var ch=false;s.blocks.forEach(function(b){if(b.rounds&&!b.vb0&&b.tr==null&&volBias(b)>0&&!legLow(b)){var r1=rounds(b,c,id);b.vb0=1;if(rounds(b,c,id)<r1)ch=true;}});return ch;},
     function(){var ch=false;s.blocks.forEach(function(b){if(b.acc&&b.rounds&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
     function(){var b=blk(function(x){return x.acc&&!x.accm&&/Kickboxing|Power/.test(x.name);});if(!b)return false;var k=b.items.filter(function(it){return it.k==="kp_cop"||/Neck/.test(it.opts[0].n);});if(!k.length||k.length===b.items.length)return false;b.items=k;b.accm=1;b.info="Compact · tendons, adductors and neck · 60 s rest";return true;},
     function(){var b=blk(function(x){return x.acc&&!x.accm&&x.name==="Forearms & elbows";});if(!b)return false;b.items=b.items.slice(0,1);b.accm=1;b.info="Compact · protects the tendons for false grip and muscle-ups";return true;},
@@ -624,11 +661,11 @@ function design(s,id,c){s.ab=absFor(id);
     function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>2){b.items=b.items.slice(0,2);b.info="2 today, they take turns · 60–90 s rest";return true;}},
     function(){return drop(function(b){return b.acc&&b.name==="Forearms & elbows";});},
     function(){return drop(function(b){return b.acc;});},
-    function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&!b.gx&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;return true;},
+    function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&!b.gx&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;painFix(s);return true;},
     function(){var b=blk(function(x){return x.sh;});return b?shMini(b):false;}];
   for(var r=0;r<8;r++)trim.push(function(){return drop(function(b){return b.p>=2&&free(b);});});
   /* Goal skill (P-2, D1): ranks above favourites, so its long form goes only now, before favourites drop below 2. */
-  trim.push(function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&b.gx&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);nb.gx=1;if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;return true;});
+  trim.push(function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&b.gx&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);nb.gx=1;if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;painFix(s);return true;});
   /* Last resort, only once all pure accessory work is gone: one favourite today. */
   trim.push(function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>1&&!blk(function(x){return x.acc;})){b.items=b.items.slice(0,1);b.info="1 today, they take turns · 60–90 s rest";return true;}});
   /* With a goal block only: a secondary main block gives way rather than the goal (keeps every session within 90 min). */
@@ -660,6 +697,8 @@ function design(s,id,c){s.ab=absFor(id);
      hinge is full), else the one that goes over it least. */
   function nextMore(b){var j=0;if(cap){var v=volSets(s,c,id),r=rounds(b,c,id),bx=Infinity;for(var q=0;q<b.more.length;q++){var p=itPat(b.more[q]),x=p?v[p]+r-cap[p]:-99;if(x<=0){j=q;break;}if(x<bx){bx=x;j=q;}}}return b.more.splice(j,1)[0];}
   for(var k=0;k<4;k++)fill.push(fill[0]);
+  /* A-027: on a pain day the filter may leave a session short; then a main circuit gets one round back (up to 3), so the 60 min floor holds. */
+  if(painAny())for(var k2=0;k2<2;k2++)fill.push(function(){var b=blk(function(x){return x.rounds&&!x.lowb&&!x.warm&&!x.cool&&!x.acc&&x.tr==null&&rounds(x,c,id)<3&&x.items.some(function(it){return curVar(it,LOC())>=0;});});if(!b)return false;var r=rounds(b,c,id)+1;b.rounds=[r,r];return true;});
   /* A-025: first only extras that keep every pattern inside its band; the 60 min frame stays the hard limit (concept 5.3),
      so if the session is still short, a second pass may go over the band. */
   function runFill(strict){for(var j=0;j<fill.length&&s.min<DURLO;j++){var keep=s.blocks.map(function(b){return b.items.slice();}),ab0=s.ab&&{i:s.ab.i,rounds:s.ab.rounds,mini:s.ab.mini},rd=s.blocks.map(function(b){return b.rounds;});
@@ -758,10 +797,10 @@ function S0(id,c){
     KPOW()]};
   case "CH": b={goal:"A check-in every two weeks: test what you train for, then practise. Values you enter become your new status.",blocks:[WARM(),
     {name:"Trial",info:"2–3 min rest between tests · only clean reps count",p:1,rest:150,trial:1,items:trialItems()},
-    {name:"Muscle-Up EMOM",info:"2 attempts every minute for 10 minutes",p:1,rest:0,items:[F("10 × 2",L===0?"Basic: 2 negative pull-ups each":"Sloppy? Switch to transitions",L===0?["Negative pull-ups"]:["Explosive chest-to-bar pull-ups","Transition on a Smith machine","Strict muscle-ups (high bar)","Ring muscle-up with foot assist"])]},
-    {name:"Block 2",info:"60 s rest between exercises",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"]),F("30","",["Push-Ups"]),F("5","5 s lowering",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
-    {name:"Block 3",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"]),F("30","",["Bodyweight Rows","Cable row"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
-    {name:"Block 4",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"]),F("30","",["Jumping Squats"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]}]};
+    {name:"Muscle-Up EMOM",info:"2 attempts every minute for 10 minutes",p:1,rest:0,items:[FL(F("10 × 2",L===0?"Basic: 2 negative pull-ups each":"Sloppy? Switch to transitions",L===0?["Negative pull-ups"]:["Explosive chest-to-bar pull-ups","Transition on a Smith machine","Strict muscle-ups (high bar)","Ring muscle-up with foot assist"]),"pull",2)]},
+    {name:"Block 2",info:"60 s rest between exercises",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"]),FL(F("30","",["Push-Ups"]),"push",3),F("5","5 s lowering",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
+    {name:"Block 3",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"]),FL(F("30","",["Bodyweight Rows","Cable row"]),"pull",3),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
+    {name:"Block 4",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"]),FL(F("30","",["Jumping Squats"]),"legs",3),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]}]};
     if(!D.skills.mu)b.blocks.splice(2,0,{name:"Pull & push",info:"Exercises back to back · 60 s rest after the round",p:1,rest:60,rounds:[3,3],items:[
       P("ch_row",8,12,"reps","Chest to the bar, shoulders down",["Bodyweight Rows","Cable row||w","Band rows|b","Inverted rows under a table|s"],"feet higher or more weight","",[0,0]),
       P("ch_push",6,15,"reps","Body in one line",["Push-ups","Knee push-ups","Incline push-ups on a chair|s"],"harder variation","",[1,0])]});
@@ -769,7 +808,7 @@ function S0(id,c){
     /* A-024: the trial takes a Strength A/B slot, so without a lower/glute emphasis it always brings the compact leg block
        (it keeps the leg contact that slot would have had). */
     var lowT=emph()==="lower"||emph()==="glutes";
-    if(lf||!lowT) b.blocks.push(LEGMINI(lf?c.legWhy:"ch"));
+    if((lf||!lowT)&&!painU("leg")) b.blocks.push(LEGMINI(lf?c.legWhy:"ch"));
     return b;
   case "SK": return {goal:"Calm technique session. Everything clean, nothing to failure.",blocks:[WARM(),HSB(true),
     {name:"L-sit & grip",info:"10 min",p:1,rest:60,items:[LSIT(),F("3 × 20–30 s","",["False grip hang","Active Hang"]),P("s_hang",30,60,"s","Shoulders active",["Active Hang"],"start single-arm","2")]},
@@ -856,7 +895,7 @@ function cycWk(s){var n=Math.floor(Math.max(0,diff(D.start,s))/7),wk=0,sh=0,e=D.
 function ctx(s){
   var cw=cycWk(s),wk=cw.wk,we=cw.ef;
   var h=hist(s);
-  var lowE=emph()==="lower"||emph()==="glutes",kcOld=h.KC>7,legB=!lowE&&(kcOld||h.legW<2);
+  var lowE=emph()==="lower"||emph()==="glutes",kcOld=h.KC>7,legB=!lowE&&(kcOld||h.legW<2)&&!painU("leg");
   return {week:wk,cyc:(we-1)%6+1,phase:((we-1)%12)<6?1:2,lowFreq:h.lowFreq,kcGap:Math.min(h.KC,h.CH),legB:legB,legWhy:kcOld?"kc":"week"};
 }
 /* ===== P-8 daily readiness (off by default, D.opt.ready): one tap before training, day().ready 1 good, 2 normal, 3 tired.
@@ -913,8 +952,7 @@ function hist(s){
 /* Leg sessions (V1, A-009): legs at least twice per training week (weeks count from D.start, like ctx()). Strength A/B (and the
    challenge, which stands in for Strength C) get the compact leg block while Strength C is more than 7 days old or the week has fewer than 2 leg sessions so far. A session counts when it holds ≥ 6 direct lower-body working sets
    (Strength C, home strength, a compact leg block or a lower/glute emphasis block). Old logs without "lg": KC and HO count. */
-var LEGK=/^(fav_|mx_)*(c_sq|c_rdl|c_lu|c_calf|g_[a-z0-9]+|h_sq|h_ham|b_gl|gl_sq|gl_ht|gl_rdl)$/;
-function legSets(s,c,id){var n=0;s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){var q=curVar(it,LOC());if(it.f||it.iso||it.test||!LEGK.test(it.k)||q<0||painHit(it.opts[q].n))return;n+=setsOf(it,b,c,id);});});return n;}
+function legSets(s,c,id){var n=0;s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){var q=curVar(it,LOC()),p=itPat(it,q);if((p!=="legs"&&p!=="hinge")||q<0||painHit(it.opts[q].n))return;n+=setsOf(it,b,c,id);});});return n;}
 /* ===== P-5 volume: direct working sets per movement pattern (l.vs) and a set band per pattern and 7 days. =====
    Same counting as legSets (F/T/I items never count). Old logs without vs use an estimate per session type; logged past
    days (bl) carry no exercise values and never count. rounds() takes the high count when every pattern of the block is
@@ -926,21 +964,45 @@ var VSEST={KA:{pull:8,push:8,core:3},KB:{pull:8,push:8,core:3},KC:{legs:9,hinge:
 /* A-026: hip abduction (abductor machine, banded abduction, side-lying leg raises, fire hydrants: key g_ab) is leg
    accessory and counts for no pattern, like the running prehab abduction c_gm; it is no hip hinge. Logs written since
    carry vm = VMAP; for older logs logVs() reads their sets by the new mapping (the logs themselves stay as they are). */
-var VMAP=1,VREMAP={g_ab:"hinge"};
+/* A-027 mapping (doctrine): hip extension = hinge (x_be bench, a_hyp); knee flexion (leg curl, Nordic curl) = legs;
+   by variant: b_jump (swing hinge, jumps legs), x_be (home variants superman holds and bird dog core), u_cur (only chin-up
+   negatives pull), u_tri push. Calf raises (c_calf) and hip abduction (g_ab) are leg accessory without a pattern and do not
+   count for legs + hinge ≥ 10 or the 6 leg sets of a leg session. The Core Blitz counts for core (rounds / 2 sets), fixed
+   items with real load by their pattern (it.fp, it.fv sets: one set per started 10 reps of the dose).
+   Logs written since carry vm = VMAP (2); older logs are read through logVs() by this mapping, the logs stay unchanged. */
+var VMAP=2,V1P={c_calf:"legs",x_be:"core",u_tri:"",u_cur:"",b_jump:"hinge",c_rdl:"hinge",h_ham:"hinge"};
 var PATK=(function(){var m={},t={pull:"a2_com a2_row a2_wpu a_expu a_lat a_row b2_lr b2_sw b_er b_fr b_neg c_pu ch_row fl_pull gl_pull h_pull mu_neg mu_pro u_row",
-  push:"a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh",
-  legs:"c_sq c_lu c_calf g_bss g_su gl_sq h_sq",hinge:"c_rdl g_ht g_kb g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl",
-  core:"x_aw x_db x_lr x_pal x_sp x_be kp_pal kp_rot"};Object.keys(t).forEach(function(p){t[p].split(" ").forEach(function(k){m[k]=p;});});return m;})();
+  push:"a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh u_tri",
+  legs:"c_sq c_lu g_bss g_su gl_sq h_sq",hinge:"c_rdl g_ht g_kb g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl x_be",
+  core:"x_aw x_db x_lr x_pal x_sp kp_pal kp_rot"};Object.keys(t).forEach(function(p){t[p].split(" ").forEach(function(k){m[k]=p;});});return m;})();
+/* Variant names that move to another pattern than their item key (knee flexion, jumps, home back-extension forms, chin-up negatives). */
+var PATN={"Leg curl machine":"legs","Nordic Curls":"legs","Nordic curls, feet under the sofa":"legs","Box Jumps":"legs","Jumping Squats":"legs","Kettlebell Swings":"hinge",
+  "Superman holds":"core","Bird dog":"core","Back extension bench":"hinge","Chin-up negatives":"pull"};
 var EMPAT={lower:["legs","hinge"],glutes:["hinge"],upper:["pull","push"],core:["core"]};
 var GPAT={pull:"pull",dips:"push",push:"push",sq:"legs",ht:"hinge",rdl:"hinge",mu:"pull",fl:"pull",hs:"push",pl:"push",ls:"core"};
-function itPat(it){if(!it||it.f||it.iso||it.test||!it.k)return "";var k=patKey(it.k);return Object.prototype.hasOwnProperty.call(PATK,k)?PATK[k]:"";}
+function itPat(it,v){if(!it||it.f||it.iso||it.test||!it.k)return "";var k=patKey(it.k);if(v==null)v=it.opts?curVar(it,LOC()):-1;var n=v>=0&&it.opts[v]?it.opts[v].n:"";
+  if(own(PATN,n))return PATN[n];return own(PATK,k)?PATK[k]:"";}
+/* Leg keys (legs + hinge) derived from PATK; legSets() counts by the pattern of the shown variant. */
+var LEGK=(function(){var m={};Object.keys(PATK).forEach(function(k){if(PATK[k]==="legs"||PATK[k]==="hinge")m[k]=1;});return {keys:m,test:function(k){return own(m,patKey(k));}};})();
+/* Muscle group for Field kit and Never replacements (M-2): from the pattern; the name rules only for pattern-free items. */
+var PGRP={pull:"pull",push:"push",legs:"knee",hinge:"hip",core:"core"},GRPP={pull:"pull",push:"push",knee:"legs",hip:"hinge",core:"core"};
+function poolPat(g,n){return own(PATN,n)?PATN[n]:(GRPP[g]||"");}
+function fPat(it){return it&&it.f&&it.fp?it.fp:"";}
+function blitzSets(ab){return ab?Math.round(ab.rounds/2):0;}
 function vsZero(){return {pull:0,push:0,legs:0,hinge:0,core:0};}
 /* Sets per pattern of a strength log by today's mapping. A log from before A-026 (no vm) still counts the sets of a
    remapped exercise under its old pattern; they are taken off it (its default 3 sets, as the log keeps no set count). */
-function logVs(l){var v=l.vs;if(!v)return VSEST[l.id]||null;if((l.vm||0)>=VMAP||!l.ex)return v;var o=null;
-  Object.keys(l.ex).forEach(function(k){var p=VREMAP[patKey(k.split("#")[0])];if(!p)return;o=o||{pull:v.pull||0,push:v.push||0,legs:v.legs||0,hinge:v.hinge||0,core:v.core||0};o[p]=Math.max(0,o[p]-3);});
-  return o||v;}
-function volSets(s,c,id){var t=vsZero();s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){var p=itPat(it),q=curVar(it,LOC());if(!p||q<0||painHit(it.opts[q].n))return;t[p]+=setsOf(it,b,c,id);});});
+/* Old logs by today's mapping: an exercise whose pattern changed has its sets (its default 3, the log keeps no set count)
+   moved from the old pattern to the new one; a done Core Blitz adds its core sets. Field kit copies ("mx_") keep their key. */
+var KEYV=null;function keyVar(k,i){if(!KEYV){KEYV={c_rdl:["Romanian deadlift","Leg curl machine","Nordic Curls"]};var cat=favCatalog();Object.keys(cat).forEach(function(n){var it=cat[n].it;if(it.k&&!KEYV[it.k])KEYV[it.k]=it.opts.map(function(o){return o.n;});});}var a=KEYV[k];return a&&a[i]||"";}
+function oldPat(k,vm){if(k==="g_ab")return vm<1?"hinge":"";if(own(V1P,k))return V1P[k];return own(PATK,k)?PATK[k]:"";}
+function newPat(q){var h=q.split("#"),k=patKey(h[0]),n=/^mx_/.test(h[0])?"":keyVar(k,+h[1]);return own(PATN,n)?PATN[n]:(own(PATK,k)?PATK[k]:"");}
+function logVs(l){var v=l.vs;if(!v)return VSEST[l.id]||null;var vm=l.vm||0;if(vm>=VMAP)return v;var o={pull:v.pull||0,push:v.push||0,legs:v.legs||0,hinge:v.hinge||0,core:v.core||0},ch=false;
+  if(l.ex)Object.keys(l.ex).forEach(function(q){var k=patKey(q.split("#")[0]),a=oldPat(k,vm),b=/^mx_/.test(q)?(own(PATK,k)?PATK[k]:""):newPat(q);if(a===b)return;ch=true;if(a)o[a]=Math.max(0,o[a]-3);if(b)o[b]=Math.min(60,o[b]+3);});
+  if(l.abs){o.core=Math.min(60,o.core+({CH:1,TE:1,DL:1}[l.id]?2:4));ch=true;}
+  return ch?o:v;}
+function volSets(s,c,id){var t=vsZero();s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){var q=curVar(it,LOC()),p=itPat(it,q),fp=fPat(it);if(q<0||painHit(it.opts[q].n))return;if(fp){t[fp]+=it.fv||1;return;}if(!p)return;t[p]+=setsOf(it,b,c,id);});});
+  t.core+=blitzSets(s.ab);
   VPAT.forEach(function(p){t[p]=Math.min(60,t[p]);});return t;}
 var VSC={};
 function vs7(s){var n=D.logs.length,key=s+"|"+n+"|"+(n?D.logs[n-1].d+D.logs[n-1].id:"");if(VSC.L===D.logs&&VSC.k===key)return VSC.v;
@@ -952,6 +1014,7 @@ function plBoost(){var g=D.goal;return !!(g&&g.pz&&goalPat()&&(g.pk||pzAge(g)<21
 function vHot(p){return goalPat()===p||(EMPAT[emph()]||[]).indexOf(p)>=0;}
 function vBand(p){var gp=goalPat(),hot=vHot(p),b=hot?[12,20]:[8,14];
   if(gp===p&&plBoost())b=[b[0]+2,b[1]+2];return b;}
+function legLow(b){var t=vs7(TODAY);return t.on&&t.legs+t.hinge<10&&b.items.some(function(it){var p=itPat(it);return (p==="legs"||p==="hinge")&&curVar(it,LOC())>=0;});}
 function volBias(b){var P={};b.items.forEach(function(it){var p=itPat(it);if(p&&curVar(it,LOC())>=0)P[p]=1;});var ps=Object.keys(P);if(!ps.length)return 0;
   var t=vs7(TODAY);if(!t.on)return 0;
   if(ps.some(function(p){return t[p]>vBand(p)[1];}))return -1;
@@ -1013,7 +1076,7 @@ function bandFit(s,c,id,cap,est){var u=cap._u,U=[],ch=false,lb=null,lg0=legSets(
     /* Before dropping: an emphasis exercise of a full pattern swaps for one whose pattern has room (same time, fewer sets
        of the full pattern), e.g. a split squat for a kickback once hinge is full. */
     var sw=lb?lb.items.filter(function(it){var p=itPat(it);return !it.anc&&!isFavIt(it)&&!it.sw&&p&&over.indexOf(p)>=0;}).pop():null;
-    if(sw&&lb.more){var r3=setsOf(sw,lb,c,id),nx=null;lb.more.some(function(m){var p=itPat(m);if(curVar(m,LOC())>=0&&(!p||(over.indexOf(p)<0&&v[p]+r3<=cap[p]))){nx=m;return true;}});
+    if(sw&&lb.more){var r3=setsOf(sw,lb,c,id),nx=null;/* A-027: an exercise of a pattern with room goes before a pattern-free one. */[1,0].some(function(pp){return lb.more.some(function(m){var p=itPat(m);if(curVar(m,LOC())>=0&&(pp?(p&&over.indexOf(p)<0&&v[p]+r3<=cap[p]):!p)){nx=m;return true;}});});
       var lh3=nx&&(itPat(sw)==="legs"||itPat(sw)==="hinge")&&!(itPat(nx)==="legs"||itPat(nx)==="hinge")?r3:0;
       if(nx&&bandLoOK(cap,v,itPat(sw),r3)&&(!lh3||u.legs+u.hinge+v.legs+v.hinge-lh3>=10)){
         var its0=lb.items,more0=lb.more,tsS=sw.ts,tsN=nx.ts;nx.ts=sw.ts;delete sw.ts;
@@ -1078,7 +1141,7 @@ function recAll(s,noKick,noPause){
   if(!noPause&&pauseOn(s))return {btn:"pause",id:"RS",pause:1,why:D.pause.why==="ill"?"Training paused: get well first. No plan until you resume or log a session.":"Training paused. No plan until you resume or log a session."};
   var h=hist(s),c=ctx(s),td=onDay(s),F=D.focus,kickT=isKick(addD(s,1)),cb=cbInfo(s);
   var gd=goalDay(s,td);if(gd)return gd;
-  if(isKick(s)&&!noKick&&!td.some(function(l){return l.id==="KI";})) return {btn:"kick",id:"KI",why:"Today is kickboxing day."};
+  if(isKick(s)&&!noKick&&!td.some(function(l){return l.id==="KI";})) return painU("kick")?{btn:"kick",id:"KI",pain:1,why:"Kickboxing day, but knee or ankle is on the pain list. Better skip it today (one tap below), or only train what stays pain-free."}:{btn:"kick",id:"KI",why:"Today is kickboxing day."};
   if(D.opt&&D.opt.rest&&restDue(s)&&!td.some(function(l){return actLog(l);})) return {btn:"train",id:"RS",why:"Weekly rest day: "+(isKick(addD(s,1))?"kickboxing tomorrow after five active days":"six active days in a row")+". Today light mobility or nothing at all."};
   if(h.rhY) return easyPick(h,"Yesterday was a hard run.");
   if(h.limitY) return easyPick(h,"Yesterday was at the limit.");
@@ -1088,7 +1151,7 @@ function recAll(s,noKick,noPause){
   /* P-7: a comeback week stands in for a deload week (it is light already and has no tests). */
   if(c.cyc===6&&!gNear(s)&&!cb.on){
     if(strOK&&h.DL>=6&&h.TE>=6) return {btn:"train",id:"DL",why:"Week "+c.week+" is a deload week."};
-    if(strOK&&h.TE>=6&&h.DL>=2&&!cb.noTest) return {btn:"train",id:"TE",why:"Deload done, now test your bests."};
+    if(strOK&&h.TE>=6&&h.DL>=2&&!cb.noTest&&!painU("test")) return {btn:"train",id:"TE",why:"Deload done, now test your bests."};
     if((F!=="str"||gRun())&&h.RE>=2&&!h.ranToday&&h.kmOK) return {btn:"run",id:"RE",why:"Deload week: easy running only."};
     return easyPick(h,"Deload week.");
   }
@@ -1104,13 +1167,13 @@ function recAll(s,noKick,noPause){
      Strength C (the leg block of A/B comes along via ctx().legB), not the day before kickboxing (unless it is 16 days old, so
      plans with kickboxing on alternate days still get it); it needs 2 weeks of strength
      history first. Deload weeks keep their own plan (returned above). */
-  var lowE=em0==="lower"||em0==="glutes",chAB=chDue(s,h)&&!cb.noTest&&(!kickT||chGap(s,h)>=16)?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
+  var lowE=em0==="lower"||em0==="glutes",chAB=chDue(s,h)&&!cb.noTest&&!painU("test")&&(!kickT||chGap(s,h)>=16)?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
   /* A due trial counts as a week-old session from its due day on and grows more urgent each day (A-024), so a recent
      Strength A/B does not hold it back past 14 ± 2 days. */
   var chS=chAB?7+chGap(s,h)-13:0;
   add(chAB==="KA"?"CH":"KA","train",W.KA,chAB==="KA"?Math.max(h.KA,chS):h.KA,strOK&&!h.ranToday,chAB==="KA"?chW:"Strength A "+ago(h.KA)+".",mS);
   add(chAB==="KB"?"CH":"KB","train",W.KB,chAB==="KB"?Math.max(h.KB,chS):h.KB,strOK,chAB==="KB"?chW:"Strength B "+ago(h.KB)+".",mS);
-  add("KC","train",W.C,h.KC,strOK&&!kickT&&!h.oaY&&!(F==="run"&&h.hardR<=1),"Legs and full body "+ago(h.KC)+".",mS);
+  add("KC","train",W.C,h.KC,strOK&&!kickT&&!h.oaY&&!painU("kc")&&!(F==="run"&&h.hardR<=1),"Legs and full body "+ago(h.KC)+".",mS);
   var h3=hard3OK(s),lm=longMode(),kmOK=h.kmOK;if(!kmOK)hardOK=false;
   add("RH","run",W.RH,h.RH,hardOK&&(lm||h3),(lm?"Long run ":"Hard run ")+ago(h.RH)+".");
   add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2&&h3,"Intervals "+ago(h.RI)+".",5);
@@ -1138,13 +1201,15 @@ function recTrain(s,loc,noKick){
   if(loc==="h") return strOK&&Math.min(h.KA,h.KB,h.HO)>=3&&c.cyc!==6?{id:"HO",why:"Strength "+ago(Math.min(h.KA,h.KB,h.HO))+"."}:{id:"HK",why:"Today only technique at home."};
   if(r.id==="RS") return r;
   if(!strOK||c.cyc===6) return {id:h.skN<h.skT?"SK":"RS",why:"No heavy strength training today."};
-  var best=[["KA",h.KA],["KB",h.KB],["KC",h.C]].filter(function(x){return !(x[0]==="KA"&&h.ranToday)&&!(x[0]==="KC"&&h.oaY);}).sort(function(a,b){return cap(b[1])-cap(a[1]);})[0];
+  var best=[["KA",h.KA],["KB",h.KB],["KC",h.C]].filter(function(x){return !(x[0]==="KA"&&h.ranToday)&&!(x[0]==="KC"&&(h.oaY||painU("kc")));}).sort(function(a,b){return cap(b[1])-cap(a[1]);})[0];
   if(best&&best[1]>=3) return {id:best[0],why:(h.ranToday&&best[0]!=="KA"?"Already ran today, so not Strength A. ":"")+NAMES[best[0]]+" "+ago(best[1])+"."};
   return {id:selSk().length?"SK":"RS",why:"Strength sessions were done recently. Today "+(selSk().length?"technique.":"mobility.")};
 }
 function absFor(id){
   var i=D.abs%ABS.length; if((id==="KA"||id==="SK"||id==="HK")&&i===1) i=2; if(id==="KC"&&i===2) i=3;
   var mini=id==="CH"||id==="TE"||id==="DL"||D.short;
+  /* A-027: with a pain region the Blitz takes the next group whose two exercises have a pain-free variant, else none. */
+  if(painAny()){var j=0;for(;j<ABS.length;j++){var q=(i+j)%ABS.length;if(ABS[q].items.every(function(it){return painOK(it);})){i=q;break;}}if(j===ABS.length)return null;}
   return {i:i,rounds:mini?4:8,mini:mini};
 }
 function COOLS_KICK(){return COOLS.kick.items.map(function(x){return F(x[1],x[2],[x[0]]);});}
@@ -1179,7 +1244,11 @@ function morning(s){
   var doy=Math.floor(pd(s).getTime()/864e5),dk=MMOD.desk.items,desk=[0,1,2].map(function(i){return dk[(doy+i*2)%dk.length];});
   return {r:r,top:top,sec:sec,why:why,desk:desk};
 }
-function mSections(m,short){
+function mSections(m,short){var L=mSections0(m,short);
+  /* A-027: pain-hit poses leave the morning routine (a section left empty goes too). */
+  if(painAny())L=L.map(function(x){var o={};Object.keys(x).forEach(function(k){o[k]=x[k];});o.items=x.items.filter(function(y){return !painHit(y[0]);});return o;}).filter(function(x){return x.items.length;});
+  return L;}
+function mSections0(m,short){
   var L=[];
   L.push({k:"wake",n:MPH.wake.n,info:MPH.wake.info,items:short?[MPH.wake.items[0],MPH.wake.items[2]]:MPH.wake.items});
   L.push({k:"raise",n:MPH.raise.n,info:MPH.raise.info,items:short?[MPH.raise.items[0]]:MPH.raise.items});
@@ -1202,7 +1271,7 @@ var COOLS={
  run:{n:"after running",items:[["Standing calf stretch","30 s each side","Hands on a wall, tree or fence. Back knee straight, heel down",""],["Bent-knee calf stretch","30 s each side","Same stance, bend the back knee",""],["Half-kneeling hip flexor stretch","40 s each side","Squeeze the back glute",""],["Standing quad stretch","30 s each side","Knees together, hips forward",""],["Supine figure-4 stretch","40 s each side","Pull the thigh in",""],["Supine hamstring stretch","40 s each side","Leg straight, pull gently",""]]},
  kick:{n:"after kickboxing",items:[["Frog stretch","60 s","Knees wide, rock the hips back",""],["Pigeon pose","45 s each side","Hips square",""],["Half-kneeling hip flexor stretch","40 s each side","Squeeze the back glute",""],["Seated straddle reach","45 s","Long spine, reach to each foot",""],["Gentle supine twist","30 s each side","Shoulders stay down",""]]}
 };
-function coolItems(kind,loc,s){var c=COOLS[kind],doy=Math.floor(pd(s||TODAY).getTime()/864e5),it=c.items.filter(function(x){return !(x[3]==="g"&&(loc==="h"||loc==="m"));}),out=[];
+function coolItems(kind,loc,s){var c=COOLS[kind],doy=Math.floor(pd(s||TODAY).getTime()/864e5),it=c.items.filter(function(x){return !(x[3]==="g"&&(loc==="h"||loc==="m"))&&!painHit(x[0]);}),out=[];
   for(var i=0;i<Math.min(5,it.length);i++) out.push(it[(doy+i)%it.length]);
   return out.filter(function(x,i,a){return a.indexOf(x)===i;});}
 function COOL(kind){return {name:"Cool-down",info:"5 min · "+COOLS[kind].n+" · hold, breathe slowly",p:1,rest:0,cool:kind,items:coolItems(kind,LOC()).map(function(x){return F(x[1],x[2],[x[0]]);})};}
@@ -1282,6 +1351,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(it.nh) h+='<div class="c muted nxn">On your never list, but it is your goal exercise and has no equivalent here. Change the goal under More to drop it.</div>';
   if(it.nx) h+='<div class="c muted nxn">Instead of '+esc(it.nx)+' · '+esc(W("never")).toLowerCase()+'</div>';
   if(it.bx) h+='<div class="c muted nxn">Instead of '+esc(it.bx)+' · enough of these sets this week</div>';
+  if(it.px) h+='<div class="c muted nxn">Instead of '+esc(it.px)+' · pain-free choice</div>';
   if(sk) return h+'<div class="c">'+(pain?(it.add?"Hidden today: your pain filter is on.":"Skipped because of pain."):"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
   h+='<div class="tg">'+esc(tg)+'</div>';
   var wu=wuSets(it,v); if(wu) h+='<div class="wus"><span class="wub">'+esc(W("wsets"))+'</span> '+esc(wuText(wu))+' <span class="muted">· not counted</span></div>';
@@ -1324,10 +1394,11 @@ function rounds(b,c,id){
   var last=D.logs.filter(function(l){return l.id===id;}).slice(-1)[0];
   if(b.tr!=null) return b.tr;
   /* Limited time and a session at the limit last time stay hard limits; level and cycle week give way to the band (P-5). */
-  var rd=rdDay(),lim=D.short||(last&&(last.rpe||0)>=10)||cbInfo(TODAY).low||rd===3,base=(c.cyc<=2||lim||lvl()===0)?b.rounds[0]:b.rounds[1];
+  var rd=rdDay(),lim=D.short||(last&&(last.rpe||0)>=10)||cbInfo(TODAY).low||(rd===3&&!legLow(b)),base=(c.cyc<=2||lim||lvl()===0)?b.rounds[0]:b.rounds[1];
   if(lim||b.rounds[0]===b.rounds[1]||b.vb0)return base;
   /* A-025 (concept 5.3): at level 0 the band may only lower, never raise. */
-  var vb=volBias(b);if(rd===1&&lvl()>0&&vb>=0)return b.rounds[1];return vb>0&&lvl()>0?b.rounds[1]:(vb<0?b.rounds[0]:base);
+  var vb=volBias(b);if(rd===1&&lvl()>0&&vb>=0)return b.rounds[1];
+  return vb>0&&lvl()>0?b.rounds[1]:(vb<0?b.rounds[0]:base);
 }
 function pace(l){var p=l.min/l.km;return Math.floor(p)+":"+pad(Math.round((p%1)*60)%60)+"/km";}
 function trainId(dy){var loc=D.loc,list=loc==="g"?GYM:HOME;
@@ -1487,11 +1558,13 @@ function goalBlock(id,out){var k=gStr();if(!k)return;var up=GUP[k],ok=up?({KA:1,
   for(var j=out.length-1;j>=0;j--)if(!out[j].items.length)out.splice(j,1);
   var at=out.length&&out[0].warm?1:0;out.splice(at,0,{name:W("goal")+": "+GOALS[k].n,info:"Fresh and early in the session · 2–3 min rest",p:1,rest:150,gx:1,items:[it]});}
 /* On the goal date: the test. Runs: the run itself; skills and strength: the Skill Trial (home: home strength). */
-function goalDay(s,td){var g=D.goal;if(!g||g.d!==s||!GOALS[g.k])return null;
+/* A-027: a goal test the pain table or a comeback week blocks is postponed (goalTick moves the date to tomorrow). */
+function goalBlocked(s){if(cbInfo(s).noTest)return true;return gRun()?(painU("rgoal")||painRun()):painU("test");}
+function goalDay(s,td){var g=D.goal;if(!g||g.d!==s||!GOALS[g.k]||goalBlocked(s))return null;
   if(gRun()){if(td.some(isRun))return null;return {btn:"run",id:"RH",why:"Goal day: "+goalName(g)+". Today is the test."};}
   if(td.some(function(l){return STR[l.id];}))return null;return {btn:"train",id:"CH",why:"Goal day: "+goalName(g)+". Today is the test."};}
 /* After the date without reaching it: archived as "ended", no penalty, the next goal is suggested once. */
-function goalTick(){var g=D.goal;if(!g||!g.d||g.d>=TODAY||WK.sim)return;(D.goalsDone=D.goalsDone||[]).push({k:g.k,v:g.v,d:TODAY,r:"e"});if(D.goalsDone.length>30)D.goalsDone.splice(0,D.goalsDone.length-30);
+function goalTick(){var g=D.goal;if(!g||!g.d||WK.sim)return;if(g.d<=TODAY&&goalBlocked(TODAY)){g.d=addD(TODAY,1);save();return;}if(g.d>=TODAY)return;(D.goalsDone=D.goalsDone||[]).push({k:g.k,v:g.v,d:TODAY,r:"e"});if(D.goalsDone.length>30)D.goalsDone.splice(0,D.goalsDone.length-30);
   D.goal=null;D._toast=goalName(g)+": the date has passed. Your progress stays. Choose your next goal under More.";save();}
 /* One-time focus hint: a run goal with the strength focus (one tap to Runner), a skill goal with the runner focus (note). */
 function goalFocusHTML(){var g=D.goal;if(!g||g.fh)return "";
@@ -1563,7 +1636,7 @@ function vStart(){
   if(!dn.run&&!(r.btn==="run"&&r.id==="RE")) h+='<button type="button" class="lnk ctr xrun" data-a="xrun">'+esc(W("xrun"))+' <span class="muted">· extra and relaxed, '+(dn.train?'after your training':'also on a training day')+'</span></button>';
   if(D.kickDays.length||dn.kick) h+=big("kick","Kickboxing","Log it, with mobility before and after");
   else h+='<p class="ctr"><button type="button" class="lnk" data-tab="kick">Did a kickboxing or other class? Log it →</button></p>';
-  if(r.btn==="kick"&&!dn.kick){var alt=recAll(TODAY,true);h+='<button type="button" class="lnk ctr" data-a="nokick">No kickboxing today? Then: '+esc(NAMES[alt.id])+'</button>';}
+  if(r.btn==="kick"&&!dn.kick){var alt=recAll(TODAY,true);h+='<button type="button" class="'+(r.pain?'b wide':'lnk ctr')+'" data-a="nokick">'+(r.pain?'Skip kickboxing today. Instead: ':'No kickboxing today? Then: ')+esc(NAMES[alt.id])+'</button>';}
   if(dy.noKick&&isKick(TODAY)&&!dn.kick) h+='<button type="button" class="lnk ctr" data-a="nokick">Kickboxing after all</button>';
   if(D.opt&&D.opt.oa) h+='<p class="ctr"><button type="button" class="lnk oalnk" data-tab="other">+ '+esc(W("oa"))+' <span class="muted">· hiking, dancing, cycling …</span></button></p>';
   if(D.logs.length) h+='<p class="ctr"><button type="button" class="lnk" data-a="blopen">Missed logging a day? '+esc(W("backlog"))+' →</button></p>';
@@ -2155,7 +2228,7 @@ function saveTrain(){
       else if(dy.done[iid]&&!hold){ isoDone[it.iso]=1; D.profile[it.iso]=cur+1; }
       return; }
     if(it.test){ if(sets.length){ if(!it.tvo)D.profile[it.test]=sets[0]; tv[it.test]=sets[0]; rec("test:"+it.test,sets[0],it.lw||0,it.opts[0].n); } return; }
-    if(it.f) return;
+    if(it.f){ if(fPat(it)&&dy.done[iid]) vsA[it.fp]=Math.min(60,vsA[it.fp]+(it.fv||1)); return; }
     var g=target(it,v), r, w=num(inp.w);
     if(sets.length) r=Math.min.apply(null,sets); else if(dy.done[iid]) r=g.r; else return;
     if(w===null) w=g.w||0;
@@ -2164,7 +2237,7 @@ function saveTrain(){
     if(pv&&(pv.stall||0)>=3)stall=0;
     /* The top of a bodyweight range is no stall: the next step is a harder variation, not a smaller target. */
     if(r>=it.hi&&!(it.opts[v].w&&w))stall=0;
-    var ptn=itPat(it);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(sets.length||setsOf(it,b,c,id)));
+    var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(sets.length||setsOf(it,b,c,id)));
     if(kit){D.kitD=D.kitD||{};D.kitD[patKey(it.k)]=TODAY;}
     /* Field kit days never downgrade a shared variant and never count towards a stall (A-019 addendum). */
     if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};
@@ -2175,7 +2248,7 @@ function saveTrain(){
     if(it.opts[v].w&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
     if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
   });});
-  var absDone=!!dy.done["abs-T"]; if(absDone) D.abs=(absFor(id).i+1)%ABS.length;
+  var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
   var rk0=rankOf(xpTotal());
   var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,vm:VMAP,lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};if(cbk)lgo.cb=1;var rd0=rdDay();if(rd0)lgo.rd=rd0;addLog(lgo);
@@ -2409,7 +2482,7 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={applyState:applyState,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={applyState:applyState,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

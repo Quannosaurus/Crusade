@@ -115,10 +115,10 @@ PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);const hotP=({lower:['l
  const t=k.vs7(TD);if(t.hinge!==13)issue('old log not read by the new mapping: hinge '+t.hinge+' (expected 7 + 6)');
  if(JSON.stringify(D.logs)!==snap)issue('reading the stats changed the logs');
  const ci=k.cleanImport({v:3,logs:[neu,old]});if(!ci||ci.logs[0].vm!==1||ci.logs[1].vm!=null)issue('cleanImport: vm not kept/added as sent');
- const ci2=k.cleanImport({v:3,logs:[Object.assign({},neu,{vm:'<b>'}),Object.assign({},neu,{vm:99})]});if(!ci2||ci2.logs.some(l=>l.vm!=null&&!(l.vm>=0&&l.vm<=1)))issue('cleanImport: junk vm accepted');
+ const ci2=k.cleanImport({v:3,logs:[Object.assign({},neu,{vm:'<b>'}),Object.assign({},neu,{vm:99})]});if(!ci2||ci2.logs.some(l=>l.vm!=null&&!(l.vm>=0&&l.vm<=2)))issue('cleanImport: junk vm accepted');
  // a logged session today carries vm
  D.logs=[vlog('2026-10-20','KA',{})];const dy=k.day();dy.pick='KA';dy.fin={rpe:6};const c=k.ctx(TD),s=k.S('KA',c);s.blocks.forEach((b,bi)=>{const bix=b.bi!=null?b.bi:bi;b.items.forEach((it,ii)=>{if(k.curVar(it,k.LOC())>=0)dy.done['KA-'+bix+'-'+ii]=true;});});
- k.saveTrain();const l=D.logs[D.logs.length-1];if(l.vm!==1)issue('new log without vm');
+ k.saveTrain();const l=D.logs[D.logs.length-1];if(l.vm!==2)issue('new log without vm (A-027: VMAP 2)');
  // pull far over the band: the circuit keeps its rounds, a pull item swaps for a pattern-free one
  const z=boot(),k2=z.k,E=setup(k2,prof('Partner glutes'));E.logs=[vlog('2026-10-20','KA',{}),vlog(addD(TD,-5),'KB',{pull:6,push:4,hinge:4}),vlog(addD(TD,-3),'KC',{pull:3,push:3,legs:6,hinge:4}),vlog(addD(TD,-1),'KB',{pull:6,push:4,hinge:4})];
  const c2=k2.ctx(TD),s2=k2.S('KA',c2),v2=k2.volSets(s2,c2,'KA'),sw=[];s2.blocks.forEach(b=>b.items.forEach(it=>{if(it.bx)sw.push([b,it]);}));

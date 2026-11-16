@@ -3,7 +3,7 @@
 // profiles (3 audit profiles + runner) gives exactly the recommendations and sessions recorded before P-2
 // (fixtures/t31-nogoal.json; re-recorded with P-5: the set band raises a round in some sessions, same exercises; re-recorded with A-025: the set band
 // cuts single sets and level 0 is no longer raised, same exercises, only the estimates move; re-recorded with A-026: abduction
-// counts for no pattern and a full pattern outside the emphasis block swaps for a pattern-free exercise, first change Partner glutes day 3: step-ups → abductor machine in the glute block). 6-week simulations per goal type: skill goal first and in its long form (shortened only after favourites
+// counts for no pattern and a full pattern outside the emphasis block swaps for a pattern-free exercise, first change Partner glutes day 3: step-ups → abductor machine in the glute block; re-recorded with A-027: pattern table – calf raises and abduction pattern-free, knee flexion legs, u_tri push, Core Blitz and loaded fixed items count – and the emphasis block's second exercise by band room; 28 of 168 days changed, all in exercises only, no session type: Captain 2, Partner lower 9, Partner glutes 14, Runner 3). 6-week simulations per goal type: skill goal first and in its long form (shortened only after favourites
 // are down to 2, D1), 5 skill contacts as the weekly target (≥ 2 per training week reached); strength goals (pull-ups, squat kg, hip thrust kg) get a goal anchor right after the warm-up at least
 // twice per training week that is never trimmed, every session ≤ 90 min; run goal (10 km with the strength focus) keeps
 // ≥ 2 runs and 1 long run per week, time goal adds fast runs. Date: taper only in the 7 days before it (about half the
