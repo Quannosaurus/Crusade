@@ -986,6 +986,7 @@ function vStart(){
   function was(f){return td.some(f);}
   var dn={morgen:was(function(l){return l.id==="MO";}),train:was(function(l){return GYM.indexOf(l.id)>=0||HOME.indexOf(l.id)>=0;}),run:was(isRun),kick:was(function(l){return l.id==="KI";})};
   if(D._toast){h+='<div class="toast" role="status">'+esc(D._toast)+'</div>';D._toast="";}
+  h+=loveFinHTML();
   if(!D.seenFav&&D.logs.length) h+='<button type="button" class="warn wbtn" data-tab="favs" data-from="start">New: pick a strength emphasis (legs & glutes, glutes, upper body, core) and star your favourite exercises →</button>';
   else if(!D.seenFocus) h+='<button type="button" class="warn wbtn" data-tab="mehr">New: choose your doctrine. Focus on running, strength or balanced, plus your skills →</button>';
   if(memOnly) h+='<div class="warn">This browser does not allow saving here. Use the backup under More.</div>';
@@ -1201,7 +1202,7 @@ function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1
 // The derived key is kept on this device only (localStorage kz_love_k as "2:<salt>:<key>", never in D or backups); keys for another salt are void.
 var LOVEVER="crusade-love-verifier-v2",LOVEIT=600000,LOVEMIN=12,LOVEKK="kz_love_k";
 var LOVEENC={"v":2,"salt":"7k+quMz2QaOLmU1KbEnDOQ==","it":600000,"iv":"dCG3DZQwC6pD0wNT","ct":"u+S6g+Ep2vOwNiOoCbn6GSLndT+hddmjjpWDVOXhwqkLpgNAVtHg7ZNQHfL4dlEMb3iRDDCkll5Hy+nbL62AWRT7ELttIobgo5sD/HH+SuM7QHs4p7nCnmKR1NPYcjnsz/OxUjpNuR+3ngDD4Xs5DXk9RS0Fx46T8/3PRNUtomkNKcjuD7V63/u0CBRp7mBzyhOlrfj54eDcV3uOBP7RYJC0BGthb8vZ3bwDYZBJ2a4UfkJMxttlE7k+J+nxiXkgjIL3GHeyepZDoaap+oZvXGLUgGIOGJzXSk8Kt56ToFC0Rh234sxZl9wRzFtIne+o1qMRFMi2gr95wxCLzkgPYF1CgwjdPgVi0gQ6d2iJh+4Sn5oDh4w5puG1/DWmtM/Jz+D+R/hnT1Ow2FuwGdLeEojdGWrqEpnbpxe7/VZSLEnrqQZvkQUF4QhcHX8ZTYF8+Sp7VgNkm4EYhhgpyJ4ph7Turmxl/kjeQcCEbOCIxnNHeSBfXYRAl9s2ihHaHJUWXM9ww5RP6UIkBP1fjZBHv4CMHSnKPQHeraVqvRjUBTHinxbQzDmFBH8UdW+8eND1gMSDDYN6cuuhiJnzglUViNZvgzC+7XEcqzbzyXNu/BM4YLSN2m7OMI+0XcOH++WmU6o2OaRTy5JnDhmnEGJNhz+SYoSXSVXUThqFO2p6hxbWquTLnULxICuhqmVzTILDkMOi3In4IrisOQhfmdN8u6n2JLfstliheeG0j7YQJX/xYUufAhJxuWIgzvjq49Yb7ONeYv4P0X+OnV2/9hnq1aCXhoQBPvK3KJMPmZW2/ADipyzyrurXhHxRUQQuX6WNmvK9HVpYnoCZZWMKq2zWaE7hDB+U2OVg5hPua05DrU5qyR4VO+k3tcO+6spfrOvBFeChzJ4NmXm9f1ZLTHoNgEFZs//sBLyd6WyV2i4mEys06QJVqWlqCp/evZDhRvus/gG2hU5fxE+HtODwDhVMxLtu5q4lm7jDw/aygp86kYNj0a0Qze8JuGQJFicoPT4qygwJiI4pLUS++hg40tZkhD5UNgCfebL7VPy5/Sq6Y4elk1E5ul+P/8xp2dGFzjutoOIFIciQ+BED/BQIwk+gz8APqGQRiLcyjJBvD3V2TBGqfZHzhJFeaCtTWCGB/HOYNjvzyNZIhI6sGQbmWbWICAqB2KD/KmuZiM2oDswPGgdPEbG8Pk3hYcf3UyrR6Au7CQKqTnSo0saEzOsJARWhcYVj1p4akm1W887YLUacZtgyyuLVcv9Q6ruuCB411HqGi1ll+kMdNycyc4IXyB8slTp9+XCJKMqMlDwLodIJhJQeCTuH7jbLZz+cF3cEZfAhHD+GOqmsbwgMxgPVLMAuhe+esPgrxUHR3kyyvbKi+IVuKedAYiu9es/nW59YPBEwvgjfwZmKofP7rFIEVNA8iMVpndHEcgkGXpzWwStm3xNwGtLD4T5mtCGjF4szSe8fzhTrlcPiSm0yKjv5UMLlSFpUN7PjUrto5KLkRTPp7nMToWs2wkvXItc6nNgYkM9g03Y3NYoK/oSKGUOca5q2Z6W7bNx5bBe04gsyMyCXq6sAo3CVxffOxZdbqnCwQx6nedsLXRrwlCmNue9PVfbTsqzRNWdD/+0AzlEUk7yVyss86GkiYtPAp0LWsrD0AHzLklD32zowag4wH9isfoLJwXTTksH9sEP8hs0O8zV+fWSQr2eK8Y7zNaE1PttUuNwqw9iuaVPsrxRHlG4swEMTLAUOeuTq0HscfytyZw0hkDXsFWJLGvKXhS9LspSrws/8gh0QPJYy0Ce8gy8cqYRdhKXxuwE3c1UFFBFKdJ6XBIP1hFKJ3USGpUdH2/QZf5RLGbjawczOwraeBsw8OjN2sCZtYVhJFF3bKedz","viv":"YDcTQSmn2UGPsMcT","vct":"/BYaXVp3h72uZdkKiNVfyAt7dkGJzP8ult67ARt8P2ULnEaB/yU9dQ=="};
-var LV={msgs:null,busy:false,keyBad:false,mem:null,msg:""};
+var LV={msgs:null,busy:false,keyBad:false,mem:null,msg:"",fin:""};
 function b64e(u){var s="";u=new Uint8Array(u);for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
 function b64d(s){var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
 function loveOK(e){return !!(e&&e.v===2&&["salt","iv","ct","viv","vct"].every(function(f){return typeof e[f]==="string"&&e[f].length>0;}));}
@@ -1228,6 +1229,11 @@ function loveOpen(kb64,enc){try{if(!kb64||!loveOK(enc))return Promise.resolve(nu
 function loveRng(a){return function(){a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
 function lovePerm(n,c){var r=loveRng((c*2654435761)^(n*40503)),p=[];for(var i=0;i<n;i++)p.push(i);for(i=n-1;i>0;i--){var j=Math.floor(r()*(i+1)),x=p[i];p[i]=p[j];p[j]=x;}return p;}
 function lovePick(n,dn){if(n<1)return -1;if(n===2)return dn%2;var c=Math.floor(dn/n),p=lovePerm(n,c);if(n>1&&c>0){var q=lovePerm(n,c-1);if(p[0]===q[n-1]){var x=p[0];p[0]=p[1];p[1]=x;}}return p[dn-c*n];}
+/* A-020: one short sentence after a finished workout in the unlocked love theme. It comes from the same encrypted notes,
+   a different one from today's daily note, fixed per day. Only a day stamp is kept in memory; no plaintext in D or storage. */
+function loveFinIdx(n,dn){if(n<2)return -1;var t=lovePick(n,dn);return (t+1+((dn*7919)>>>0)%(n-1))%n;}
+function loveFinHTML(){if(LV.fin!==TODAY||thKey()!=="love")return "";loveLoad();if(!LV.msgs||!LV.msgs.length)return "";
+  var i=loveFinIdx(LV.msgs.length,loveDay());LV.fin="";if(i<0)return "";return '<p class="lovefin" role="status"><span aria-hidden="true">♥</span> '+esc(LV.msgs[i])+'</p>';}
 function loveDay(){return Math.floor(pd(TODAY).getTime()/864e5);}
 // Stored key: check it once per start (theme shows at once, falls back if the key is void).
 function loveLoad(){if(LV.msgs||LV.busy||LV.keyBad)return;var k=loveKeyGet();if(!k)return;LV.busy=true;
@@ -1475,7 +1481,7 @@ function findItem(id){
   return S(p[0],c).blocks[bi].items[+p[2]];
 }
 function addLog(o){D.logs.push(o);D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});}
-function finish(dy){var tl=TH().toast;D._toast=D._toastX||tl[D.logs.length%tl.length];D._toastX="";dy.fin={};dy.open={};dy.pick=null;dy.run=null;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};D.tab="start";save();render();window.scrollTo(0,0);}
+function finish(dy){LV.fin=thKey()==="love"?TODAY:"";var tl=TH().toast;D._toast=D._toastX||tl[D.logs.length%tl.length];D._toastX="";dy.fin={};dy.open={};dy.pick=null;dy.run=null;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};D.tab="start";save();render();window.scrollTo(0,0);}
 function needRpe(dy){if(!dy.fin.rpe){dy.fin.err="Please choose how hard it was.";save();render();return true;}dy.fin.err="";return false;}
 function saveTrain(){
   var dy=day(); if(needRpe(dy)) return;
@@ -1666,7 +1672,7 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

@@ -93,6 +93,7 @@ Internal IDs and data keys never change, only the display name:
     - Unlock (`loveUnlock`): the code (any text, min. `LOVEMIN` = 12 characters, trimmed) → PBKDF2-SHA256 key → counts only if the verifier decrypts (`loveOpen`). Both the theme gate (`data-a="unlock"`) and the start card (`data-a="lovekey"`) use it; one entry opens theme and notes.
     - Unlock state = a valid key in localStorage `kz_love_k` as `"2:<salt>:<key>"` (`loveOn()`), never in `D` or backups. A key for another salt (new file) or a bare A-006 key is void: the code is asked once again. `D.loveOK` is retired (dropped on load and import).
     - A chosen but locked love theme stays in `D.theme`, but renders as templar (`thKey()`); the start card asks for the code. Without `love.enc.json` the theme stays locked with a hint in the code field.
+    - A-020 finish sentence: `finish()` stamps `LV.fin` (memory only) in the love theme; `loveFinHTML()` on the Today page shows one note `loveFinIdx()` (never today's daily note, fixed per day) once below the toast. Love polish: `.lovefin`, theme-coloured toast, done states in `--gold-t` (all love text pairs ≥ 5.8:1).
     - Never write the code or plaintext notes into the repo or chat. The old numeric code is in the Git history and burned.
   - **Love code and notes – the Captain's 3 steps** (locally, never committed):
     1. Write the notes into `love.txt` in the repo root (one per line, git-ignored).
