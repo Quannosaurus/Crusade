@@ -1,8 +1,13 @@
 # Builds the app from src/: the PWA into the repo root (served by GitHub Pages) and a single-file copy into .build/index.html (for tests).
 import re,shutil,os,glob
 R=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));B=R+'/src';O=R
+# Love notes: only the ciphertext from src/love.enc.json (made by tools/encrypt_love.py) is embedded, never plaintext.
+import json
+LM='var LOVEENC=null; /*@LOVEENC@*/'
+LE=B+'/love.enc.json'
+LJ='var LOVEENC='+(json.dumps(json.load(open(LE)),separators=(',',':')) if os.path.exists(LE) else 'null')+';'
 os.makedirs(O+'/fonts',exist_ok=True);os.makedirs(R+'/.build',exist_ok=True)
-single=open(B+'/head.html').read()+'\n<script>\n'+open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read()+'\n</script>\n</body>\n</html>\n'
+single=open(B+'/head.html').read()+'\n<script>\n'+open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read().replace(LM,LJ)+'\n</script>\n</body>\n</html>\n'
 open(R+'/.build/index.html','w').write(single)
 h=open(B+'/head.html').read()
 css=re.search(r'<style>([\s\S]*?)</style>',h).group(1)
@@ -21,7 +26,7 @@ h=re.sub(r'<style>[\s\S]*?</style>','<link rel="stylesheet" href="app.css">',h)
 h=h.replace('<meta charset="utf-8">','<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="%s">\n<meta name="referrer" content="no-referrer">\n<link rel="icon" type="image/svg+xml" href="icon.svg">\n<link rel="apple-touch-icon" href="icon-192.png">\n<link rel="manifest" href="manifest.webmanifest">'%csp,1)
 assert 'Content-Security-Policy' in h
 open(O+'/index.html','w').write(h+'\n<script src="app.js"></script>\n</body>\n</html>\n')
-js=open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read()+'\nif("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}\n'
+js=open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read().replace(LM,LJ)+'\nif("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}\n'
 open(O+'/app.js','w').write(js)
 import hashlib
 ver=hashlib.sha256((h+js+fonts+css).encode()).hexdigest()[:8]

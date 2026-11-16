@@ -41,6 +41,7 @@ Tests marked as **report** pass if they run without crashing; read their output 
 | t16 | emphasis-favs | t16.js | Emphasis block and favourites in sessions (Playwright) |
 | t18 | emphasis-matrix | t18.js | All emphases × gym/home, favourites page UI (Playwright, 390×844) |
 | t19 | suite-naming | t19.js | Meta: every test has a name, is listed here, gaps are documented |
+| t20 | love-crypto | t20.js | Encrypted daily love note: Python encrypt ↔ app decrypt, wrong code, daily pick, card, restart, backup (Playwright, 390×844) |
 
 ## Retired numbers
 

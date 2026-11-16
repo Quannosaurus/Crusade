@@ -68,5 +68,6 @@ Vorschläge: <Folgeaufträge, oder "keine">
 - **Themes:**
   - `THEMES` plus `THX`: templar, sanguine, sisters, slaanesh, nurgle, plain.
   - `love` is locked behind a code gate (`LOVEH` = FNV hash. Never write the code in plain text in the repo; the gate is a gift, not a security feature).
+  - Daily love note (`loveCard`): notes ship only as AES-GCM ciphertext `src/love.enc.json` (PBKDF2-SHA256 key from the love code, `LOVESALT`/`LOVEIT`), embedded by `tools/build.py` as `LOVEENC`. Create it with `tools/encrypt_love.py` from a local, git-ignored `love.txt`. The derived key lives only in localStorage `kz_love_k` (not in `D`, not in backups). Never commit plaintext notes.
 - **Backup:** `saveBackupFile`, `restoreText`, `askPersist`.
 - **Test hook:** `window.__kz` exposes internals for tests.

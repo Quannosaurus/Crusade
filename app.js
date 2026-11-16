@@ -794,6 +794,7 @@ function vStart(){
   function big(tab,title,sub){var rec=r.btn===tab&&!dn[tab];
     return '<button type="button" class="big'+(dn[tab]?" done":(rec?" rec":""))+'" data-tab="'+tab+'"><span class="bt"><b>'+title+'</b>'+(dn[tab]?'<i class="tag ok">Done</i>':(rec?'<i class="tag">Recommended</i>':''))+'</span><span>'+(rec?'<span class="rn">'+esc(NAMES[r.id])+'</span><br>'+esc(r.why):esc(sub))+'</span></button>';}
   if(D.logs.length){var xp0=xpTotal(),st0=streaks();h+='<button type="button" class="rkline lnk" data-tab="verlauf"><span><b>'+esc(rankName(rankOf(xp0)))+'</b> · '+xp0+' XP</span><span>'+(st0.day.now>1?st0.day.now+'-day streak · ':'')+'Stats →</span></button>';}
+  h+=loveCard();
   if(TH().notes){var nt=TH().notes;h+='<p class="note"><span aria-hidden="true">'+({templar:"✠",sanguine:"✦",sisters:"⚜",slaanesh:"✧",nurgle:"☣",love:"♥",plain:"•"}[D.theme||"templar"]||"•")+'</span> '+esc(nt[Math.floor(pd(TODAY).getTime()/864e5)%nt.length])+'</p>';}
   h+='<h2 class="q">'+W("orders")+'</h2>';
   h+=big("morgen","Morning routine","Home, on the mat · 7 or 15 min");
@@ -950,6 +951,40 @@ function rankName(i){return TH().ranks[i]||RANKS[i][1];}
 function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=W("title")||"Crusade Training Book";document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
 function codeHash(x){var h=2166136261;for(var i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h;}
 var LOVEH=1005865574;
+// Love notes (A-006): one daily note in the love theme. The notes ship only as AES-GCM ciphertext (LOVEENC, injected by tools/build.py from src/love.enc.json,
+// written by tools/encrypt_love.py). The key is derived from the love code with PBKDF2-SHA256 and kept on this device only (own localStorage key, never in backups).
+var LOVESALT="crusade-love-notes-v1",LOVEIT=600000,LOVEKK="kz_love_k";
+var LOVEENC=null;
+var LV={msgs:null,busy:false,bad:false,mem:null};
+function b64e(u){var s="";u=new Uint8Array(u);for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
+function b64d(s){var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
+function loveKeyGet(){try{return localStorage.getItem(LOVEKK)||LV.mem;}catch(e){return LV.mem;}}
+function loveKeySet(k){LV.mem=k;try{localStorage.setItem(LOVEKK,k);}catch(e){}}
+function loveDerive(code){var te=new TextEncoder(),cs=crypto.subtle;
+  return cs.importKey("raw",te.encode(String(code).trim()),"PBKDF2",false,["deriveBits"]).then(function(k){
+    return cs.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:te.encode(LOVESALT),iterations:LOVEIT},k,256);}).then(b64e);}
+function loveOpen(kb64,enc){try{if(!enc||enc.v!==1)return Promise.resolve(null);var cs=crypto.subtle;
+  return cs.importKey("raw",b64d(kb64),"AES-GCM",false,["decrypt"]).then(function(k){return cs.decrypt({name:"AES-GCM",iv:b64d(enc.iv)},k,b64d(enc.ct));})
+    .then(function(pt){var a=JSON.parse(new TextDecoder().decode(pt));return Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x;}).map(function(x){return x.slice(0,400);}):null;})
+    .catch(function(){return null;});}catch(e){return Promise.resolve(null);}}
+// Day dn -> index into n notes: a fresh seeded shuffle per cycle of n days, so no note repeats before all were shown (and none twice across a cycle edge).
+function loveRng(a){return function(){a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
+function lovePerm(n,c){var r=loveRng((c*2654435761)^(n*40503)),p=[];for(var i=0;i<n;i++)p.push(i);for(i=n-1;i>0;i--){var j=Math.floor(r()*(i+1)),x=p[i];p[i]=p[j];p[j]=x;}return p;}
+function lovePick(n,dn){if(n<1)return -1;if(n===2)return dn%2;var c=Math.floor(dn/n),p=lovePerm(n,c);if(n>1&&c>0){var q=lovePerm(n,c-1);if(p[0]===q[n-1]){var x=p[0];p[0]=p[1];p[1]=x;}}return p[dn-c*n];}
+function loveDay(){return Math.floor(pd(TODAY).getTime()/864e5);}
+function loveLoad(){if(LV.msgs||LV.busy||LV.keyBad||!LOVEENC||D.theme!=="love")return;var k=loveKeyGet();if(!k)return;LV.busy=true;
+  loveOpen(k,LOVEENC).then(function(m){LV.busy=false;if(m&&m.length)LV.msgs=m;else LV.keyBad=true;if(D.tab==="start")keepRender();});}
+function loveUnlock(code,show){if(!LOVEENC||LV.busy)return Promise.resolve(false);LV.busy=true;if(show)keepRender();
+  return loveDerive(code).then(function(k){return loveOpen(k,LOVEENC).then(function(m){LV.busy=false;
+    if(m&&m.length){loveKeySet(k);LV.msgs=m;LV.bad=false;LV.keyBad=false;}else LV.bad=true;if(show||D.tab==="start")keepRender();return !!(m&&m.length);});})
+    .catch(function(){LV.busy=false;LV.bad=true;if(show)keepRender();return false;});}
+function loveCard(){if(D.theme!=="love"||!LOVEENC)return "";loveLoad();
+  var h='<section class="lovecard" aria-label="Today\'s note"><h3><span aria-hidden="true">♥</span> A note for today</h3>';
+  if(LV.msgs){h+='<p>'+esc(LV.msgs[lovePick(LV.msgs.length,loveDay())])+'</p>';}
+  else if(LV.busy)h+='<p class="lvw">Opening your note…</p>';
+  else if(loveKeyGet()&&!LV.keyBad)return "";
+  else h+='<p class="lvw">Enter your code once on this phone to read a new note every day.</p><div class="row"><input type="password" id="love_code" inputmode="numeric" autocomplete="off" aria-label="Code for your daily note" placeholder="Code"><button type="button" class="b" data-a="lovekey">Open</button></div>'+(LV.bad?'<p class="warn" role="alert">That\'s not the code.</p>':'');
+  return h+'</section>';}
 function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).filter(function(k){return k!=="love"||D.loveOK;}).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+
   (D.loveOK?'':'<details class="lock"'+(D.wantLove?" open":"")+'><summary><span aria-hidden="true">🔒</span> Secret theme</summary><div class="row"><input type="password" id="'+pre+'_code" inputmode="numeric" autocomplete="off" aria-label="Code for the secret theme" placeholder="Code"><button type="button" class="b" data-a="unlock" data-pre="'+pre+'">Unlock</button></div>'+(D._lockMsg?'<p class="warn" role="alert">'+esc(D._lockMsg)+'</p>':'')+'</details>')+'</div></fieldset>';}
 /* ================= Ranks, honours and statistics ================= */
@@ -1255,7 +1290,8 @@ document.addEventListener("click",function(e){
   else if(a==="savekick"){if(needRpe(dy))return;var rk0=rankOf(xpTotal());addLog({d:TODAY,id:"KI",t:NAMES.KI,rpe:dy.fin.rpe,note:(dy.fin.note||"").slice(0,300)});afterLog(rk0,[]);finish(dy);return;}
   else if(a==="savemo"){var mm=morning(TODAY),rk0=rankOf(xpTotal());addLog({d:TODAY,id:"MO",t:NAMES.MO,m:[mm.top].concat(D.mlen==="k"?[]:[mm.sec])});D.tab="start";afterLog(rk0,[]);D._toast=D._toastX||"Morning routine logged. Let the day come.";D._toastX="";}
   else if(a==="mlen"){D.mlen=t.dataset.v;}
-  else if(a==="unlock"){var ci=document.getElementById(t.dataset.pre+"_code");if(ci&&codeHash("crusade:"+ci.value.trim())===LOVEH){D.loveOK=true;D.theme="love";D.wantLove=false;D._lockMsg="";D._toast=D.onb?"Secret theme unlocked. Hello, love.":"";}else{D._lockMsg="That's not the code.";}save();keepRender();return;}
+  else if(a==="unlock"){var ci=document.getElementById(t.dataset.pre+"_code");if(ci&&codeHash("crusade:"+ci.value.trim())===LOVEH){loveUnlock(ci.value,false);D.loveOK=true;D.theme="love";D.wantLove=false;D._lockMsg="";D._toast=D.onb?"Secret theme unlocked. Hello, love.":"";}else{D._lockMsg="That's not the code.";}save();keepRender();return;}
+  else if(a==="lovekey"){var lc=document.getElementById("love_code");if(lc&&lc.value.trim())loveUnlock(lc.value,true);return;}
   else if(a==="fav"){var fn=t.dataset.n;D.fav=D.fav||[];var fi=D.fav.indexOf(fn);if(fi>=0)D.fav.splice(fi,1);else D.fav.push(fn);save();keepRender();return;}
   else if(a==="hold"){startHold(+t.dataset.s,+t.dataset.sides);return;}
   else if(a==="edit"){D._edit=D._edit===+t.dataset.i?null:+t.dataset.i;D._del=null;}
@@ -1355,7 +1391,7 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={tb:function(){return TB;},recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD};
+window.__kz={tb:function(){return TB;},recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,LV:LV,KK:LOVEKK}};
 })();
 
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

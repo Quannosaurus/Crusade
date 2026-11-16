@@ -1,2 +1,5 @@
 .build/
 node_modules
+love.txt
+*.love.txt
+__pycache__/
