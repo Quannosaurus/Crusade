@@ -69,7 +69,7 @@ PROF.forEach(p=>{const z=boot(),k=z.k,D=setup(k,p,START);let strDays=0,runDays=0
    let lead=0;while(lead<s.blocks.length&&(s.blocks[lead].warm||s.blocks[lead].gx||s.blocks[lead].skill||s.blocks[lead].hsb||s.blocks[lead].mu||s.blocks[lead].trial))lead++;
    if(i!==lead)issue(pn+' '+id+': emphasis block at '+i+', want right after warm-up/skill blocks ('+lead+')');
    if(!b.ser)issue(pn+' '+id+': emphasis block with anchor is a circuit');if(!b.items[0]||!b.items[0].anc)issue(pn+' '+id+': anchor is not the first exercise');
-   const sec=k.blockSec(b,c,id),n=k.setsOf(b.items[0],b,c,id);if(sec<n*(40+150))issue(pn+' '+id+': anchor estimate without full rest ('+sec+' s)');
+   const sec=k.blockSec(b,c,id),n=k.setsOf(b.items[0],b,c,id);if(sec<n*(40+120))issue(pn+' '+id+': anchor estimate without full rest ('+sec+' s)');
    rep.push(pn+' '+id+': '+s.blocks.map(x=>x.lowb?'['+x.name+']':x.name).join(' > ')+' · '+s.min+' min');});
  D.tab='train';k.day().pick='KA';k.render();const det=z.$$('details.blk').find(d=>/focus/i.test(d.querySelector('.bn').textContent));
  if(!det||!/Anchor set by set/.test(det.textContent)||/Circuit/.test(det.querySelector('.kind').textContent))issue(pn+': emphasis block not shown as anchor set by set');

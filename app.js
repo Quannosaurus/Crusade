@@ -439,7 +439,7 @@ function EMB(id,pres){var e=emph();var cfg={lower:[GLUTES,"Lower body focus","Gl
      exercises follow it back to back. postBlocks puts the block right after the warm-up and the skill blocks. */
   if(out.some(function(it){return it.anc;}))return {name:cfg[1],info:cfg[2]+" · your emphasis · anchor first, set by set with 2–3 min rest, then the others back to back, 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,ser:1,items:out,more:more};
   return out.length?{name:cfg[1],info:cfg[2]+" · your emphasis · 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,items:out,more:more}:null;}
-var ANCREST=150;
+var ANCREST=120;
 /* Where an anchored emphasis block goes: right after the warm-up, the goal anchor and the skill blocks at the start. */
 function leadEnd(out){var i=0;while(i<out.length&&(out[i].warm||out[i].gx||out[i].skill||out[i].hsb||out[i].mu||out[i].trial))i++;return i;}
 /* Favourite exercises: always included in strength sessions. */
@@ -691,7 +691,19 @@ function design(s,id,c){s.ab=absFor(id);
   s.min=est();
   for(var i=0;i<trim.length&&s.min>DURMAX;i++){if(trim[i]())s.min=est();}
   /* A-025: the set band also works through the sets of single exercises (blocks without a round range had nothing to cut). */
-  var cap=BANDIDS[id]?bandCaps():null;if(cap&&bandFit(s,c,id,cap,est))s.min=est();
+  /* A-032 (M-3): the goal anchor counts into the cap like any exercise; when it trains the same pattern as the emphasis,
+     the emphasis gives sets: each of its exercises of that pattern one set less (floor 2). */
+  var gxi=null;s.blocks.forEach(function(b){if(b.gx)b.items.forEach(function(it){if(it.gx&&curVar(it,LOC())>=0)gxi=it;});});
+  var gpx=gxi?itPat(gxi):"",lbg=blk(function(x){return x.lowb;});
+  /* The goal anchor then is the session's anchor: the emphasis anchor of the same pattern becomes a companion. */
+  if(gpx&&lbg&&(EMPAT[emph()]||[]).indexOf(gpx)>=0){var rep1=false,lgb=legSets(s,c,id),snap=lbg.items.map(function(it){return [it,it.ts,it.anc];}),more0=lbg.more&&lbg.more.slice();lbg.items=lbg.items.map(function(it){if(itPat(it)!==gpx||curVar(it,LOC())<0)return it;if(it.anc){it.gan=1;delete it.anc;}
+      /* one exercise of the goal pattern makes way for a pattern-free emphasis exercise (e.g. abduction), the others give a set */
+      if(!it.gan&&!rep1&&lbg.more){var j=-1;lbg.more.some(function(m,q){if(!itPat(m)&&curVar(m,LOC())>=0){j=q;return true;}});if(j>=0){var m=lbg.more.splice(j,1)[0];lbg.more.push(it);m.ts=setsOf(it,lbg,c,id);m.gsw=1;rep1=true;return m;}}
+      var n=setsOf(it,lbg,c,id);if(n>2){it.ts=n-1;it.gcut=1;}return it;});
+    /* a session that has to stay a leg session (A-009) keeps what the emphasis would have given */
+    if(legKeep(id,lgb)&&legSets(s,c,id)<6){lbg.items=snap.map(function(x){var it=x[0];if(x[1]==null)delete it.ts;else it.ts=x[1];if(x[2])it.anc=x[2];delete it.gan;delete it.gcut;return it;});lbg.more=more0;}
+    s.min=est();}
+  var cap=BANDIDS[id]?bandCaps(id):null;if(cap&&bandFit(s,c,id,cap,est))s.min=est();
   if(rdDay()===3&&BANDIDS[id]&&tiredCut(s,c,id,est))s.min=est();
   /* Taper week before a goal date (P-2): same exercises and loads, about half the working sets (taken evenly, from the end
      of the session first; every exercise keeps at least 1 set). Frequency stays, nothing is filled up. */
@@ -726,6 +738,8 @@ function design(s,id,c){s.ab=absFor(id);
   runFill(!!cap);if(cap)runFill(false);
   /* A-025: what the fill made room for (now over 60 min) can now give way to the band too. */
   if(cap&&bandFit(s,c,id,cap,est))s.min=est();
+  /* A-032: a leave-out that the fill could not make up for comes back: 60 min stays the floor. */
+  if(!D.short&&s.min<flo){var bdl=[];s.blocks.forEach(function(b){b.items.forEach(function(it){if(it.bd)bdl.push(it);});});while(bdl.length&&s.min<flo){var r0=bdl.pop();delete r0.gone;delete r0.bd;s.min=est();}}
   /* A-035: the anchor set by set takes longer, so the emphasis block brings fewer extras through the under-60 fill. An
      emphasis pattern still under its band lower limit (7 days with today, and under its share per session) gets one more
      emphasis exercise of that pattern when it fits the caps and 90 min. */
@@ -1067,17 +1081,26 @@ function volBias(b){var P={};b.items.forEach(function(it){var p=itPat(it);if(p&&
    never cut. Last step: the emphasis block keeps only its anchor (and favourites). It only ever lowers, never below
    60 min (outside Limited time) and never below 6 leg sets in a session that is a leg session. */
 var NDEF={str:3,bal:3,run:2};
-function bandCaps(){var t=vsZero(),n=vsZero(),f=vsZero(),cap={};
+/* A-032: legs and hinge: Strength C (the leg day) takes the bigger share of the per-session cap (weight KCW), the other
+   sessions the smaller one, so the leg day is not the thinnest leg dose of the week. */
+var KCW=1.6;
+function bandCaps(id){var t=vsZero(),n=vsZero(),f=vsZero(),cap={};
   D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;var x=diff(l.d,TODAY);if(x<1||x>14)return;var v=logVs(l);if(!v)return;VPAT.forEach(function(p){if(v[p]){f[p]++;if(x<7){t[p]+=v[p];n[p]++;}}});});
-  var on=vs7(TODAY).on;cap._n={};VPAT.forEach(function(p){var hi=vBand(p)[1],nw=on&&!vHot(p)?n[p]+1:Math.max(n[p]+1,NDEF[D.focus]||3,Math.ceil(f[p]/2));cap[p]=Math.max(0,Math.min(hi-t[p],Math.floor(hi/nw)));cap._n[p]=nw;});
+  /* a second Strength C within 6 days takes the normal share: the bigger one belongs to one leg day per 7 days */
+  var kc6=D.logs.some(function(l){var x=diff(l.d,TODAY);return l.id==="KC"&&!l.bl&&x>=1&&x<=6;});
+  var on=vs7(TODAY).on;cap._n={};VPAT.forEach(function(p){var hi=vBand(p)[1],nw=on&&!vHot(p)?n[p]+1:Math.max(n[p]+1,NDEF[D.focus]||3,Math.ceil(f[p]/2),vUnits()),sh=hi/nw;
+    if((p==="legs"||p==="hinge")&&nw>1&&legPlan())sh=hi*(id==="KC"&&!kc6?KCW:1)/(nw-1+KCW);
+    cap[p]=Math.max(0,Math.min(hi-t[p],Math.floor(sh)));cap._n[p]=nw;});
   cap._u=t;return cap;}
+/* Profiles whose week has a leg day (Strength C): every one but the upper-body emphasis and a knee/ankle/hip pain week. */
+function legPlan(){return emph()!=="upper"&&!painU("kc");}
 /* A cut keeps a pattern at its band lower limit: over the 7 days, or at least its share of it per session. */
 function bandLoOK(cap,v,p,k){var lo=vBand(p)[0];return cap._u[p]+v[p]-k>=lo||v[p]-k>=Math.round(lo/cap._n[p]);}
 /* P-8: tired day. Extra favourites (beyond 2), emphasis exercises beyond anchor + 1 and all but one exercise of pure accessory go, then every exercise outside the
    protected blocks gives one set and every circuit one round (floor 2); leg and hinge work keeps its sets. A-035: "Tired" is an explicit user wish, so the
    session may go down to 45 min (DURMIN); the other floors stay. Each step is undone if it takes the session under 45 min, a leg session under
    6 leg sets or legs + hinge of the 7 days under 10. */
-function tiredCut(s,c,id,est){var ch=false,lg0=legSets(s,c,id),t=vs7(TODAY),u0=bandCaps()._u;
+function tiredCut(s,c,id,est){var ch=false,lg0=legSets(s,c,id),t=vs7(TODAY),u0=bandCaps(id)._u;
   function ok(){var v=volSets(s,c,id);return (D.short||est()>=DURMIN)&&!(lg0>=6&&legSets(s,c,id)<6)&&!(u0.legs+u0.hinge+v.legs+v.hinge<10&&t.on);}
   var fb=s.blocks.filter(function(b){return b.fav;})[0];if(fb&&fb.items.length>2){var k0=fb.items;fb.items=fb.items.slice(0,2);if(ok())ch=true;else fb.items=k0;}
   s.blocks.forEach(function(b){if(b.acc&&b.items.length>1){var ka=b.items;b.items=b.items.slice(0,1);if(ok()){b.accm=1;ch=true;}else b.items=ka;}});
@@ -1090,41 +1113,67 @@ function tiredCut(s,c,id,est){var ch=false,lg0=legSets(s,c,id),t=vs7(TODAY),u0=b
   return ch;}
 /* A-035: a band swap never takes away the last exercise of a muscle group (kitGroup) in the session. */
 function grpLast(s,it){var g=kitGroup(it),n=0;s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items.forEach(function(x){if(x!==it&&x.k&&!x.f&&curVar(x,LOC())>=0&&kitGroup(x)===g)n++;});});return n===0;}
+/* A-032: under the band a leg session stays one (≥ 6 leg sets, A-009). With lower/glutes only where it is needed: Strength C,
+   or a training week that still needs a second leg session besides Strength C (a goal anchor alone does not lock it). */
+function legKeep(id,lg0){if(lg0<6)return false;var e=emph();if(id==="KC"||(e!=="lower"&&e!=="glutes")||painU("kc"))return true;
+  /* with lower/glutes Strength C comes every training week and every session carries leg work, so a session only has to
+     stay a leg session while the week still needs it besides Strength C */
+  var w0=blkStart(TODAY),kc=!D.logs.some(function(l){return l.id==="KC"&&l.d>=w0&&l.d<=TODAY;});return hist(TODAY).legW+(kc?1:0)<2;}
+/* A-032: the leg day is not the thinnest leg dose of its training week. Strength C keeps at least the legs + hinge sets of
+   every other strength session of the week so far (kcLow, a floor above the band); a session after Strength C in the same
+   week counts as over its leg/hinge share once it would pass Strength C (kcCeil). Profiles with a leg day only (legPlan). */
+function wkLh(f){var w0=blkStart(TODAY),m=0;D.logs.forEach(function(l){if(!STR[l.id]||l.bl||l.d<w0||l.d>=TODAY||!f(l))return;var v=logVs(l);if(v)m=Math.max(m,(v.legs||0)+(v.hinge||0));});return m;}
+var KCF=0;
+/* Set at the start of bandFit: the floor for today's Strength C, or 0. The band tolerance ranks first: the floor holds only
+   while it fits into the room legs and hinge have left over the 7 days up to their tolerance (upper limit + 2 for an
+   emphasis/goal pattern, + 4 for the others). */
+function kcFloor(s,c,id){if(id!=="KC"||!legPlan())return 0;var f=wkLh(function(l){return l.id!=="KC";});if(!f)return 0;var u=vs7(TODAY),tl=function(p){return vBand(p)[1]+(vHot(p)?2:4);};
+  return f<=tl("legs")-u.legs+tl("hinge")-u.hinge?f:0;}
+function kcLow(s,c,id,v0){if(!KCF||id!=="KC")return false;var v=volSets(s,c,id);if(v.legs+v.hinge>=KCF)return false;
+  /* a cut that brings legs or hinge back into the tolerance is never undone for the floor */
+  if(v0){var u=vs7(TODAY);if(["legs","hinge"].some(function(p){return v[p]<v0[p]&&u[p]+v0[p]>vBand(p)[1]+(vHot(p)?2:4);}))return false;}return true;}
+function kcCeil(id){if(id==="KC"||!legPlan())return 0;return wkLh(function(l){return l.id==="KC";});}
+/* The time floor of the band steps: 60 min, 45 min on a tired day (explicit user wish, A-035). */
+function bfLo(){return rdDay()===3?DURMIN:DURLO;}
 function bandFit(s,c,id,cap,est){var u=cap._u,U=[],ch=false,lb=null,lg0=legSets(s,c,id);
-  s.blocks.forEach(function(b,bi){if(b.lowb)lb=b;if(b.warm||b.cool||b.add||b.trial||b.gx||b.skill||b.mu||b.hsb||b.lng||(D.short&&b.p>1))return;
+  s.blocks.forEach(function(b,bi){if(b.lowb)lb=b;
+    if(b.warm||b.cool||b.add||b.trial||b.gx||b.skill||b.mu||b.hsb||b.lng||(D.short&&b.p>1))return;
     var its=b.items.filter(function(it){return itPat(it)&&!it.gx&&curVar(it,LOC())>=0;});if(!its.length)return;
     var pr=b.acc?0:(b.lowb?5:(b.legs?4:(b.fav?3:(b.p>1?1:2))));
-    /* The emphasis block is not a circuit: its exercises are cut one by one (it.ts, read by setsOf), the anchor last. */
-    if(b.lowb)its.forEach(function(it){U.push({b:b,its:[it],pr:it.anc?6:5,i:bi});});
+    /* The emphasis block is not a circuit: its exercises are cut one by one (it.ts, read by setsOf), the anchor last (an
+       anchor whose pattern the goal anchor already trains ranks like the other emphasis exercises, M-3). */
+    if(b.lowb)its.forEach(function(it){U.push({b:b,its:[it],pr:it.anc&&!it.gan?6:5,i:bi});});
     else if(b.rounds)U.push({b:b,its:its,r:1,pr:pr,i:bi});else its.forEach(function(it){U.push({b:b,its:[it],pr:pr,i:bi});});});
   function cur(x){return x.r?rounds(x.b,c,id):setsOf(x.its[0],x.b,c,id);}
-  for(var g=0;g<200;g++){var v=volSets(s,c,id),over=VPAT.filter(function(p){return v[p]>cap[p];});if(!over.length)break;
+  var kcc=kcCeil(id);KCF=kcFloor(s,c,id);
+  for(var g=0;g<200;g++){var v=volSets(s,c,id),over=VPAT.filter(function(p){return v[p]>cap[p]||((p==="legs"||p==="hinge")&&kcc&&v[p]>0&&v.legs+v.hinge>kcc);});if(!over.length)break;
     var best=null;U.forEach(function(x){if(x.no)return;var ps={};x.its.forEach(function(it){var p=itPat(it);ps[p]=(ps[p]||0)+1;});
       if(!Object.keys(ps).every(function(p){return over.indexOf(p)>=0&&bandLoOK(cap,v,p,ps[p]);})||cur(x)<=2)return;
       var lh=(ps.legs||0)+(ps.hinge||0);if(lh&&u.legs+u.hinge+v.legs+v.hinge-lh<10)return;
       if(!best||x.pr<best.pr||(x.pr===best.pr&&x.i>best.i))best=x;});
     if(best){var o=best.r?best.b.tr:best.its[0].ts,n=cur(best)-1;if(best.r)best.b.tr=n;else best.its[0].ts=n;
       /* The 60–90 min frame stays the hard limit (concept 5.3) and a leg session stays one (≥ 6 leg sets, A-009). */
-      if((!D.short&&est()<DURLO)||(lg0>=6&&legSets(s,c,id)<6)){if(best.r)best.b.tr=o;else best.its[0].ts=o;best.no=1;}else ch=true;continue;}
+      if((!D.short&&est()<bfLo())||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){if(best.r)best.b.tr=o;else best.its[0].ts=o;best.no=1;}else ch=true;continue;}
     /* A-026: an exercise of a full pattern outside the emphasis block (circuits mix patterns, so their rounds cannot be cut
        for one of them) swaps for a pattern-free one of the same body area and the same sets: rear delts for a pull,
        lateral raises for a push, hip abduction, adductors or shins for legs and hinge. Same order as the cuts. Only for a
        real surplus: the 7 days with today's session would go over the band upper limit, not just over the fair share. */
-    if(bandSwap(s,c,id,cap,v,over,est,lg0)){ch=true;continue;}
+    if(bandSwap(s,c,id,cap,v,over,est,lg0)||bandDrop(s,c,id,cap,v,over,est,lg0)){ch=true;continue;}
     /* Before dropping: an emphasis exercise of a full pattern swaps for one whose pattern has room (same time, fewer sets
        of the full pattern), e.g. a split squat for a kickback once hinge is full. */
-    var sw=lb?lb.items.filter(function(it){var p=itPat(it);return !it.anc&&!isFavIt(it)&&!it.sw&&p&&over.indexOf(p)>=0&&!grpLast(s,it);}).pop():null;
+    var sw=lb?lb.items.filter(function(it){var p=itPat(it);return !(it.anc&&!it.gan)&&!isFavIt(it)&&!it.sw&&p&&over.indexOf(p)>=0&&!grpLast(s,it);}).pop():null;
     if(sw&&lb.more){var r3=setsOf(sw,lb,c,id),nx=null;/* A-027: an exercise of a pattern with room goes before a pattern-free one. */[1,0].some(function(pp){return lb.more.some(function(m){var p=itPat(m);if(curVar(m,LOC())>=0&&(pp?(p&&over.indexOf(p)<0&&v[p]+r3<=cap[p]):!p)){nx=m;return true;}});});
       var lh3=nx&&(itPat(sw)==="legs"||itPat(sw)==="hinge")&&!(itPat(nx)==="legs"||itPat(nx)==="hinge")?r3:0;
       if(nx&&bandLoOK(cap,v,itPat(sw),r3)&&(!lh3||u.legs+u.hinge+v.legs+v.hinge-lh3>=10)){
-        var its0=lb.items,more0=lb.more,tsS=sw.ts,tsN=nx.ts;nx.ts=sw.ts;delete sw.ts;
+        var its0=lb.items,more0=lb.more,tsS=sw.ts,tsN=nx.ts,e0=est();nx.ts=sw.ts;delete sw.ts;
         lb.items=lb.items.map(function(it){return it===sw?nx:it;});lb.more=lb.more.filter(function(m){return m!==nx;}).concat([sw]);
-        if((!D.short&&est()<DURLO)||(lg0>=6&&legSets(s,c,id)<6)){lb.items=its0;lb.more=more0;sw.ts=tsS;nx.ts=tsN;}else{nx.sw=1;ch=true;}
+        /* a swap of the same sets only fails the time floor when it makes the session shorter */
+        if((!D.short&&est()<bfLo()&&est()<e0)||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){lb.items=its0;lb.more=more0;sw.ts=tsS;nx.ts=tsN;}else{nx.sw=1;ch=true;}
         sw.sw=1;continue;}}
-    var drop=lb?lb.items.filter(function(it){var p=itPat(it);return !it.anc&&!isFavIt(it)&&p&&over.indexOf(p)>=0;}).pop():null;
+    var drop=lb?lb.items.filter(function(it){var p=itPat(it);return !(it.anc&&!it.gan)&&!isFavIt(it)&&p&&over.indexOf(p)>=0;}).pop():null;
     if(drop&&lb.items.length>1){var r2=rounds(lb,c,id),lh2=(itPat(drop)==="legs"||itPat(drop)==="hinge")?r2:0;if((lh2&&u.legs+u.hinge+v.legs+v.hinge-lh2<10)||!bandLoOK(cap,v,itPat(drop),r2))break;
       var keep=lb.items;lb.items=lb.items.filter(function(it){return it!==drop;});
-      if((!D.short&&est()<DURLO)||(lg0>=6&&legSets(s,c,id)<6)){lb.items=keep;break;}
+      if((!D.short&&est()<bfLo())||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){lb.items=keep;break;}
       lb.more=[drop].concat(lb.more||[]);lb.vcut=1;ch=true;continue;}
     break;}
   return ch;}
@@ -1132,20 +1181,46 @@ var BSWAP={pull:["Reverse fly machine","Cable face pulls","Bent-over dumbbell re
   push:["Cable lateral raises","Dumbbell lateral raises","Band lateral raises","Scapula Push-Ups Plus"],
   legs:["Abductor machine","Lateral band walks","Copenhagen Plank","Wall tibialis raises","Side-lying leg raises"],
   hinge:["Abductor machine","Banded hip abduction","Lateral band walks","Copenhagen Plank","Fire hydrants"],core:[]};
-function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},C=[],cat=null;
-  s.blocks.forEach(function(b){b.items.forEach(function(it){var q=curVar(it,loc);if(q>=0)used[it.opts[q].n]=1;if(it.k)keys[patKey(it.k)]=1;});});
+/* A-032 (M-4): at most 1 band swap per session, never the first exercise of a main block, never a basic exercise of a stage
+   (BASEK), sets are cut first (bandFit), and the swap brings no function the session already has (e.g. abduction twice). */
+var BASEK=/^(fav_|mx_)?(mu_neg|a_expu|a2_wpu|b2_sw|c_pu|c_dip|c_sq|c_rdl|g_ht|g_rdl|b_gl|a_sbd|a2_dtp|b2_dl|h_pull|h_pu|h_sq)$/;
+var FUNX=[["abd",/abduct|band walks?|fire hydrants?|side-lying leg raises|clamshells?/i],["add",/adduct|copenhagen/i],["rear",/reverse fl|pull-aparts?|t-raises?|reverse butterfly/i],["fp",/face pulls?/i],["lat",/lateral raises?/i],["tib",/tibialis|shin/i],["sa",/serratus|scapula push-ups plus/i]];
+function funOf(n){for(var i=0;i<FUNX.length;i++)if(FUNX[i][1].test(n))return FUNX[i][0];return "";}
+function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},fun={},C=[],cat=null,nsw=0;
+  s.blocks.forEach(function(b){b.items.forEach(function(it){var q=curVar(it,loc);if(q>=0){used[it.opts[q].n]=1;if(!b.warm&&!b.cool){var f=funOf(it.opts[q].n);if(f)fun[f]=1;}}if(it.k)keys[patKey(it.k)]=1;if(it.bx)nsw++;});});
+  if(nsw>=1)return false;
   s.blocks.forEach(function(b,bi){if(b.warm||b.cool||b.add||b.trial||b.gx||b.skill||b.mu||b.hsb||b.lng||b.lowb||(D.short&&b.p>1))return;
-    var pr=b.acc?0:(b.legs?4:(b.fav?3:(b.p>1?1:2)));
-    b.items.forEach(function(it,ii){var p=itPat(it);if(!p||over.indexOf(p)<0||u[p]+v[p]<=vBand(p)[1]||it.anc||it.gx||it.add||it.bx||isFavIt(it)||curVar(it,loc)<0)return;C.push({b:b,it:it,ii:ii,p:p,pr:pr,i:bi});});});
-  C.sort(function(a,b){return a.pr-b.pr||b.i-a.i||b.ii-a.ii;});
+    var pr=b.acc?0:(b.legs?4:(b.fav?3:(b.p>1?1:2))),main=!b.acc&&!b.sh&&!b.fav,first=-1;b.items.forEach(function(x,q){if(first<0&&curVar(x,loc)>=0)first=q;});
+    b.items.forEach(function(it,ii){var p=itPat(it);if(!p||over.indexOf(p)<0||u[p]+v[p]<=vBand(p)[1]||it.anc||it.gx||it.add||it.bx||isFavIt(it)||curVar(it,loc)<0)return;
+      if((main&&ii===first)||BASEK.test(it.k||""))return;C.push({b:b,it:it,ii:ii,p:p,pr:pr,i:bi});});});
+  /* the one swap goes to the pattern with the biggest surplus over its band upper limit, then by the cut order */
+  var sur=function(p){return u[p]+v[p]-vBand(p)[1];};
+  C.sort(function(a,b){return sur(b.p)-sur(a.p)||a.pr-b.pr||b.i-a.i||b.ii-a.ii;});
   for(var j=0;j<C.length;j++){var x=C[j],n0=setsOf(x.it,x.b,c,id),lh=(x.p==="legs"||x.p==="hinge")?n0:0;
     if(!bandLoOK(cap,v,x.p,n0)||(lh&&u.legs+u.hinge+v.legs+v.hinge-lh<10))continue;
     cat=cat||favCatalog();var pick=null;
-    BSWAP[x.p].some(function(nm){var y=cat[nm];if(!y||used[nm]||keys[patKey(y.it.k)]||isNever(nm)||painHit(nm)||y.it.f||y.it.iso||y.it.test||itPat(y.it)||!can(y.it.opts[y.v],loc))return false;pick=y;return true;});
-    if(!pick)continue;var n={};Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});delete n.def;delete n.lv;delete n.up;n.fx=pick.v;n.bx=x.it.opts[curVar(x.it,loc)].n;
-    if(!x.b.rounds)n.ts=n0;var old=x.b.items;x.b.items=old.map(function(it){return it===x.it?n:it;});
-    if((!D.short&&est()<DURLO)||(lg0>=6&&legSets(s,c,id)<6)){x.b.items=old;continue;}
+    BSWAP[x.p].some(function(nm){var y=cat[nm];if(!y||used[nm]||keys[patKey(y.it.k)]||(funOf(nm)&&fun[funOf(nm)])||isNever(nm)||painHit(nm)||y.it.f||y.it.iso||y.it.test||itPat(y.it)||!can(y.it.opts[y.v],loc))return false;pick=y;return true;});
+    if(!pick)continue;var n={};Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});delete n.def;delete n.lv;delete n.up;n.fx=pick.v;n.bx=x.it.opts[curVar(x.it,loc)].n;n.bxk=x.it.k||"";n.bxf=x.ii===0;
+    if(!x.b.rounds)n.ts=n0;var old=x.b.items,e0=est();x.b.items=old.map(function(it){return it===x.it?n:it;});
+    if((!D.short&&est()<bfLo()&&est()<e0)||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){x.b.items=old;continue;}
     return true;}
+  return false;}
+/* A-032: once the session's one swap is used, a real surplus (the 7 days with today over the band upper limit) leaves out
+   the last fitting exercise of the full pattern in a block outside the emphasis block (same rules as the swap: never the
+   first exercise of a main block, a basic exercise, anchor, goal anchor, favourite or addition; the block keeps 2
+   exercises; 60 min, leg session and the Strength C floor hold). It keeps its place (it.gone, it.bd = name for the hint). */
+function bandDrop(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),C=[];
+  s.blocks.forEach(function(b,bi){if(b.warm||b.cool||b.add||b.trial||b.gx||b.skill||b.mu||b.hsb||b.lng||b.lowb||(D.short&&b.p>1))return;
+    var vis=b.items.filter(function(x){return curVar(x,loc)>=0;});if(vis.length<3)return;var main=!b.acc&&!b.sh&&!b.fav,first=b.items.indexOf(vis[0]);
+    b.items.forEach(function(it,ii){var p=itPat(it);if(!p||over.indexOf(p)<0||u[p]+v[p]<=vBand(p)[1]||it.anc||it.gx||it.add||it.bx||isFavIt(it)||curVar(it,loc)<0)return;
+      if((main&&ii===first)||BASEK.test(it.k||""))return;C.push({b:b,it:it,ii:ii,p:p,pr:b.acc?0:(b.legs?4:(b.fav?3:(b.p>1?1:2))),i:bi});});});
+  C.sort(function(a,b){return a.pr-b.pr||b.i-a.i||b.ii-a.ii;});
+  for(var j=0;j<C.length;j++){var x=C[j],n0=setsOf(x.it,x.b,c,id),lh=(x.p==="legs"||x.p==="hinge")?n0:0;
+    if(!bandLoOK(cap,v,x.p,n0)||(lh&&u.legs+u.hinge+v.legs+v.hinge-lh<10))continue;
+    var nm=x.it.opts[curVar(x.it,loc)].n;x.it.gone=1;
+    /* a leave-out may take the session a little under 60 min: the under-60 fill then adds what fits the band */
+    if((!D.short&&est()<bfLo()-(rdDay()===3?0:4))||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){delete x.it.gone;continue;}
+    x.it.bd=nm;return true;}
   return false;}
 function legLog(l){return l.lg!=null?!!l.lg:(l.id==="KC"||l.id==="HO");}
 function ago(n){return n===Infinity?"still to do":(n===1?"was yesterday":"last done "+n+" days ago");}
@@ -1431,9 +1506,10 @@ function blockHTML(b,bi,id,dy,loc,c,first){
   var key=id+"-"+bi, op=dy.open&&dy.open[key]!=null?dy.open[key]:first;
   /* A-025: emphasis exercises may carry fewer sets than the block (it.ts), then the tag shows the range. */
   var rr=b.rounds?b.items.filter(function(it){return curVar(it,loc)>=0;}).map(function(it){return setsOf(it,b,c,id);}):[],rlo=rr.length?Math.min.apply(null,rr):0,rhi=rr.length?Math.max.apply(null,rr):0;
-  var kind=b.ser?'<span class="kind">Anchor set by set · '+(rlo&&rlo<rhi?rlo+"–"+rhi:(rhi||rounds(b,c,id)))+' sets</span>':b.rounds?'<span class="kind z">Circuit · '+(rlo&&rlo<rhi?rlo+"–"+rhi:(rhi||rounds(b,c,id)))+' rounds</span>':(b.rest?'<span class="kind">Set by set</span>':'');
+  var ser=b.ser&&b.items.some(function(it){return it.anc;});
+  var kind=ser?'<span class="kind">Anchor set by set · '+(rlo&&rlo<rhi?rlo+"–"+rhi:(rhi||rounds(b,c,id)))+' sets</span>':b.rounds?'<span class="kind z">Circuit · '+(rlo&&rlo<rhi?rlo+"–"+rhi:(rhi||rounds(b,c,id)))+' rounds</span>':(b.rest?'<span class="kind">Set by set</span>':'');
   return '<details class="blk'+(dn===n?" fin":"")+'" data-blk="'+key+'"'+(op?" open":"")+'><summary><span class="bn">'+esc(b.name)+'</span><span class="bc">'+(dn===n?"✓":dn+"/"+n)+'</span><span class="bi">'+kind+esc(b.info||"")+'</span></summary>'+
-    (termNote(b.name+" "+(b.info||""))?'<p class="hint">'+esc(termNote(b.name+" "+(b.info||"")))+'</p>':'')+(b.ser?'<p class="hint">Anchor first: all its sets, full rest after each. Then the other exercises once back to back, rest, repeat. Enter each set in the boxes.</p>':'')+(b.rounds&&!b.ser?'<p class="hint">Do all exercises once back to back, then rest. That is one round. Enter each round in the boxes.</p>':'')+rows+'</details>';
+    b.items.filter(function(it){return it.bd;}).map(function(it){return '<p class="note">Left out today: '+esc(it.bd)+' · enough of these sets this week</p>';}).join("")+(termNote(b.name+" "+(b.info||""))?'<p class="hint">'+esc(termNote(b.name+" "+(b.info||"")))+'</p>':'')+(ser?'<p class="hint">Anchor first: all its sets, full rest after each. Then the other exercises once back to back, rest, repeat. Enter each set in the boxes.</p>':'')+(b.rounds&&!ser?'<p class="hint">Do all exercises once back to back, then rest. That is one round. Enter each round in the boxes.</p>':'')+rows+'</details>';
 }
 function absHTML(ab,dy,loc,first){
   var A=ABS[ab.i],on=!!dy.done["abs-T"],run=TB!==null;
@@ -1620,9 +1696,12 @@ var GUP={pull:1,dips:1,push:1};
 function upWeek(s){var w0=addD(D.start,7*Math.floor(Math.max(0,diff(D.start,s))/7));return D.logs.filter(function(l){return l.d>=w0&&l.d<s&&{KA:1,KB:1,HO:1,CH:1}[l.id];}).length;}
 function goalBlock(id,out){var k=gStr();if(!k)return;var up=GUP[k],ok=up?({KA:1,KB:1,HO:1,CH:1}[id]||(id==="KC"&&upWeek(TODAY)<2)):({KC:1,HO:1,CH:1}[id]||out.some(function(b){return b.legs||b.lowb;}));if(!ok)return;
   var it=GANCH[k]();it.gx=1;var v=curVar(it,LOC()),nm=v>=0?it.opts[v].n:"";
+  /* A-032: a leg goal anchor rides on every session with leg work; Strength C (the leg day) keeps its 4 sets, the others 3. */
+  if(!up&&id!=="KC")it.sets="3";
   out.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.filter(function(x){if(x.f||x.test||x.iso)return true;var w=curVar(x,LOC());return !(w>=0&&x.opts[w].n===nm);});});
   /* A leg goal is leg work itself: the compact leg block gives up its exercise for the same movement (the block still counts). */
-  if(!up){var gg=kitGroup(it);out.forEach(function(b){if(!b.legs||b.items.length<2)return;var j=-1;b.items.forEach(function(x,i){if(j<0&&!x.f&&kitGroup(x)===gg)j=i;});if(j>=0)b.items.splice(j,1);});}
+  /* A-032 (M-3): also the main leg block of Strength C, so the goal anchor is not doubled by a second exercise of its pattern. */
+  if(!up){var gg=kitGroup(it);out.forEach(function(b){if(!(b.legs||(id==="KC"&&b.name==="Legs"))||b.items.length<2)return;var j=-1;b.items.forEach(function(x,i){if(j<0&&!x.f&&kitGroup(x)===gg)j=i;});if(j>=0)b.items.splice(j,1);});}
   for(var j=out.length-1;j>=0;j--)if(!out[j].items.length)out.splice(j,1);
   var at=out.length&&out[0].warm?1:0;out.splice(at,0,{name:W("goal")+": "+GOALS[k].n,info:"Fresh and early in the session · 2–3 min rest",p:1,rest:150,gx:1,items:[it]});}
 /* On the goal date: the test. Runs: the run itself; skills and strength: the Skill Trial (home: home strength). */

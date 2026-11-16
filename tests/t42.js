@@ -28,9 +28,24 @@ const lowb=s=>s.blocks.find(b=>b.lowb);
 // (core: the Core Blitz counts for no pattern, so only its upper limit is checked); a 7-day peak may reach the upper
 // limit + 2 for an emphasis/goal pattern and + 4 for the others.
 const BAND={hot:[12,20],cold:[8,14]};
-PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);const hotP=({lower:['legs','hinge'],glutes:['hinge'],upper:['pull','push'],core:['core']})[p.emph]||[];
+// A-032: plus 2 goal profiles (Partner glutes + Hip thrust goal, Partner lower + Back squat goal); at most 1 band swap per
+// session, never a basic exercise of a stage or the first exercise of a main block, no function twice; the leg day (Strength C)
+// carries at least the legs + hinge sets of every other unit of its training week (the bigger Strength C of a week with two;
+// the band tolerance ranks first: a Strength C held down by it, with legs or hinge of its 7 days at the tolerance limit, is noted).
+const BASE=/^(fav_|mx_)?(mu_neg|a_expu|a2_wpu|b2_sw|c_pu|c_dip)$/;
+const FUN=[/abduct|band walks?|fire hydrants?|side-lying leg raises|clamshells?/i,/adduct|copenhagen/i,/lateral raises?/i,/tibialis/i];
+const GP={ht:'hinge',sq:'legs'};
+PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower'),'sq']]).forEach(([p,gk])=>{const {k,errs}=boot(),D=setup(k,p,START),pn=p.n+(gk?' + goal '+gk:'');if(gk){k.setGoal(gk);D.goal.v=999;}
+  const hotP=(({lower:['legs','hinge'],glutes:['hinge'],upper:['pull','push'],core:['core']})[p.emph]||[]).concat(gk&&!((({lower:['legs','hinge'],glutes:['hinge']})[p.emph]||[]).includes(GP[gk]))?[GP[gk]]:[]);
+  const lhs={};let nsw=0,maxsw=0;p={...p,n:pn};
   sim(k,84,START,(r,s)=>{if(!r.s)return;if(['KA','KB','KC','CH','HO'].includes(r.id)&&!D.short&&(r.min<60||r.min>90))issue(p.n+' '+s+' '+r.id+': '+r.min+' min');
-    const lb=lowb(r.s);if(hotP.length&&['lower','glutes'].includes(p.emph)&&['KA','KB','KC','CH'].includes(r.id)&&(!lb||!lb.items.some(it=>it.anc)))issue(p.n+' '+s+' '+r.id+': emphasis block without its anchor');
+    const lb=lowb(r.s),gxp=r.s.blocks.some(b=>b.gx&&b.items.some(it=>it.gx&&k.curVar(it,k.LOC())>=0&&hotP.includes(k.itPat(it))));
+    if(hotP.length&&['lower','glutes'].includes(p.emph)&&['KA','KB','KC','CH'].includes(r.id)&&(!lb||!lb.items.some(it=>it.anc))&&!gxp)issue(p.n+' '+s+' '+r.id+': emphasis block without its anchor (and no goal anchor of its pattern)');
+    let sw=0;const fun={};r.s.blocks.forEach((b,bi)=>{if(b.warm||b.cool)return;b.items.forEach((it,ii)=>{const v=k.curVar(it,k.LOC());if(v<0)return;const n=it.opts[v].n;
+      FUN.forEach((f,fi)=>{if(f.test(n)){if(fun[fi]&&(it.bx||fun[fi].bx))issue(p.n+' '+s+' '+r.id+': band swap brings a function twice ('+fun[fi].n+' / '+n+')');fun[fi]={n,bx:it.bx};}});
+      if(!it.bx)return;sw++;if(BASE.test(it.bxk||''))issue(p.n+' '+s+' '+r.id+': basic exercise swapped ('+it.bx+')');if(it.bxf&&!b.acc&&!b.sh&&!b.fav)issue(p.n+' '+s+' '+r.id+': first exercise of '+b.name+' swapped');});});
+    nsw+=sw;maxsw=Math.max(maxsw,sw);if(sw>1)issue(p.n+' '+s+' '+r.id+': '+sw+' band swaps (max 1)');
+    const w=Math.floor((Date.parse(s)-Date.parse(START))/864e5/7),cx=k.ctx(s);(lhs[w]=lhs[w]||[]).push({d:s,id:r.id,n:k.legSets(r.s,cx,r.id)});
     const c=k.ctx(s);r.s.blocks.forEach(b=>{if(D.short&&b.p>1)return;b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,k.LOC())<0)return;const n=k.setsOf(it,b,c,r.id);if(n<2)issue(p.n+' '+s+' '+r.id+' '+it.k+': '+n+' working set(s), floor is 2');});});});
   const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5);
   const wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={pull:0,push:0,legs:0,hinge:0,core:0,dl:false,lg:0});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.vs)V.forEach(q=>x[q]+=l.vs[q]);if(l.lg)x.lg++;});
@@ -44,6 +59,12 @@ PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);const hotP=({lower:['l
     if(avg<lo&&q!=='core')issue(p.n+': '+q+' average '+avg.toFixed(1)+' per training week under the band ('+lo+')');});
   rep.push(p.n+': '+sum.join(' | '));
   rep.push('  '+Object.keys(wk).map(w=>{const x=wk[w];return 'W'+(+w+1)+' H'+x.hinge+'/L'+x.legs+'/P'+x.pull+'/D'+x.push+'/C'+x.core+(x.dl?'(deload)':'');}).join(' '));
+  /* the leg day is not the thinnest leg dose of its week */
+  const tolOf=q=>(hotP.includes(q)?BAND.hot[1]+2:BAND.cold[1]+(p.focus==='str'?2:0)+4);let held=0;
+  Object.keys(lhs).forEach(w=>{const a=lhs[w],kc=a.filter(x=>x.id==='KC');if(!kc.length||wk[w]&&wk[w].dl)return;const top=kc.reduce((m,x)=>x.n>m.n?x:m,kc[0]);
+    a.filter(x=>x.id!=='KC').forEach(x=>{if(x.n<=top.n)return;const i=day(top.d);const at=['legs','hinge'].some(q=>{let h=0;D.logs.forEach(l=>{const y=day(l.d);if(y>i-7&&y<=i&&l.vs&&!l.bl)h+=l.vs[q];});return h>=tolOf(q)-1;});
+      if(at){held++;rep.push('  note: week '+(+w+1)+' Strength C '+top.n+' < '+x.id+' '+x.n+' leg sets, held by the band tolerance');}else issue(p.n+' week '+(+w+1)+': Strength C '+top.n+' leg sets < '+x.id+' '+x.n);});});
+  rep.push('  band swaps '+nsw+' (max '+maxsw+' per session)'+(held?' · Strength C held by the tolerance in '+held+' week(s)':''));
   tw.forEach(w=>{const x=wk[w];if(x.legs+x.hinge<10)issue(p.n+' week '+(+w+1)+': legs + hinge '+(x.legs+x.hinge)+' (< 10)');
     if(p.focus!=='run'&&x.lg<2)issue(p.n+' week '+(+w+1)+': only '+x.lg+' leg session(s)');});
   if(errs.length)issue(p.n+' JS errors '+errs.join('; '));});
@@ -125,7 +146,7 @@ PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);const hotP=({lower:['l
  const c2=k2.ctx(TD),s2=k2.S('KA',c2),v2=k2.volSets(s2,c2,'KA'),sw=[];s2.blocks.forEach(b=>b.items.forEach(it=>{if(it.bx)sw.push([b,it]);}));
  if(!sw.length)issue('pull over the band: nothing swapped');
  sw.forEach(([b,it])=>{if(k2.itPat(it))issue('swapped-in exercise '+it.k+' counts for a pattern');if(b.lowb||b.warm||b.cool||b.gx||b.add)issue('swap in a protected block '+b.name);});
- if(!sw.some(([b,it])=>/row|pulldown|pull-up/i.test(it.bx)))issue('no pull exercise swapped');if(v2.pull>4)issue('KA still '+v2.pull+' pull sets with 15 in the last 6 days');
+ if(!sw.some(([b,it])=>/row|pulldown|pull-up/i.test(it.bx)))issue('no pull exercise swapped');if(sw.length>1)issue('pull over the band: '+sw.length+' swaps (A-032: max 1)');if(v2.pull>6)issue('KA still '+v2.pull+' pull sets with 15 in the last 6 days');
  E.tab='train';k2.day().pick='KA';k2.render();const tx=z.w.document.getElementById('app').textContent;if(sw.length&&tx.indexOf('Instead of '+sw[0][1].bx)<0)issue('swap hint not shown');
  if(s2.min<60||s2.min>90)issue('swapped KA '+s2.min+' min');
  rep.push('Pull over the band, KA: pull '+v2.pull+', swaps '+sw.map(([b,it])=>it.bx+' → '+it.opts[it.fx].n).join(', '));
