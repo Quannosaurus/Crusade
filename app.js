@@ -100,7 +100,7 @@ function load(){
   return fresh();}
 var D=load();
 (function(){try{var q=new URLSearchParams(location.search).get("theme");if(q&&!D.onb&&!D.logs.length&&/^[a-z]+$/.test(q))D.pendingTheme=q;}catch(x){}})();
-(function(){if(D.theme==="love")D.loveOK=true;var f=fresh();if(D.skills==null&&D.onb)D.skills={hs:true,mu:true,ls:true,fl:false,pl:false};Object.keys(f).forEach(function(k){if(D[k]==null){D[k]=f[k];if(k==="focus")D.seenFocus=false;}});Object.keys(f.profile).forEach(function(k){if(D.profile[k]==null)D.profile[k]=f.profile[k];});Object.keys(f.skills).forEach(function(k){if(D.skills[k]==null)D.skills[k]=f.skills[k];});})();
+(function(){delete D.loveOK;var f=fresh();if(D.skills==null&&D.onb)D.skills={hs:true,mu:true,ls:true,fl:false,pl:false};Object.keys(f).forEach(function(k){if(D[k]==null){D[k]=f[k];if(k==="focus")D.seenFocus=false;}});Object.keys(f.profile).forEach(function(k){if(D.profile[k]==null)D.profile[k]=f.profile[k];});Object.keys(f.skills).forEach(function(k){if(D.skills[k]==null)D.skills[k]=f.skills[k];});})();
 (function(){var cut=addD(TODAY,-14);Object.keys(D.days||{}).forEach(function(k){if(k<cut)delete D.days[k];});})();
 function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){memOnly=true;}}
 function day(s){s=s||TODAY;if(!D.days[s])D.days[s]={done:{},inp:{},skip:{},pick:null,run:null,fin:{},noKick:false};var d=D.days[s];d.skip=d.skip||{};return d;}
@@ -128,7 +128,7 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
     return o;});
   if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&e&&typeof e==="object")b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80),stall:numv(e.stall)};});
   if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&e&&typeof e==="object")b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80),p:numv(e.p),km:numv(e.km)};});
-  if(n.loveOK===true)b.loveOK=true; if(EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90;}).slice(0,20); if(THEMES[n.theme])b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
+  if(EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90;}).slice(0,20); if(THEMES[n.theme])b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
   if(n.vr&&typeof n.vr==="object")Object.keys(n.vr).slice(0,300).forEach(function(k){if(/^[a-z0-9_]+$/.test(k))b.vr[k]=Math.max(0,Math.min(20,Math.floor(numv(n.vr[k]))));});
   return b;}
 function bkJSON(){var o=JSON.parse(JSON.stringify(D));["_bk","_msg","_toast","_toastX","days"].forEach(function(k){delete o[k];});return JSON.stringify(o);}
@@ -795,7 +795,7 @@ function vStart(){
     return '<button type="button" class="big'+(dn[tab]?" done":(rec?" rec":""))+'" data-tab="'+tab+'"><span class="bt"><b>'+title+'</b>'+(dn[tab]?'<i class="tag ok">Done</i>':(rec?'<i class="tag">Recommended</i>':''))+'</span><span>'+(rec?'<span class="rn">'+esc(NAMES[r.id])+'</span><br>'+esc(r.why):esc(sub))+'</span></button>';}
   if(D.logs.length){var xp0=xpTotal(),st0=streaks();h+='<button type="button" class="rkline lnk" data-tab="verlauf"><span><b>'+esc(rankName(rankOf(xp0)))+'</b> · '+xp0+' XP</span><span>'+(st0.day.now>1?st0.day.now+'-day streak · ':'')+'Stats →</span></button>';}
   h+=loveCard();
-  if(TH().notes){var nt=TH().notes;h+='<p class="note"><span aria-hidden="true">'+({templar:"✠",sanguine:"✦",sisters:"⚜",slaanesh:"✧",nurgle:"☣",love:"♥",plain:"•"}[D.theme||"templar"]||"•")+'</span> '+esc(nt[Math.floor(pd(TODAY).getTime()/864e5)%nt.length])+'</p>';}
+  if(TH().notes){var nt=TH().notes;h+='<p class="note"><span aria-hidden="true">'+({templar:"✠",sanguine:"✦",sisters:"⚜",slaanesh:"✧",nurgle:"☣",love:"♥",plain:"•"}[thKey()]||"•")+'</span> '+esc(nt[Math.floor(pd(TODAY).getTime()/864e5)%nt.length])+'</p>';}
   h+='<h2 class="q">'+W("orders")+'</h2>';
   h+=big("morgen","Morning routine","Home, on the mat · 7 or 15 min");
   h+=big("train","Training","Gym or home");
@@ -940,53 +940,71 @@ var THX={
   ui:{orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan",focus:"Where to focus",honours:"Badges",records:"Personal records",rank:"Level",title:"Training Book",sub:"Set up your training",ready:"All set. Your first plan is ready.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Badge earned: "}}
 };
 Object.keys(THX).forEach(function(k){if(THEMES[k])Object.keys(THX[k]).forEach(function(f){THEMES[k][f]=THX[k][f];});});
-function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!D.loveOK)D.wantLove=true;else if(THEMES[D.pendingTheme])D.theme=D.pendingTheme;delete D.pendingTheme;}
-  if(D.theme==="love"&&!D.loveOK)D.theme="templar";return THEMES[D.theme]||THEMES.templar;}
+function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!loveOn())D.wantLove=true;else if(THEMES[D.pendingTheme])D.theme=D.pendingTheme;delete D.pendingTheme;}
+  return THEMES[thKey()];}
+// Effective theme: a chosen but locked love theme (e.g. an old device before the new code is entered) stays in D.theme, but renders as templar.
+function thKey(){var k=THEMES[D.theme]?D.theme:"templar";return k==="love"&&!loveOn()?"templar":k;}
 var UIW={orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
     UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"},
     UIL={orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart"};
 var UIX={focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank"};
 function W(k){var u=TH().ui||{};return u[k]||UIW[k]||UIX[k]||"";}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}
-function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=W("title")||"Crusade Training Book";document.body.setAttribute("data-theme",D.theme||"templar");var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
-function codeHash(x){var h=2166136261;for(var i=0;i<x.length;i++){h^=x.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h;}
-var LOVEH=1005865574;
-// Love notes (A-006): one daily note in the love theme. The notes ship only as AES-GCM ciphertext (LOVEENC, injected by tools/build.py from src/love.enc.json,
-// written by tools/encrypt_love.py). The key is derived from the love code with PBKDF2-SHA256 and kept on this device only (own localStorage key, never in backups).
-var LOVESALT="crusade-love-notes-v1",LOVEIT=600000,LOVEKK="kz_love_k";
+function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=W("title")||"Crusade Training Book";document.body.setAttribute("data-theme",thKey());loveLoad();var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
+// Love lock + daily notes (A-008). No hash of the code ships anywhere. tools/encrypt_love.py writes src/love.enc.json (v2): a random salt, the PBKDF2
+// iteration count, the notes as AES-GCM ciphertext and a verifier (AES-GCM ciphertext of LOVEVER); tools/build.py embeds it as LOVEENC.
+// A code counts only if its PBKDF2-SHA256 key decrypts the verifier. Without LOVEENC the love theme stays locked.
+// The derived key is kept on this device only (localStorage kz_love_k as "2:<salt>:<key>", never in D or backups); keys for another salt are void.
+var LOVEVER="crusade-love-verifier-v2",LOVEIT=600000,LOVEMIN=12,LOVEKK="kz_love_k";
 var LOVEENC=null;
-var LV={msgs:null,busy:false,bad:false,mem:null};
+var LV={msgs:null,busy:false,keyBad:false,mem:null,msg:""};
 function b64e(u){var s="";u=new Uint8Array(u);for(var i=0;i<u.length;i++)s+=String.fromCharCode(u[i]);return btoa(s);}
 function b64d(s){var b=atob(s),u=new Uint8Array(b.length);for(var i=0;i<b.length;i++)u[i]=b.charCodeAt(i);return u;}
-function loveKeyGet(){try{return localStorage.getItem(LOVEKK)||LV.mem;}catch(e){return LV.mem;}}
-function loveKeySet(k){LV.mem=k;try{localStorage.setItem(LOVEKK,k);}catch(e){}}
-function loveDerive(code){var te=new TextEncoder(),cs=crypto.subtle;
+function loveOK(e){return !!(e&&e.v===2&&["salt","iv","ct","viv","vct"].every(function(f){return typeof e[f]==="string"&&e[f].length>0;}));}
+function loveEnc(){return loveOK(LOVEENC)?LOVEENC:null;}
+function loveIt(e){var n=+e.it;return n>=100000&&n<=10000000?Math.floor(n):LOVEIT;}
+function loveKeyRaw(){try{return localStorage.getItem(LOVEKK)||LV.mem;}catch(e){return LV.mem;}}
+function loveKeyGet(){var e=loveEnc(),k=loveKeyRaw();if(!e||typeof k!=="string")return null;var p="2:"+e.salt+":";return k.indexOf(p)===0&&k.length>p.length?k.slice(p.length):null;}
+function loveKeySet(kb){LV.mem="2:"+loveEnc().salt+":"+kb;try{localStorage.setItem(LOVEKK,LV.mem);}catch(e){}}
+function loveKeyDrop(){LV.mem=null;try{localStorage.removeItem(LOVEKK);}catch(e){}}
+// Old devices (A-006) hold a bare key from the retired code: drop it quietly, the new code is asked once.
+(function(){var k=loveKeyRaw();if(typeof k==="string"&&k.indexOf("2:")!==0)loveKeyDrop();})();
+function loveOn(){return !!loveKeyGet()&&!LV.keyBad;}
+function loveDerive(code,enc){enc=enc||loveEnc();if(!loveOK(enc))return Promise.resolve(null);var te=new TextEncoder(),cs=crypto.subtle;
   return cs.importKey("raw",te.encode(String(code).trim()),"PBKDF2",false,["deriveBits"]).then(function(k){
-    return cs.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:te.encode(LOVESALT),iterations:LOVEIT},k,256);}).then(b64e);}
-function loveOpen(kb64,enc){try{if(!enc||enc.v!==1)return Promise.resolve(null);var cs=crypto.subtle;
-  return cs.importKey("raw",b64d(kb64),"AES-GCM",false,["decrypt"]).then(function(k){return cs.decrypt({name:"AES-GCM",iv:b64d(enc.iv)},k,b64d(enc.ct));})
-    .then(function(pt){var a=JSON.parse(new TextDecoder().decode(pt));return Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x;}).map(function(x){return x.slice(0,400);}):null;})
+    return cs.deriveBits({name:"PBKDF2",hash:"SHA-256",salt:b64d(enc.salt),iterations:loveIt(enc)},k,256);}).then(b64e);}
+// Key + file -> notes array if the verifier decrypts to LOVEVER, else null.
+function loveOpen(kb64,enc){try{if(!kb64||!loveOK(enc))return Promise.resolve(null);var cs=crypto.subtle,td=new TextDecoder();
+  return cs.importKey("raw",b64d(kb64),"AES-GCM",false,["decrypt"]).then(function(k){
+    return cs.decrypt({name:"AES-GCM",iv:b64d(enc.viv)},k,b64d(enc.vct)).then(function(v){if(td.decode(v)!==LOVEVER)throw 0;
+      return cs.decrypt({name:"AES-GCM",iv:b64d(enc.iv)},k,b64d(enc.ct));});})
+    .then(function(pt){var a=JSON.parse(td.decode(pt));return Array.isArray(a)?a.filter(function(x){return typeof x==="string"&&x;}).map(function(x){return x.slice(0,400);}):null;})
     .catch(function(){return null;});}catch(e){return Promise.resolve(null);}}
 // Day dn -> index into n notes: a fresh seeded shuffle per cycle of n days, so no note repeats before all were shown (and none twice across a cycle edge).
 function loveRng(a){return function(){a=(a+0x6D2B79F5)|0;var t=Math.imul(a^(a>>>15),1|a);t=(t+Math.imul(t^(t>>>7),61|t))^t;return((t^(t>>>14))>>>0)/4294967296;};}
 function lovePerm(n,c){var r=loveRng((c*2654435761)^(n*40503)),p=[];for(var i=0;i<n;i++)p.push(i);for(i=n-1;i>0;i--){var j=Math.floor(r()*(i+1)),x=p[i];p[i]=p[j];p[j]=x;}return p;}
 function lovePick(n,dn){if(n<1)return -1;if(n===2)return dn%2;var c=Math.floor(dn/n),p=lovePerm(n,c);if(n>1&&c>0){var q=lovePerm(n,c-1);if(p[0]===q[n-1]){var x=p[0];p[0]=p[1];p[1]=x;}}return p[dn-c*n];}
 function loveDay(){return Math.floor(pd(TODAY).getTime()/864e5);}
-function loveLoad(){if(LV.msgs||LV.busy||LV.keyBad||!LOVEENC||D.theme!=="love")return;var k=loveKeyGet();if(!k)return;LV.busy=true;
-  loveOpen(k,LOVEENC).then(function(m){LV.busy=false;if(m&&m.length)LV.msgs=m;else LV.keyBad=true;if(D.tab==="start")keepRender();});}
-function loveUnlock(code,show){if(!LOVEENC||LV.busy)return Promise.resolve(false);LV.busy=true;if(show)keepRender();
-  return loveDerive(code).then(function(k){return loveOpen(k,LOVEENC).then(function(m){LV.busy=false;
-    if(m&&m.length){loveKeySet(k);LV.msgs=m;LV.bad=false;LV.keyBad=false;}else LV.bad=true;if(show||D.tab==="start")keepRender();return !!(m&&m.length);});})
-    .catch(function(){LV.busy=false;LV.bad=true;if(show)keepRender();return false;});}
-function loveCard(){if(D.theme!=="love"||!LOVEENC)return "";loveLoad();
+// Stored key: check it once per start (theme shows at once, falls back if the key is void).
+function loveLoad(){if(LV.msgs||LV.busy||LV.keyBad)return;var k=loveKeyGet();if(!k)return;LV.busy=true;
+  loveOpen(k,loveEnc()).then(function(m){LV.busy=false;if(m)LV.msgs=m;else{LV.keyBad=true;loveKeyDrop();}if(!m||D.tab==="start")keepRender();});}
+function loveUnlock(code){var e=loveEnc();code=String(code==null?"":code).trim();
+  if(!e){LV.msg="The secret theme isn't set up on this build yet.";return Promise.resolve(false);}
+  if(code.length<LOVEMIN){LV.msg="The code has at least "+LOVEMIN+" characters.";return Promise.resolve(false);}
+  if(LV.busy)return Promise.resolve(false);LV.busy=true;LV.msg="";
+  return loveDerive(code,e).then(function(k){return loveOpen(k,e).then(function(m){LV.busy=false;
+    if(m){loveKeySet(k);LV.msgs=m;LV.keyBad=false;return true;}LV.msg="That's not the code.";return false;});})
+    .catch(function(){LV.busy=false;LV.msg="That's not the code.";return false;});}
+function loveField(id,label,act,pre){var e=loveEnc();
+  return '<div class="row"><input type="password" id="'+id+'" autocomplete="off" autocapitalize="off" spellcheck="false" minlength="'+LOVEMIN+'" maxlength="200" aria-label="'+label+'" placeholder="'+(e?"Code (min. "+LOVEMIN+")":"Not set up yet")+'"'+(e?"":" disabled")+'><button type="button" class="b" data-a="'+act+'"'+(pre?' data-pre="'+pre+'"':"")+(e&&!LV.busy?"":" disabled")+'>Unlock</button></div>'+
+    (!e?'<p class="lvw">The secret theme isn\'t set up on this build yet.</p>':LV.busy?'<p class="lvw" role="status">Checking your code…</p>':LV.msg?'<p class="warn" role="alert">'+esc(LV.msg)+'</p>':'');}
+function loveCard(){if(D.theme!=="love")return "";loveLoad();
   var h='<section class="lovecard" aria-label="Today\'s note"><h3><span aria-hidden="true">♥</span> A note for today</h3>';
-  if(LV.msgs){h+='<p>'+esc(LV.msgs[lovePick(LV.msgs.length,loveDay())])+'</p>';}
-  else if(LV.busy)h+='<p class="lvw">Opening your note…</p>';
-  else if(loveKeyGet()&&!LV.keyBad)return "";
-  else h+='<p class="lvw">Enter your code once on this phone to read a new note every day.</p><div class="row"><input type="password" id="love_code" inputmode="numeric" autocomplete="off" aria-label="Code for your daily note" placeholder="Code"><button type="button" class="b" data-a="lovekey">Open</button></div>'+(LV.bad?'<p class="warn" role="alert">That\'s not the code.</p>':'');
+  if(loveOn()){if(!LV.msgs||!LV.msgs.length)return "";h+='<p>'+esc(LV.msgs[lovePick(LV.msgs.length,loveDay())])+'</p>';}
+  else{if(LV.busy&&!LV.msg&&loveKeyGet())return "";h+='<p class="lvw">Enter your code once on this phone to open your theme and a new note every day.</p>'+loveField("love_code","Code for your theme and daily note","lovekey");}
   return h+'</section>';}
-function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).filter(function(k){return k!=="love"||D.loveOK;}).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+((D.theme||"templar")===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+
-  (D.loveOK?'':'<details class="lock"'+(D.wantLove?" open":"")+'><summary><span aria-hidden="true">🔒</span> Secret theme</summary><div class="row"><input type="password" id="'+pre+'_code" inputmode="numeric" autocomplete="off" aria-label="Code for the secret theme" placeholder="Code"><button type="button" class="b" data-a="unlock" data-pre="'+pre+'">Unlock</button></div>'+(D._lockMsg?'<p class="warn" role="alert">'+esc(D._lockMsg)+'</p>':'')+'</details>')+'</div></fieldset>';}
+function themeHTML(pre){return '<fieldset class="fs"><legend>Theme</legend><div class="thc">'+Object.keys(THEMES).filter(function(k){return k!=="love"||loveOn();}).map(function(k){var t=THEMES[k];return '<label><input type="radio" name="'+pre+'_theme" value="'+k+'" data-a="theme"'+(thKey()===k?" checked":"")+'><span class="sw4 sw-'+k+'" aria-hidden="true"><i></i><i></i><i></i></span>'+t.n+'</label>';}).join("")+
+  (loveOn()?'':'<details class="lock"'+(D.wantLove||LV.msg||LV.busy?" open":"")+'><summary><span aria-hidden="true">🔒</span> Secret theme</summary>'+loveField(pre+"_code","Code for the secret theme","unlock",pre)+'</details>')+'</div></fieldset>';}
 /* ================= Ranks, honours and statistics ================= */
 var XPB={KA:40,KB:40,KC:40,CH:45,TE:45,SK:30,HO:30,HK:20,RS:15,DL:20,KI:35,RE:20,RH:30,RI:35,MO:10};
 function xpOf(l){var x=XPB[l.id]||15;if(l.km)x+=Math.round(l.km*(l.id==="RH"?3:2));if(l.abs)x+=5;if(l.pr)x+=15*l.pr;return x;}
@@ -1290,8 +1308,8 @@ document.addEventListener("click",function(e){
   else if(a==="savekick"){if(needRpe(dy))return;var rk0=rankOf(xpTotal());addLog({d:TODAY,id:"KI",t:NAMES.KI,rpe:dy.fin.rpe,note:(dy.fin.note||"").slice(0,300)});afterLog(rk0,[]);finish(dy);return;}
   else if(a==="savemo"){var mm=morning(TODAY),rk0=rankOf(xpTotal());addLog({d:TODAY,id:"MO",t:NAMES.MO,m:[mm.top].concat(D.mlen==="k"?[]:[mm.sec])});D.tab="start";afterLog(rk0,[]);D._toast=D._toastX||"Morning routine logged. Let the day come.";D._toastX="";}
   else if(a==="mlen"){D.mlen=t.dataset.v;}
-  else if(a==="unlock"){var ci=document.getElementById(t.dataset.pre+"_code");if(ci&&codeHash("crusade:"+ci.value.trim())===LOVEH){loveUnlock(ci.value,false);D.loveOK=true;D.theme="love";D.wantLove=false;D._lockMsg="";D._toast=D.onb?"Secret theme unlocked. Hello, love.":"";}else{D._lockMsg="That's not the code.";}save();keepRender();return;}
-  else if(a==="lovekey"){var lc=document.getElementById("love_code");if(lc&&lc.value.trim())loveUnlock(lc.value,true);return;}
+  else if(a==="unlock"||a==="lovekey"){var ci=document.getElementById(a==="lovekey"?"love_code":t.dataset.pre+"_code"),pr=loveUnlock(ci?ci.value:"");if(a==="unlock")D.wantLove=true;keepRender();
+    pr.then(function(ok){if(ok){D.theme="love";D.wantLove=false;D._toast=D.onb?"Secret theme unlocked. Hello, love.":"";save();}keepRender();});return;}
   else if(a==="fav"){var fn=t.dataset.n;D.fav=D.fav||[];var fi=D.fav.indexOf(fn);if(fi>=0)D.fav.splice(fi,1);else D.fav.push(fn);save();keepRender();return;}
   else if(a==="hold"){startHold(+t.dataset.s,+t.dataset.sides);return;}
   else if(a==="edit"){D._edit=D._edit===+t.dataset.i?null:+t.dataset.i;D._del=null;}
@@ -1391,7 +1409,7 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={tb:function(){return TB;},recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,LV:LV,KK:LOVEKK}};
+window.__kz={tb:function(){return TB;},recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

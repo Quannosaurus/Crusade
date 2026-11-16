@@ -67,7 +67,15 @@ Vorschläge: <Folgeaufträge, oder "keine">
 - **Stats and gamification:** `statsHTML`, `xpOf`, `RANKS`, `honours()`, `streaks()`, `D.pr`.
 - **Themes:**
   - `THEMES` plus `THX`: templar, sanguine, sisters, slaanesh, nurgle, plain.
-  - `love` is locked behind a code gate (`LOVEH` = FNV hash. Never write the code in plain text in the repo; the gate is a gift, not a security feature).
-  - Daily love note (`loveCard`): notes ship only as AES-GCM ciphertext `src/love.enc.json` (PBKDF2-SHA256 key from the love code, `LOVESALT`/`LOVEIT`), embedded by `tools/build.py` as `LOVEENC`. Create it with `tools/encrypt_love.py` from a local, git-ignored `love.txt`. The derived key lives only in localStorage `kz_love_k` (not in `D`, not in backups). Never commit plaintext notes.
+  - `love` is locked behind the love code (A-008). No hash of the code ships anywhere (no `LOVEH`, no FNV). The only proof is cryptographic:
+    - `src/love.enc.json` (v2) holds a random salt, the PBKDF2 iteration count (`LOVEIT` = 600,000), the daily notes as AES-GCM ciphertext and a **verifier** (AES-GCM ciphertext of `LOVEVER`). `tools/build.py` embeds it as `LOVEENC`.
+    - Unlock (`loveUnlock`): the code (any text, min. `LOVEMIN` = 12 characters, trimmed) → PBKDF2-SHA256 key → counts only if the verifier decrypts (`loveOpen`). Both the theme gate (`data-a="unlock"`) and the start card (`data-a="lovekey"`) use it; one entry opens theme and notes.
+    - Unlock state = a valid key in localStorage `kz_love_k` as `"2:<salt>:<key>"` (`loveOn()`), never in `D` or backups. A key for another salt (new file) or a bare A-006 key is void: the code is asked once again. `D.loveOK` is retired (dropped on load and import).
+    - A chosen but locked love theme stays in `D.theme`, but renders as templar (`thKey()`); the start card asks for the code. Without `love.enc.json` the theme stays locked with a hint in the code field.
+    - Never write the code or plaintext notes into the repo or chat. The old numeric code is in the Git history and burned.
+  - **Love code and notes – the Captain's 3 steps** (locally, never committed):
+    1. Write the notes into `love.txt` in the repo root (one per line, git-ignored).
+    2. Run `python3 tools/encrypt_love.py` and type the new code twice (at least 12 characters). It writes `src/love.enc.json` with a fresh salt and prints only the number of notes.
+    3. Run `python3 tools/build.py`, `sh tests/run.sh`, then commit `src/love.enc.json` + build and push. On each phone, enter the code once (theme gate or start card).
 - **Backup:** `saveBackupFile`, `restoreText`, `askPersist`.
 - **Test hook:** `window.__kz` exposes internals for tests.

@@ -37,11 +37,11 @@ Tests marked as **report** pass if they run without crashing; read their output 
 | t12 | welcome-restore | t12.js | Welcome/restore, one-tap set entry |
 | t13 | persona-report | t13.js | 10-persona simulation – **report, read manually** |
 | t14 | entry-edit | t14.js | Edit entries, how-to, hold timer |
-| t15 | love-lock | t15.js | Love theme lock |
+| t15 | love-lock | t15.js | Love theme lock (A-008): no code hash shipped, verifier unlock, min. length, no-file hint, A-006 migration, forged key, old backup (Playwright, 390×844) |
 | t16 | emphasis-favs | t16.js | Emphasis block and favourites in sessions (Playwright) |
 | t18 | emphasis-matrix | t18.js | All emphases × gym/home, favourites page UI (Playwright, 390×844) |
 | t19 | suite-naming | t19.js | Meta: every test has a name, is listed here, gaps are documented |
-| t20 | love-crypto | t20.js | Encrypted daily love note: Python encrypt ↔ app decrypt, wrong code, daily pick, card, restart, backup (Playwright, 390×844) |
+| t20 | love-crypto | t20.js | Encrypted daily love note: Python encrypt (v2: random salt, verifier, min. length) ↔ app decrypt, wrong code, broken verifier, daily pick, card, restart, backup (Playwright, 390×844) |
 
 ## Retired numbers
 

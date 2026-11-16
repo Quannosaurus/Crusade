@@ -4,47 +4,50 @@
 Usage:  python3 tools/encrypt_love.py [path/to/love.txt]
   - love.txt: one note per line (blank lines and lines starting with # are skipped).
     It is listed in .gitignore. Never commit it.
-  - The love code is asked for at the prompt (hidden, twice). It is never taken from
-    an argument or a file, and it is checked against LOVEH in src/app.js first.
+  - The love code is any text of at least 12 characters (spaces at both ends are
+    ignored). It is asked for at the prompt (hidden, twice), never taken from an
+    argument or a file, and never checked against or stored as a hash.
+  - Every run draws a fresh random salt, so every run also needs the code again
+    on each phone (once).
   - Needs: pip install cryptography
 Then run python3 tools/build.py, test, commit src/love.enc.json and the build.
 Only the number of notes is printed, never their text.
+
+File format (v2): {"v":2,"salt","it","iv","ct","viv","vct"} (base64 fields).
+  key = PBKDF2-SHA256(code, salt, it) -> 32 bytes
+  ct  = AES-GCM(key, iv, notes as JSON)
+  vct = AES-GCM(key, viv, VERIFIER) - the app accepts a code only if this decrypts.
 """
-import base64, getpass, hashlib, json, os, re, sys
+import base64, getpass, hashlib, json, os, sys
 
 R = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-APP = os.path.join(R, 'src', 'app.js')
 OUT = os.path.join(R, 'src', 'love.enc.json')
+VERIFIER = 'crusade-love-verifier-v2'   # must match LOVEVER in src/app.js
+ITERATIONS = 600000                    # must match LOVEIT in src/app.js
+MIN_LEN = 12                           # must match LOVEMIN in src/app.js
 
 
-def params():
-    s = open(APP, encoding='utf-8').read()
-    salt = re.search(r'LOVESALT="([^"]+)"', s).group(1)
-    it = int(re.search(r'LOVEIT=(\d+)', s).group(1))
-    loveh = int(re.search(r'var LOVEH=(\d+);', s).group(1))
-    return salt, it, loveh
+def check_code(code):
+    code = code.strip()
+    if len(code) < MIN_LEN:
+        raise ValueError('The code needs at least %d characters.' % MIN_LEN)
+    return code
 
 
-def code_hash(x):
-    h = 2166136261
-    for ch in x:
-        h ^= ord(ch)
-        h = (h * 16777619) & 0xFFFFFFFF
-    return h
+def derive(code, salt, it=ITERATIONS):
+    return hashlib.pbkdf2_hmac('sha256', check_code(code).encode('utf-8'), salt, it, 32)
 
 
-def derive(code, salt, it):
-    return hashlib.pbkdf2_hmac('sha256', code.strip().encode('utf-8'), salt.encode('utf-8'), it, 32)
-
-
-def encrypt_json(notes, code, salt=None, it=None):
+def encrypt_json(notes, code, it=ITERATIONS):
     from cryptography.hazmat.primitives.ciphers.aead import AESGCM
-    if salt is None or it is None:
-        salt, it, _ = params()
-    iv = os.urandom(12)
+    salt = os.urandom(16)
+    aes = AESGCM(derive(code, salt, it))
+    iv, viv = os.urandom(12), os.urandom(12)
     pt = json.dumps(notes, ensure_ascii=False, separators=(',', ':')).encode('utf-8')
-    ct = AESGCM(derive(code, salt, it)).encrypt(iv, pt, None)
-    return json.dumps({'v': 1, 'iv': base64.b64encode(iv).decode(), 'ct': base64.b64encode(ct).decode()})
+    b = lambda x: base64.b64encode(x).decode()
+    return json.dumps({'v': 2, 'salt': b(salt), 'it': it,
+                       'iv': b(iv), 'ct': b(aes.encrypt(iv, pt, None)),
+                       'viv': b(viv), 'vct': b(aes.encrypt(viv, VERIFIER.encode('utf-8'), None))})
 
 
 def read_notes(path):
@@ -63,14 +66,15 @@ def main():
     notes = read_notes(src)
     if not notes:
         sys.exit('The notes file is empty.')
-    salt, it, loveh = params()
-    code = getpass.getpass('Love code: ')
+    code = getpass.getpass('Love code (at least %d characters): ' % MIN_LEN)
+    try:
+        check_code(code)
+    except ValueError as e:
+        sys.exit(str(e) + ' Nothing written.')
     if getpass.getpass('Again: ') != code:
-        sys.exit('The codes do not match.')
-    if code_hash('crusade:' + code.strip()) != loveh:
-        sys.exit('That is not the love code of the app (LOVEH does not match). Nothing written.')
+        sys.exit('The codes do not match. Nothing written.')
     with open(OUT, 'w', encoding='utf-8') as f:
-        f.write(encrypt_json(notes, code, salt, it) + '\n')
+        f.write(encrypt_json(notes, code) + '\n')
     print('Encrypted %d notes into src/love.enc.json. Now run: python3 tools/build.py' % len(notes))
 
 
