@@ -45,7 +45,7 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
   if(n.loc==="h"||n.loc==="g")b.loc=n.loc; if(n.mlen==="k"||n.mlen==="n")b.mlen=n.mlen;
   b.logs=(Array.isArray(n.logs)?n.logs:[]).filter(function(l){return l&&typeof l==="object"&&DS.test(l.d)&&typeof l.id==="string"&&/^[A-Z]{2}$/.test(l.id);}).slice(-2000).map(function(l){
     var o={d:l.d,id:l.id,t:str(l.t,60),rpe:Math.max(0,Math.min(10,numv(l.rpe))),note:str(l.note),sum:str(l.sum),abs:l.abs?1:0};
-    if(l.km!=null)o.km=numv(l.km);if(l.min!=null)o.min=numv(l.min);
+    if(l.km!=null)o.km=numv(l.km);if(l.min!=null)o.min=numv(l.min);if(l.lg!=null)o.lg=l.lg?1:0;
     if(Array.isArray(l.sk))o.sk=l.sk.filter(function(x){return ["hs","mu","ls","fl","pl"].indexOf(x)>=0;});
     if(Array.isArray(l.m))o.m=l.m.filter(function(x){return typeof x==="string"&&MMOD[x];});
     if(l.pr)o.pr=Math.max(0,Math.min(20,Math.floor(numv(l.pr))));
@@ -149,7 +149,7 @@ function SHOULDER(p,rot){return {name:"Shoulder stability",info:"Back to back ·
 function FOREARM(){return {name:"Forearms & elbows",info:"Back to back · protects the tendons for false grip and muscle-ups",p:3,rest:45,rounds:[2,2],items:[
   P("fa_rc",12,20,"reps","Lower slowly, elbows still",["EZ-bar reverse curls|g|w","Band reverse curls|b","Dumbbell reverse curls|d|w"],"more weight","2"),
   P("fa_wc",15,20,"reps","Alternate wrist flexors and extensors",["Dumbbell wrist curls|g|w","Band wrist curls|b"],"more weight","2")]};}
-function LEGMINI(){return {name:"Compact legs",info:"Strength C was a while ago · 3 sets · 90 s rest",p:2,rest:90,items:[
+function LEGMINI(why){return {name:"Compact legs",info:(why==="week"?"Second leg day this week":"Strength C was a while ago")+" · 3 sets · 90 s rest",p:2,rest:90,items:[
   P("c_sq",6,10,"reps","",["Dumbbell Bulgarian split squat|g|w","Barbell back squat|g|w","Leg press|g|w","Assisted pistol squat"],"more weight","3",[3,0]),
   P("c_rdl",8,12,"reps","Hips back, back straight",["Romanian deadlift|g|w","Leg curl machine|g|w","Nordic Curls"],"more weight","3")]};}
 /* Lower-body emphasis: glute- and leg-focused exercises, rotated two per session. */
@@ -184,15 +184,18 @@ function COREX(){return [
   P("x_lr",8,15,"reps","No swinging, roll the pelvis up",["Hanging knee or leg raises|g","Hanging knee raises|k","Lying leg raises"],"straighter legs","3"),
   P("x_be",10,15,"reps","Long spine, squeeze the glutes at the top",["Back extension bench|g","Superman holds","Bird dog"],"hold a plate","3"),
   P("x_aw",6,12,"reps","Ribs down, only roll as far as you can hold",["Ab wheel rollouts|g","Plank walkouts","Plank shoulder taps"],"further out","3")];}
+/* Anchor (lower/glutes emphasis): one fixed exercise per session type that stays the same week after week, so it can
+   progress (repeated exposure is what progressive overload needs), plus one rotating exercise. First match that is not
+   already in the session wins; Hip thrust is shared by Strength A and C, so it is trained twice a week on one progression. */
+var ANCH={lower:{KA:["g_ht","g_bss"],KB:["g_rdl","g_bss"],KC:["g_ht","g_su"],HO:["g_su","g_ab"]},glutes:{KA:["g_ht","g_45"],KB:["g_45","g_su"],KC:["g_ht","g_45"],HO:["g_su","g_fp"]}};
 function EMB(id,pres){var e=emph();var cfg={lower:[GLUTES,"Lower body focus","Glutes & legs"],glutes:[GLUTEX,"Glute focus","Glutes"],upper:[UPPERX,"Upper body focus","Arms & shoulders"],core:[COREX,"Core focus","Core & back"]}[e];if(!cfg)return null;
   pres=pres||[];var all=cfg[0]().filter(function(it){return !it.opts.some(function(o){return pres.indexOf(o.n)>=0;});});
   var big=(e==="lower"||e==="glutes")?id==="KC":(e==="upper"&&(id==="KA"||id==="KB"));
   var cnt=D.logs.filter(function(l){return l.id===id;}).length,n=Math.min(big?3:2,all.length),out=[];
-  for(var i=0;i<n;i++)out.push(all[(cnt*n+i)%all.length]);
+  if(ANCH[e]&&all.length){var anc=null;(ANCH[e][id]||[]).some(function(k){anc=all.filter(function(it){return it.k===k;})[0]||null;return !!anc;});if(!anc)anc=all[0];
+    anc.anc=1;out.push(anc);var rest=all.filter(function(it){return it!==anc;});if(rest.length)out.push(rest[cnt%rest.length]);}
+  else for(var i=0;i<n;i++)out.push(all[(cnt*n+i)%all.length]);
   return out.length?{name:cfg[1],info:cfg[2]+" · your emphasis · 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,items:out}:null;}
-function LOWB(id,pres){pres=pres||[];var all=GLUTES().filter(function(it){return !it.opts.some(function(o){return pres.indexOf(o.n)>=0;});}),cnt=D.logs.filter(function(l){return l.id===id;}).length,n=Math.min(id==="KC"?3:2,all.length),out=[];
-  for(var i=0;i<n;i++)out.push(all[(cnt*n+i)%all.length]);
-  return {name:"Lower body focus",info:"Glutes & legs · 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,items:out};}
 /* Favourite exercises: always included in strength sessions. */
 var FAVIDS={KA:1,KB:1,KC:1,CH:1,HO:1};
 function favCatalog(){var cat={};function add(it,v){var n=it.opts[v].n;if(!cat[n])cat[n]={it:it,v:v};}
@@ -273,7 +276,7 @@ function S(id,c){
   return s;
 }
 function S0(id,c){
-  var ph=c.phase,L=lvl(),lf=c.lowFreq&&c.kcGap>=10,pr=D.profile,b;
+  var ph=c.phase,L=lvl(),lf=c.legB!=null?!!c.legB:(c.lowFreq&&c.kcGap>=10),pr=D.profile,b;
   switch(id){
   case "KA":
     if(ph===1) b=[WARM(),HSB(),MUB(),
@@ -300,7 +303,7 @@ function S0(id,c){
         P("a2_ww",pr.pike>=15?2:4,pr.pike>=15?8:6,"reps","Pause briefly at the top",pr.pike>=15?["Wall HSPU|w","Wall Walks|w"]:["Wall Walks|w","Negative wall HSPU|w","Pike Walk-Ins"],"hold longer at the top"),
         P("a_hyp",8,12,"reps","Back extensors, tempo 2-0-1-2",["Hyperextension bench","Romanian deadlift||w","Reverse Hyperextension"],"add weight")]},
       SHOULDER(3,true)];
-    if(lf) b.splice(b.length-1,0,LEGMINI());
+    if(lf) b.splice(b.length-1,0,LEGMINI(c.legWhy));
     return {goal:L===0?"Build pulling and support strength so pull-ups, dips and later muscle-ups are solid.":(L===2?"Consolidate muscle-ups and add weight, plus overhead pressing strength.":(ph===1?"Explosiveness and transition for the first clean muscle-up, plus overhead pressing strength.":"Transitions and support strength: dip to tuck planche, L-sit to push-up.")),blocks:b};
   case "KB":
     if(ph===1) b=[WARM(),HSB(false,2),
@@ -326,7 +329,7 @@ function S0(id,c){
         P("b2_tr",8,15,"reps","",["Cable triceps pushdown||w","SZ French Press||w","Bodyweight triceps extensions"],"more weight"),
         P("b2_am",20,60,"reps total","As many clean reps as possible in 10 min",["Push-Ups AMRAP 10 min","Ring-Push-Ups AMRAP 10 min|r"],"rings or feet elevated","1")]},
       SHOULDER(2,false),FOREARM(),KPOW()];
-    if(lf) b.splice(b.length-1,0,LEGMINI());
+    if(lf) b.splice(b.length-1,0,LEGMINI(c.legWhy));
     return {goal:ph===1?"Learn the muscle-up transition from the top down and build strength endurance in a circuit.":"Lots of clean pulling and pushing volume as the base for multiple muscle-ups.",blocks:b};
   case "KC": return {goal:"Legs for running and kicks, plus slow upper-body strength endurance and kickboxing power.",blocks:[WARM(),HSB(true),
     {name:"Legs",info:"Exercises back to back · 90 s rest",p:1,rest:90,rounds:[3,4],items:[
@@ -342,11 +345,13 @@ function S0(id,c){
       P("c_dip",8,15,"reps","",["Dips","Weighted dips||w","Negative parallel bar dips|p"],"add weight","",[2,1]),
       P("c_rf",8,12,"reps","Anti-hunchback",["Reverse Butterfly||w","Dumbbell reverse flyes||w","Ring reverse flyes|r"],"more weight")]},
     KPOW()]};
-  case "CH": return {goal:"A check-in every two weeks. Note time and clean attempts in the note.",blocks:[WARM(),
+  case "CH": b={goal:"A check-in every two weeks. Note time and clean attempts in the note.",blocks:[WARM(),
     {name:"Muscle-Up EMOM",info:"2 attempts every minute for 10 minutes",p:1,rest:0,items:[F("10 × 2",L===0?"Basic: 2 negative pull-ups each":"Sloppy? Switch to transitions",L===0?["Negative pull-ups"]:["Explosive chest-to-bar pull-ups","Transition on a Smith machine","Strict muscle-ups (high bar)","Ring muscle-up with foot assist"])]},
     {name:"Block 2",info:"60 s rest between exercises",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"]),F("30","",["Push-Ups"]),F("5","5 s lowering",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
     {name:"Block 3",info:"60 s rest",p:1,rest:60,items:[F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"]),F("30","",["Bodyweight Rows","Cable row"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
     {name:"Block 4",info:"60 s rest",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"]),F("30","",["Jumping Squats"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]}]};
+    if(lf) b.blocks.push(LEGMINI(c.legWhy));
+    return b;
   case "SK": return {goal:"Calm technique session. Everything clean, nothing to failure.",blocks:[WARM(),HSB(true),
     {name:"L-sit & grip",info:"10 min",p:1,rest:60,items:[LSIT(),F("3 × 20–30 s","",["False grip hang","Active Hang"]),P("s_hang",30,60,"s","Shoulders active",["Active Hang"],"start single-arm","2")]},
     SHOULDER(2,true)]};
@@ -391,7 +396,7 @@ function target(it,v){
   var o=it.opts[v], st=D.ex[it.k+"#"+v], isS=it.unit.indexOf("s")===0, step=isS?(it.hi-it.lo>=20?5:2):1, w=null;
   if(!st) return {r:it.lo,w:null,note:"",first:true};
   w=st.w||null; var gap=diff(st.d,TODAY), inc=w&&w>=40?5:2.5;
-  if(gap>10){var back=gap>28?2:1, r0=Math.max(1,Math.min(it.hi,st.r)-back*step), w0=(o.w&&w)?Math.max(0,w-back*inc):w;
+  if(gap>=14){var back=gap>28?2:1, r0=Math.max(1,Math.min(it.hi,st.r)-back*step), w0=(o.w&&w)?Math.max(0,w-back*inc):w;
     return {r:r0,w:w0,note:"Last entry "+gap+" days: "+(back===2?"two steps":"one step")+" back."};}
   if(st.hold) return {r:Math.min(it.hi,Math.max(st.r,1)),w:w,note:"At the limit last time: same target."};
   if((st.stall||0)>=3) return {r:Math.min(it.hi,Math.max(st.r,1)),w:w,note:"Three times without progress. Swap the variation, the blade needs a new edge.",low:true};
@@ -412,7 +417,8 @@ function ctx(s){
   for(var w=0;w<=n;w++){var a=addD(D.start,7*w),z=addD(a,6);
     if(w===n||D.logs.some(function(l){return isTrain(l)&&l.d>=a&&l.d<=z;}))wk++;}
   var h=hist(s);
-  return {week:wk,cyc:(wk-1)%6+1,phase:((wk-1)%12)<6?1:2,lowFreq:h.lowFreq,kcGap:Math.min(h.KC,h.CH)};
+  var lowE=emph()==="lower"||emph()==="glutes",kcOld=h.KC>7,legB=!lowE&&(kcOld||h.legW<2);
+  return {week:wk,cyc:(wk-1)%6+1,phase:((wk-1)%12)<6?1:2,lowFreq:h.lowFreq,kcGap:Math.min(h.KC,h.CH),legB:legB,legWhy:kcOld?"kc":"week"};
 }
 function hist(s){
   var h={},y=onDay(addD(s,-1));
@@ -432,8 +438,15 @@ function hist(s){
   var first=D.logs.filter(isTrain)[0], days={};
   D.logs.forEach(function(l){var x=diff(l.d,s);if(isTrain(l)&&x>=1&&x<=14)days[l.d]=1;});
   h.lowFreq=!!first&&diff(first.d,s)>=14&&Object.keys(days).length<=7;
+  var w0=addD(D.start,7*Math.floor(Math.max(0,diff(D.start,s))/7));h.legW=D.logs.filter(function(l){return l.d>=w0&&l.d<s&&legLog(l);}).length;
   return h;
 }
+/* Leg sessions (V1, A-009): legs at least twice per training week (weeks count from D.start, like ctx()). Strength A/B (and the
+   challenge, which stands in for Strength C) get the compact leg block while Strength C is more than 7 days old or the week has fewer than 2 leg sessions so far. A session counts when it holds ≥ 6 direct lower-body working sets
+   (Strength C, home strength, a compact leg block or a lower/glute emphasis block). Old logs without "lg": KC and HO count. */
+var LEGK=/^(fav_)?(c_sq|c_rdl|c_lu|c_calf|g_[a-z0-9]+|h_sq|h_ham|b_gl)$/;
+function legSets(s,c,id){var n=0;s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){if(it.f||it.iso||it.test||!LEGK.test(it.k)||curVar(it,D.loc)<0)return;n+=setsOf(it,b,c,id);});});return n;}
+function legLog(l){return l.lg!=null?!!l.lg:(l.id==="KC"||l.id==="HO");}
 function ago(n){return n===Infinity?"still to do":(n===1?"was yesterday":"last done "+n+" days ago");}
 function cap(n){return n===Infinity?21:Math.min(n,21);}
 function isRun(l){return l.id==="RE"||l.id==="RH"||l.id==="RI";}
@@ -469,8 +482,8 @@ function recAll(s,noKick){
   var hardOK=!h.kcY&&!h.ranToday&&!kickT;
   add("KA","train",W.KA,h.KA,strOK&&!h.ranToday,"Strength A "+ago(h.KA)+".",mS);
   add("KB","train",W.KB,h.KB,strOK,"Strength B "+ago(h.KB)+".",mS);
-  var kcId=(h.CH>=13&&h.KC<h.CH)?"CH":"KC";
-  add(kcId,"train",W.C,h.C,strOK&&!kickT&&!(F==="run"&&h.hardR<=1),kcId==="CH"?"The challenge has been due for 2 weeks.":"Legs and full body "+ago(h.C)+".",mS);
+  var lowE=em0==="lower"||em0==="glutes",kcId=(!lowE&&h.CH>=13&&h.KC<h.CH)?"CH":"KC";
+  add(kcId,"train",W.C,lowE?h.KC:h.C,strOK&&!kickT&&!(F==="run"&&h.hardR<=1),kcId==="CH"?"The challenge has been due for 2 weeks.":"Legs and full body "+ago(h.C)+".",mS);
   add("RH","run",W.RH,h.RH,hardOK,(F==="run"?"Long run ":"Hard run ")+ago(h.RH)+".");
   add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2,"Intervals "+ago(h.RI)+".",5);
   add("RE","run",W.RE,h.RE,!h.ranToday&&h.runs7<(F==="run"?5:3),"Easy run "+ago(h.RE)+".",F==="run"?2:3);
@@ -627,6 +640,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   h+='<label class="n" for="c'+id+'">'+((D.fav||[]).indexOf(o.n)>=0?'<span class="fvs" aria-label="favourite">★ </span>':'')+esc(o.n)+'</label>';
   if(sk) return h+'<div class="c">'+(pain?"Skipped because of pain.":"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
   h+='<div class="tg">'+esc(tg)+'</div>';
+  if(it.anc) h+='<div class="anc"><span class="ancb">⚓ '+esc(W("anchor"))+'</span> Same every week, so it keeps growing.</div>';
   if(it.c) h+='<div class="c">'+esc(it.c)+'</div>';
   var hw=pc?"":howto(o.n); if(hw) h+='<details class="how"><summary>How?</summary><p>'+esc(hw)+'</p></details>';
   if(g&&g.note) h+='<div class="c gold">'+esc(g.note)+'</div>';
@@ -828,42 +842,42 @@ var THX={
   morns:["Rise, brother. The crusade awaits","Dawn breaks over the crusade","Morning litany: steel your body","The Emperor does not sleep. Rise","A new day, a new oath"],
   notes:["Suffer not the rest day to become a rest week.","Faith without effort is merely hope.","The strongest armour is forged in repetition.","Even a single clean rep is a victory over weakness.","Discipline is a weapon. Keep it sharp.","The crusade is long. Pace yourself, never stop.","A tired body still obeys a determined mind.","Purity of form before weight of iron.","Recovery is not weakness. It is preparation for war.","Your will is the blade. Training is the whetstone.","Every morning routine is a small vow kept.","The enemy you fight today is yesterday's limit.","Stand tall. Shoulders back. A Templar does not slouch.","Rest well, for the Emperor needs you strong.","No crusade was won in a single day.","Doubt is the first heresy. Begin anyway."],
   hon:{first:"First Oath",dawn:"Dawn Vigil",week:"Iron Week",unbroken:"Unbroken",pilgrim:"Pilgrim",march:"Long March",zealot:"Tabata Zealot",trial:"Trial of Strength",records:"Record Breaker",centurion:"Centurion",ascend:"Ascension",inverted:"World Upside Down",lever:"Lever of Faith"},
-  ui:{orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade",focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank",title:"Crusade Training Book",sub:"Induction of a new recruit",ready:"The crusade begins. The Emperor watches over you.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Honour earned: "}},
+  ui:{orders:"Your orders for today",battle:"How hard was the battle?",anchor:"Oath lift",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade",focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank",title:"Crusade Training Book",sub:"Induction of a new recruit",ready:"The crusade begins. The Emperor watches over you.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Honour earned: "}},
  sanguine:{
   toast:["Logged. The Angel would be proud.","Logged. Wings of gold, will of iron.","Logged. Nobility in every rep.","Logged. Rise, and rise again.","Logged. The red thirst is quenched by effort.","Logged. Grace and strength, as the Angel taught.","Logged. Your form is a work of art.","Logged. The Sanguinary Guard takes note.","Logged. Beauty is forged in discipline.","Logged. Another golden feather for your wings.","Logged. Baal's sun shines on your progress.","Logged. Strength worthy of a son of the Angel.","Logged. The Black Rage has nothing on your focus.","Logged. Noble work, brother.","Logged. Your sacrifice today is your glory tomorrow.","Logged. Fly higher tomorrow."],
   ups:["","Neophyte. The Angel's blood stirs in you.","Initiate. Your wings begin to form.","Battle Angel. You take to the sky.","Veteran Angel. Grace earned in many battles.","Sanguinary Guard. Gold suits you.","Captain. Lead with the Angel's nobility.","Chapter Master. Baal stands behind you.","Herald of Sanguinius. You embody the Angel's light."],
   morns:["Morning devotion under Baal's sun","Rise, angel","Golden light, golden effort","The Angel's sons rise early","A noble morning begins"],
   notes:["Grace is strength under control.","Beauty in form, power in purpose.","Nobility is shown in what you do when no one watches.","Sanguinius fell so that others could rise. Rise.","Control the thirst. Channel it into effort.","A clean rep is a beautiful rep.","Spread your wings: mobility is freedom.","The Angel valued art. Make your training art.","Your blood is gold. Treat your body accordingly.","Rest is part of glory. Even angels land.","Each morning is a chance to be noble.","Strength without grace is merely force.","Fly high, land soft.","Sacrifice a little comfort for a lot of strength.","The best warriors are also the most graceful.","Shine, son of the Angel."],
   hon:{first:"First Feather",dawn:"Dawn over Baal",week:"Seven Golden Days",unbroken:"Unbroken Wings",pilgrim:"Pilgrim of Baal",march:"Long Flight",zealot:"Core of Gold",trial:"Trial of the Angel",records:"Golden Records",centurion:"Hundred Feathers",ascend:"Ascension of the Angel",inverted:"Angelic Inversion",lever:"Wings of Lever"},
-  ui:{orders:"Your duty for today",battle:"How fierce was the fight?",oath:"Blood oath",begin:"Spread your wings",chron:"Annals",crusade:"Your ascent",focus:"Counsel of the Angel",honours:"Golden honours",records:"Golden records",rank:"Rank",title:"Angel's Training Book",sub:"A new son of the Angel",ready:"Your ascent begins. The Angel watches over you.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New golden record! ",newhon:"Golden honour earned: "}},
+  ui:{orders:"Your duty for today",anchor:"Angel's lift",battle:"How fierce was the fight?",oath:"Blood oath",begin:"Spread your wings",chron:"Annals",crusade:"Your ascent",focus:"Counsel of the Angel",honours:"Golden honours",records:"Golden records",rank:"Rank",title:"Angel's Training Book",sub:"A new son of the Angel",ready:"Your ascent begins. The Angel watches over you.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New golden record! ",newhon:"Golden honour earned: "}},
  sisters:{
   toast:["Logged. Faith is your armour.","Logged. The Emperor protects, Sister.","Logged. Another prayer answered in sweat.","Logged. Your devotion burns bright.","Logged. The flame of faith grows stronger.","Logged. Saint Celestine would be proud.","Logged. Purity of body, purity of soul.","Logged. Your litanies are spoken in reps.","Logged. Righteous effort, righteous rewards.","Logged. The Ecclesiarchy records your devotion.","Logged. Your faith is your strength, Sister.","Logged. Each rep a bead on your rosarius.","Logged. The heretic called Weakness burns.","Logged. Sing the litany of strength once more.","Logged. Your order is proud of you.","Logged. Rest, Sister. Faith renews in sleep."],
   ups:["","Novitiate. Your training in faith begins.","Sister Militant. You bear arms for the Emperor.","Sister Superior. You lead your squad with devotion.","Veteran Superior. Your faith has been tested and holds.","Palatine. Your order looks to you.","Canoness. You lead an order of the faithful.","Canoness Superior. Your devotion is legend.","Living Saint. The Emperor's light shines through you."],
   morns:["Morning prayer, Sister","Rise in faith","The flame burns at dawn","Matins of strength","A blessed morning, Sister"],
   notes:["Faith is a muscle. Train it daily.","The Emperor protects those who protect their bodies.","Devotion is not a feeling. It is a practice.","Light the flame: one small session counts.","A Sister's strength is her discipline.","Purity of form before speed of rep.","Celestine rose again. So can you, after any break.","Prayer and training share one secret: consistency.","Rest is holy. Even saints sleep.","Hymns are sung in breaths. Breathe through the effort.","Your armour is faith. Your shield is routine.","The Emperor asks for devotion, not perfection.","Burn doubt with action.","Every morning routine is a small act of devotion.","Stand straight. Faith deserves good posture.","Strength in faith, faith in strength."],
   hon:{first:"First Prayer",dawn:"Matins Kept",week:"Seven Days of Devotion",unbroken:"Unbroken Faith",pilgrim:"Pilgrimage",march:"Long Pilgrimage",zealot:"Core of Faith",trial:"Trial of Faith",records:"Blessed Records",centurion:"Hundred Prayers",ascend:"Ascension",inverted:"Miracle of Balance",lever:"Lever of Devotion"},
-  ui:{orders:"Your devotions for today",battle:"How hard was the trial?",oath:"Vows of the order",begin:"Take the vows",chron:"Chronicle of faith",crusade:"Your path of faith",focus:"Counsel of the Canoness",honours:"Blessings",records:"Blessed records",rank:"Rank",title:"Book of Devotion",sub:"A new Sister of the order",ready:"Your vows are taken. The Emperor protects, Sister.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"A blessed record! ",newhon:"Blessing received: "}},
+  ui:{orders:"Your devotions for today",anchor:"Vow lift",battle:"How hard was the trial?",oath:"Vows of the order",begin:"Take the vows",chron:"Chronicle of faith",crusade:"Your path of faith",focus:"Counsel of the Canoness",honours:"Blessings",records:"Blessed records",rank:"Rank",title:"Book of Devotion",sub:"A new Sister of the order",ready:"Your vows are taken. The Emperor protects, Sister.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"A blessed record! ",newhon:"Blessing received: "}},
  slaanesh:{
   toast:["Logged. Exquisite. More!","Logged. Perfection is a habit.","Logged. Delicious burn.","Logged. Nothing in moderation.","Logged. Every rep a sensation.","Logged. The pursuit of perfection continues.","Logged. Feel that? That's progress.","Logged. Excess suits you.","Logged. The Prince adores your dedication.","Logged. Indulge in another set tomorrow.","Logged. Beautiful form. Divine burn.","Logged. Pain is merely intense sensation.","Logged. You crave improvement. Good.","Logged. Your reflection approves.","Logged. Rest, then indulge again.","Logged. Flawless. Almost. Again tomorrow."],
   ups:["","Devotee. You have tasted progress.","Hedonist. You crave more.","Bliss-Bringer. Your effort is intoxicating.","Exalted. Perfection draws near.","Champion of Excess. Nothing is enough.","Herald. Your devotion sings.","Daemon Prince. Ascension achieved.","Chosen of the Prince. Perfection, embodied."],
   morns:["Morning indulgence","Wake to sensation","A perfect morning awaits","Stretch, and savour it","Rise, devotee"],
   notes:["Perfection is not a goal. It is a habit.","Savour the burn.","Moderation is for those who fear greatness.","Treat your stretches like a luxury.","Excess in effort, moderation in nothing but rest.","The mirror is your judge. Impress it.","Every sensation is information.","Beauty demands discipline.","A perfect rep is better than ten sloppy ones.","Rest is an indulgence. Enjoy it fully.","Crave progress, not approval.","Your body is your masterpiece.","Pleasure in effort is the secret of champions.","Try the harder variation. You know you want to.","Elegance is strength made visible.","Never enough. Always more."],
   hon:{first:"First Taste",dawn:"Morning Indulgence",week:"Seven Days of Excess",unbroken:"Insatiable",pilgrim:"Marathon of Sensation",march:"Hundred Kilometres of Bliss",zealot:"Core of Desire",trial:"Trial of Perfection",records:"Perfectionist",centurion:"Hundred Indulgences",ascend:"Ascension",inverted:"Delightfully Upside Down",lever:"Exquisite Lever"},
-  ui:{orders:"Today's indulgence",battle:"How intense was it?",oath:"Pact of perfection",begin:"Begin the pursuit",chron:"Sensations",crusade:"Your pursuit",focus:"Whispers of the Prince",honours:"Indulgences",records:"Perfect records",rank:"Rank",title:"Book of Perfection",sub:"A new devotee",ready:"The pursuit of perfection begins.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"Exquisite new record! ",newhon:"Indulgence earned: "}},
+  ui:{orders:"Today's indulgence",anchor:"Signature lift",battle:"How intense was it?",oath:"Pact of perfection",begin:"Begin the pursuit",chron:"Sensations",crusade:"Your pursuit",focus:"Whispers of the Prince",honours:"Indulgences",records:"Perfect records",rank:"Rank",title:"Book of Perfection",sub:"A new devotee",ready:"The pursuit of perfection begins.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"Exquisite new record! ",newhon:"Indulgence earned: "}},
  nurgle:{
   toast:["Logged. Grandfather is pleased with your perseverance.","Logged. Endure, and endure again.","Logged. Rot cannot stop the persistent.","Logged. Your resilience grows like a fine mould.","Logged. Sweat is merely a gift shared.","Logged. Slow and steady, like decay.","Logged. Nothing lasts, except your stubbornness.","Logged. Grandfather chuckles warmly.","Logged. The flies buzz in approval.","Logged. Toughness, the true blessing.","Logged. Another day, another layer of resilience.","Logged. Pain fades. Persistence remains.","Logged. You are pleasingly unkillable.","Logged. Share the joy: tell someone about your workout.","Logged. Grandfather's garden blooms with your effort.","Logged. Rest now, my little rotling. Grow strong."],
   ups:["","Rotling. Grandfather notices you.","Plague Acolyte. You endure where others quit.","Plaguebearer. Count your reps like blessings.","Blightbringer. Your resilience spreads.","Rotting Champion. Nothing stops you.","Lord of Decay. Unbreakable, unbothered.","Herald of Grandfather. Jovial and relentless.","Chosen of Grandfather. Eternal endurance."],
   morns:["Good morning, my little rotling","Rise from the compost","Another glorious, damp morning","Stretch those creaking joints","Grandfather wakes you gently"],
   notes:["Endurance is the greatest gift.","Everything decays. Your habits don't have to.","Slow progress is still progress. Ask any mould.","Toughness is built, not born.","Grandfather loves you, especially on hard days.","A cold is no excuse. Well, sometimes it is. Rest.","Persistence beats talent when talent skips leg day.","Share your strength, like a generous cough.","Embrace the burn. It means you're alive.","Rot is patient. Be patient.","Creaky joints? Morning routine. Grandfather insists.","The garden grows one rep at a time.","Resilience is just stubbornness with good manners.","Nothing is permanent except your consistency.","Laugh at fatigue. Grandfather does.","Endure today, flourish tomorrow."],
   hon:{first:"First Spore",dawn:"Damp Dawns",week:"Week of Persistence",unbroken:"Unkillable",pilgrim:"Marathon of Rot",march:"Hundred Kilometres of Endurance",zealot:"Core of Iron Mould",trial:"Trial of Endurance",records:"Blossoming Records",centurion:"Hundred Blessings",ascend:"Rising from the Mire",inverted:"Upside-Down Fly",lever:"Lever of Patience"},
-  ui:{orders:"Today's blessings",battle:"How much did you endure?",oath:"Grandfather's welcome",begin:"Begin enduring",chron:"The garden",crusade:"Your endurance",focus:"Grandfather's advice",honours:"Blessings",records:"Blossoming records",rank:"Rank",title:"Book of Endurance",sub:"A new rotling joins the garden",ready:"Welcome to the garden. Grandfather is delighted.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record, blossoming beautifully! ",newhon:"Blessing received: "}},
- love:{ui:{orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart",title:"Your Training Book ♥",sub:"For the love of my life",ready:"All set. You're going to be amazing, love.",welcome:"Hello, love of my life. I made this for you: a training book that plans each day from what you did before. Everything stays on your phone.",newrec:"New record, my champion! ",newhon:"New badge, love (I'm so proud): "}},
+  ui:{orders:"Today's blessings",anchor:"Steadfast lift",battle:"How much did you endure?",oath:"Grandfather's welcome",begin:"Begin enduring",chron:"The garden",crusade:"Your endurance",focus:"Grandfather's advice",honours:"Blessings",records:"Blossoming records",rank:"Rank",title:"Book of Endurance",sub:"A new rotling joins the garden",ready:"Welcome to the garden. Grandfather is delighted.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record, blossoming beautifully! ",newhon:"Blessing received: "}},
+ love:{ui:{orders:"Your plan for today, love",anchor:"Your steady lift",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart",title:"Your Training Book ♥",sub:"For the love of my life",ready:"All set. You're going to be amazing, love.",welcome:"Hello, love of my life. I made this for you: a training book that plans each day from what you did before. Everything stays on your phone.",newrec:"New record, my champion! ",newhon:"New badge, love (I'm so proud): "}},
  plain:{
   toast:["Logged. Nice work.","Logged. Consistency wins.","Logged. One more in the bank.","Logged. Keep it up.","Logged. Solid session.","Logged. Progress is progress.","Logged. Future you says thanks.","Logged. Well done.","Logged. That counts.","Logged. Good job showing up.","Logged. Strong work today.","Logged. Another brick in the wall.","Logged. You're building a habit.","Logged. Great effort.","Logged. On track.","Logged. Rest well."],
   ups:["","Regular. You're building a habit.","Committed. Consistency is paying off.","Athlete. You train like one now.","Strong. Visible progress.","Advanced. Few get this far.","Expert. You know what you're doing.","Elite. Top level consistency.","Legend. Seriously impressive."],
   morns:["Good morning","Morning routine","Start the day moving","Wake up and stretch","Good morning, let's move"],
   notes:["Consistency beats intensity.","A short session is better than none.","Sleep is part of training.","Form first, then load.","Small steps add up.","Rest days are training days for recovery.","Drink water.","Progress is rarely linear. Keep going.","Move a little every day.","Your future self will thank you.","Showing up is half the work.","Easy days make hard days possible.","Track it, then improve it.","Don't compare, just improve.","Stretching counts.","Keep it simple."],
-  ui:{orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan",focus:"Where to focus",honours:"Badges",records:"Personal records",rank:"Level",title:"Training Book",sub:"Set up your training",ready:"All set. Your first plan is ready.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Badge earned: "}}
+  ui:{orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan",anchor:"Anchor",focus:"Where to focus",honours:"Badges",records:"Personal records",rank:"Level",title:"Training Book",sub:"Set up your training",ready:"All set. Your first plan is ready.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Badge earned: "}}
 };
 Object.keys(THX).forEach(function(k){if(THEMES[k])Object.keys(THX[k]).forEach(function(f){THEMES[k][f]=THX[k][f];});});
 function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!loveOn())D.wantLove=true;else if(THEMES[D.pendingTheme])D.theme=D.pendingTheme;delete D.pendingTheme;}
@@ -873,7 +887,7 @@ function thKey(){var k=THEMES[D.theme]?D.theme:"templar";return k==="love"&&!lov
 var UIW={orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
     UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"},
     UIL={orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart"};
-var UIX={focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank"};
+var UIX={anchor:"Anchor",focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank"};
 function W(k){var u=TH().ui||{};return u[k]||UIW[k]||UIX[k]||"";}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}
 function applyTheme(){var t=TH(),h1=document.querySelector("header h1");if(h1)h1.textContent=W("title")||"Crusade Training Book";document.body.setAttribute("data-theme",thKey());loveLoad();var e=document.getElementById("emblem");if(e)e.innerHTML='<svg width="38" height="38" viewBox="0 0 100 100" aria-hidden="true">'+t.emb+'</svg>';var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",t.sw[0]);}
@@ -1101,7 +1115,7 @@ function favGroups(){var cat=favCatalog(),seen={},G=[["Glutes",GLUTES().concat(G
   var rest=[];Object.keys(cat).forEach(function(n){if(!seen[n]){seen[n]=1;rest.push(cat[n].it.opts[cat[n].v]);}});rest.sort(function(a,b){return a.n<b.n?-1:1;});out.push(["From your plan",rest]);return out;}
 function favRow(o){var on=(D.fav||[]).indexOf(o.n)>=0,q=(D._favq||"").toLowerCase(),hid=q&&o.n.toLowerCase().indexOf(q)<0;
   return '<button type="button" class="fvrow'+(on?" on":"")+(hid?" hid":"")+'" data-a="fav" data-n="'+esc(o.n)+'" aria-pressed="'+on+'"><span class="st" aria-hidden="true">'+(on?"★":"☆")+'</span><span class="fn">'+esc(o.n)+'</span>'+(can(o,"h")?'':'<span class="gt">Gym</span>')+'</button>';}
-function emphHTML(pre){return '<fieldset class="fs"><legend>Strength emphasis</legend><p class="muted">Adds an extra block to every strength session (Gym A, Gym B, Legs, Home). Running and skills stay as they are.</p>'+EMPH.map(function(x){return '<label class="optc"><input type="radio" name="'+pre+'_emph" value="'+x[0]+'" data-a="emph"'+(emph()===x[0]?" checked":"")+'><span><b>'+x[1]+'</b><span class="muted">'+x[2]+'</span></span></label>';}).join("")+'</fieldset>';}
+function emphHTML(pre){return '<fieldset class="fs"><legend>Strength emphasis</legend><p class="muted">Adds an extra block to every strength session (Gym A, Gym B, Legs, Home). Running and skills stay as they are.</p><p class="muted">Legs & glutes and Glutes: legs at least twice a week, and each session keeps one fixed main exercise (⚓ '+esc(W("anchor"))+') so it can grow.</p>'+EMPH.map(function(x){return '<label class="optc"><input type="radio" name="'+pre+'_emph" value="'+x[0]+'" data-a="emph"'+(emph()===x[0]?" checked":"")+'><span><b>'+x[1]+'</b><span class="muted">'+x[2]+'</span></span></label>';}).join("")+'</fieldset>';}
 function vFavs(){
   var first=!D.seenFav||!(D.fav||[]).length;if(!D.seenFav){D.seenFav=true;save();}
   var favs=D.fav||[],cat=favCatalog(),from={train:"train",start:"start"}[D._favFrom]||"mehr";
@@ -1109,6 +1123,7 @@ function vFavs(){
   h+='<div class="card"><div class="sec"><h2>Make the plan yours</h2>'+
     '<details class="howit"'+(first?" open":"")+'><summary>How it works</summary><ol class="why">'+
       '<li><b>Emphasis</b> adds an extra block to every strength session, for the area you want to grow.</li>'+
+      '<li><b>⚓ '+esc(W("anchor"))+'</b> (Legs & glutes, Glutes): each session keeps one fixed main exercise week after week, so its weight and reps can climb. The second exercise rotates.</li>'+
       '<li><b>Tap an exercise to star it ★.</b> Starred exercises are in every strength session, in the block “★ Your favourites”.</li>'+
       '<li>Already in today\'s session? Then your starred variant is used there, nothing doubles up.</li>'+
       '<li>More than 4 stars? Each session takes 4 and they take turns.</li>'+
@@ -1186,7 +1201,7 @@ function saveTrain(){
   var absDone=!!dy.done["abs-T"]; if(absDone) D.abs=(absFor(id).i+1)%ABS.length;
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
   var rk0=rankOf(xpTotal());
-  addLog({d:TODAY,id:id,t:NAMES[id],rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length});
+  addLog({d:TODAY,id:id,t:NAMES[id],lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length});
   afterLog(rk0,prs); finish(dy);
 }
 function saveRun(){
@@ -1335,5 +1350,5 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={tb:function(){return TB;},recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={tb:function(){return TB;},legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();

@@ -45,6 +45,7 @@ Tests marked as **report** pass if they run without crashing; read their output 
 | t19 | suite-naming | t19.js | Meta: every test has a name, is listed here, gaps are documented |
 | t20 | love-crypto | t20.js | Encrypted daily love note: Python encrypt (v2: random salt, verifier, min. length) ↔ app decrypt, wrong code, broken verifier, daily pick, card, restart, backup (Playwright, 390×844) |
 | t21 | hardening | t21.js | Hardening (A-012): no external URLs in sources/build, off-site links stripped, frame-buster in an iframe (only a note with the real URL, nothing rendered or stored), normal open unchanged, net guard self-check (Playwright, 390×844) |
+| t22 | leg-frequency-anchor | t22.js | A-009: 6-week simulation of the 3 audit profiles: ≥ 2 leg sessions per week (deload excepted), fixed anchor per session that progresses, CH no longer replaces KC with lower/glute emphasis, 14-day pause rule, old backup + favourites, anchor mark in the UI |
 
 ## Retired numbers
 

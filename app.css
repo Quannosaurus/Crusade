@@ -240,6 +240,7 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .fvrow{display:flex;align-items:center;gap:10px;width:100%;min-height:46px;padding:8px 12px;text-align:left;background:transparent;border:1px solid var(--line);border-radius:10px;color:var(--bone);font:inherit;cursor:pointer}
 .fvrow .st{font-size:1.3rem;width:1.4em;text-align:center;color:var(--muted)}.fvrow .fn{flex:1}
 .fvrow.on{border-color:var(--gold-t);background:rgba(200,160,60,.08)}.fvrow.on .st{color:var(--gold-t)}
+.anc{font-size:.8rem;color:var(--muted);margin:2px 0}.ancb{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--gold);color:var(--gold-t);border-radius:6px;padding:1px 6px;margin-right:4px}
 .gt{font-size:.7rem;letter-spacing:.06em;text-transform:uppercase;border:1px solid var(--line);border-radius:6px;padding:1px 6px;color:var(--muted)}
 .fvg{margin:8px 0}.fvg summary{cursor:pointer;font-weight:600;padding:8px 0}
 .hid{display:none!important}.fvs{color:var(--gold-t)}
