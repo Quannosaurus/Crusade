@@ -241,9 +241,10 @@ function hasSk(l,k){if(l.sk)return l.sk.indexOf(k)>=0;return k==="hs"&&!!HASHS[l
 function skLast(k,s){for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(l.d<s&&hasSk(l,k))return diff(l.d,s);}return 99;}
 function skillPlan(id,s){var rot=selSk(),n={KA:D.skills.mu?1:2,KB:1,KC:1,SK:3}[id]||0;if(!n||!rot.length)return [];
   if(rot.length===1)return rot.slice();
+  var gs=gSkill();if(gs&&rot.indexOf(gs)>=0){var oth=rot.filter(function(k){return k!==gs;}).map(function(k,i){return {k:k,sc:skLast(k,s)+(k==="hs"?1:0)-i*0.01};}).sort(function(a,b){return b.sc-a.sc;}).map(function(x){return x.k;});return [gs].concat(oth).slice(0,n);}
   return rot.map(function(k,i){return {k:k,sc:skLast(k,s)+(k==="hs"?1:0)-i*0.01};}).sort(function(a,b){return b.sc-a.sc;}).slice(0,n).map(function(x){return x.k;});}
 function SKB(k,longer,p){var b=k==="hs"?HSB(longer,p):(k==="fl"?FLB(longer,p):PLB(longer,p));b.skill=k;return b;}
-function skBlocks(id,longer,p){var pl=skillPlan(id,TODAY),one=selSk().length===1;var lg=(longer||one)&&!D.short;return pl.map(function(k){var b=SKB(k,lg,p);if(lg)b.lng=[k,p];return b;});}
+function skBlocks(id,longer,p){var pl=skillPlan(id,TODAY),one=selSk().length===1,gs=gSkill();return pl.map(function(k){var lg=(longer||one||k===gs)&&!D.short,b=SKB(k,lg,p);if(lg)b.lng=[k,p];if(k===gs)b.gx=1;return b;});}
 function LSIT(){var full=D.profile.lsit>=11,n=full?"L-Sit":"Tuck L-Sit";return I(lsKey(),full?"Legs straight, shoulders down":"Knees to chest, shoulders down. Then 3 short attempts with straight legs",[n+" on parallel bars|p",n+" between chairs|s",n+" on the floor","Hanging "+n+"|k"]);}
 function MUB(){var L=lvl(),mu=D.profile.mu;
   if(L===0) return {name:"Pulling base",info:"2 min rest · the base before muscle-ups make sense",p:1,rest:120,items:[
@@ -374,6 +375,7 @@ function postBlocks(id,bl){var sk=D.skills,out=[];
     if((em==="lower"||em==="glutes")&&id!=="KC")out.forEach(function(b){if(b.rounds&&!b.lowb&&/Strength|Circuit|Pull|Push|Transitions|Base strength|Explosive/.test(b.name))b.rounds=[Math.max(2,b.rounds[0]-1),Math.max(2,b.rounds[1]-1)];});
     if(em==="upper"&&id==="KC")out.forEach(function(b){if(b.name==="Legs"&&b.items.length>3)b.items=b.items.slice(0,3);});
     var pr0=[];out.forEach(function(b){b.items.forEach(function(it){it.opts.forEach(function(o){pr0.push(o.n);});});});var eb=EMB(id,pr0);if(eb)out.push(eb);}
+  goalBlock(id,out);
   if(FAVIDS[id]&&(D.fav||[]).length)out.forEach(favDef);
   if(FAVIDS[id]){var pres=[];out.forEach(function(b){b.items.forEach(function(it){var v=curVar(it,LOC());if(v>=0)it.opts.forEach(function(o){pres.push(o.n);});});});var fb=FAVB(id,pres);if(fb)out.push(fb);}
   if(COOLK[id]) out.push(COOL(COOLK[id]));
@@ -400,6 +402,7 @@ function S(id,c){
 function neverApply(s){if(!nev().length)return;var loc=LOC(),used={},cat=null;
   s.blocks.forEach(function(b){b.items.forEach(function(it){var v=curVar(it,loc);if(v>=0)used[it.opts[v].n]=1;});});
   s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.map(function(it){if(it.f||it.test||it.iso||it.add)return it;var v=curVar(it,loc);if(v<0||!isNever(it.opts[v].n))return it;
+    if(it.gx){it.nh=1;return it;}
     var g=kitGroup(it),n={},pick=null;cat=cat||favCatalog();
     Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
     if(pick){Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});n.fx=pick.v;}
@@ -463,7 +466,7 @@ function design(s,id,c){s.ab=absFor(id);
   function blk(f){return s.blocks.filter(f)[0];}
   function est(){return estMin(s,c,id);}
   function drop(f){for(var j=s.blocks.length-1;j>=0;j--){if(f(s.blocks[j])){s.blocks.splice(j,1);return true;}}return false;}
-  var free=function(b){return !b.warm&&!b.cool&&!b.legs&&!b.lowb&&!b.fav&&!b.sh&&!b.acc;};
+  var free=function(b){return !b.warm&&!b.cool&&!b.legs&&!b.lowb&&!b.fav&&!b.sh&&!b.acc&&!b.gx;};
   var trim=[
     function(){var ch=false;s.blocks.forEach(function(b){if(b.acc&&b.rounds&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
     function(){var b=blk(function(x){return x.acc&&!x.accm&&/Kickboxing|Power/.test(x.name);});if(!b)return false;var k=b.items.filter(function(it){return it.k==="kp_cop"||/Neck/.test(it.opts[0].n);});if(!k.length||k.length===b.items.length)return false;b.items=k;b.accm=1;b.info="Compact · tendons, adductors and neck · 60 s rest";return true;},
@@ -477,14 +480,26 @@ function design(s,id,c){s.ab=absFor(id);
     function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>2){b.items=b.items.slice(0,2);b.info="2 today, they take turns · 60–90 s rest";return true;}},
     function(){return drop(function(b){return b.acc&&b.name==="Forearms & elbows";});},
     function(){return drop(function(b){return b.acc;});},
-    function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;return true;},
+    function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&!b.gx&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;return true;},
     function(){var b=blk(function(x){return x.sh;});return b?shMini(b):false;}];
   for(var r=0;r<8;r++)trim.push(function(){return drop(function(b){return b.p>=2&&free(b);});});
+  /* Goal skill (P-2, D1): ranks above favourites, so its long form goes only now, before favourites drop below 2. */
+  trim.push(function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&b.gx&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);nb.gx=1;if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;return true;});
   /* Last resort, only once all pure accessory work is gone: one favourite today. */
   trim.push(function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>1&&!blk(function(x){return x.acc;})){b.items=b.items.slice(0,1);b.info="1 today, they take turns · 60–90 s rest";return true;}});
+  /* With a goal block only: a secondary main block gives way rather than the goal (keeps every session within 90 min). */
+  if(blk(function(x){return x.gx;}))for(var g2=0;g2<4;g2++)trim.push(function(){return drop(function(b){return free(b)&&!b.skill&&!b.mu&&!b.hsb;});});
   s.min=est();
   for(var i=0;i<trim.length&&s.min>DURMAX;i++){if(trim[i]())s.min=est();}
-  if(D.short||!BANDIDS[id]||c.cyc===6)return s;
+  /* Taper week before a goal date (P-2): same exercises and loads, about half the working sets (taken evenly, from the end
+     of the session first; every exercise keeps at least 1 set). Frequency stays, nothing is filled up. */
+  if(gTaper()){var U=[];s.blocks.forEach(function(b){if(b.warm||b.cool)return;var its=b.items.filter(function(it){return it.k&&!it.f&&!it.iso&&!it.test&&curVar(it,LOC())>=0;});if(!its.length)return;
+      if(b.rounds)U.push({b:b,n:its.length,r:1});else its.forEach(function(it){U.push({b:b,it:it,n:1});});});
+    var cur=function(u){return u.r?rounds(u.b,c,id):setsOf(u.it,u.b,c,id);},tot=0;U.forEach(function(u){tot+=cur(u)*u.n;});
+    var tg=Math.round(tot*0.5),fl=Math.ceil(tot*0.4),ch=true;
+    while(tot>tg&&ch){ch=false;for(var q=U.length-1;q>=0&&tot>tg;q--){var u=U[q],v=cur(u);if(v>1&&tot-u.n>=fl){if(u.r)u.b.tr=v-1;else u.it.ts=v-1;tot-=u.n;ch=true;}}}
+    s.taper=1;s.min=est();return s;}
+  if(D.short||!BANDIDS[id]||(c.cyc===6&&!gNear(TODAY)))return s;
   /* Under 60 min: sensible extras only, each kept only if the session stays within 90 min. */
   var fill=[
     function(){var b=blk(function(x){return x.fav;});if(b&&b.more&&b.more.length&&b.items.length<6){b.items.push(b.more.shift());return true;}},
@@ -628,7 +643,7 @@ function target(it,v){
     return {r:Math.max(1,st.r+1),w:w,note:"Below the range. Easier variation or band via “Swap” until "+it.lo+" are clean.",low:true}; }
   return {r:Math.min(it.hi,st.r+step),w:w,note:"Last time "+st.r+(o.w&&w?" at "+fmtKg(w)+" kg":"")+"."};
 }
-function setsOf(it,b,c,id){ if(b&&b.rounds) return rounds(b,c,id); var n=parseInt(String(it.sets),10); return isNaN(n)?1:n; }
+function setsOf(it,b,c,id){ if(b&&b.rounds) return rounds(b,c,id); var n=parseInt(String(it.sets),10); if(it.ts!=null) return it.ts; return isNaN(n)?1:n; }
 
 /* ================= Empfehlung ================= */
 function onDay(s){return D.logs.filter(function(l){return l.d===s;});}
@@ -654,7 +669,7 @@ function hist(s){
   h.str7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=6&&STR[l.id];}).length;
   h.lim7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&(l.rpe||0)>=10&&HARD[l.id];}).length;
   h.skN=D.logs.filter(function(l){var x=diff(l.d,s);return x>=0&&x<=6&&(l.sk?l.sk.length>0:!!HASHS[l.id]);}).length;
-  h.skT=selSk().length?4:0; h.hardR=Math.min(h.RH,h.RI);
+  h.skT=selSk().length?(gSkill()?5:4):0; h.hardR=Math.min(h.RH,h.RI);
   h.run=Math.min(h.RE,h.RH,h.RI);
   var td=onDay(s); h.ranToday=td.some(isRun); h.strToday=td.some(function(l){return STR[l.id];});
   var first=D.logs.filter(isTrain)[0], days={};
@@ -666,7 +681,7 @@ function hist(s){
 /* Leg sessions (V1, A-009): legs at least twice per training week (weeks count from D.start, like ctx()). Strength A/B (and the
    challenge, which stands in for Strength C) get the compact leg block while Strength C is more than 7 days old or the week has fewer than 2 leg sessions so far. A session counts when it holds ≥ 6 direct lower-body working sets
    (Strength C, home strength, a compact leg block or a lower/glute emphasis block). Old logs without "lg": KC and HO count. */
-var LEGK=/^(fav_|mx_)*(c_sq|c_rdl|c_lu|c_calf|g_[a-z0-9]+|h_sq|h_ham|b_gl)$/;
+var LEGK=/^(fav_|mx_)*(c_sq|c_rdl|c_lu|c_calf|g_[a-z0-9]+|h_sq|h_ham|b_gl|gl_sq|gl_ht|gl_rdl)$/;
 function legSets(s,c,id){var n=0;s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){if(it.f||it.iso||it.test||!LEGK.test(it.k)||curVar(it,LOC())<0)return;n+=setsOf(it,b,c,id);});});return n;}
 function legLog(l){return l.lg!=null?!!l.lg:(l.id==="KC"||l.id==="HO");}
 function ago(n){return n===Infinity?"still to do":(n===1?"was yesterday":"last done "+n+" days ago");}
@@ -676,6 +691,7 @@ function skPick(h,why){return {btn:"train",id:"SK",why:why+" Today technique: "+
 var SKN={hs:"Handstand",mu:"Muscle-Up",ls:"L-Sit",fl:"Front Lever",pl:"Planche"};
 function easyPick(h,why){
   var F=D.focus;
+  if(gRun()&&F==="str"&&h.runs7<2&&h.run>=1&&!h.rhY&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today an easy run for your goal."};
   if(F==="run"&&h.runs7<5&&h.run>=1&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today just an easy run, very relaxed."};
   if(F==="bal"&&h.runs7<2&&h.run>=1&&!h.rhY&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today just an easy run."};
   if(h.skN<h.skT) return skPick(h,why);
@@ -684,31 +700,35 @@ function easyPick(h,why){
 }
 function recAll(s,noKick){
   var h=hist(s),c=ctx(s),td=onDay(s),F=D.focus,kickT=isKick(addD(s,1));
+  var gd=goalDay(s,td);if(gd)return gd;
   if(isKick(s)&&!noKick&&!td.some(function(l){return l.id==="KI";})) return {btn:"kick",id:"KI",why:"Today is kickboxing day."};
   if(h.rhY) return easyPick(h,"Yesterday was a hard run.");
   if(h.limitY) return easyPick(h,"Yesterday was at the limit.");
   if(h.lim7>=3&&h.RS>=3) return {btn:"train",id:"RS",why:"Three hard sessions at the limit in 7 days: today is a rest day with light mobility. Progress happens while you recover."};
   if(h.hardRun>=3) return easyPick(h,"Three hard days in a row.");
   var strOK=!h.strY&&!h.strToday&&(F!=="run"||h.str7<2);
-  if(c.cyc===6){
+  if(c.cyc===6&&!gNear(s)){
     if(strOK&&h.DL>=6&&h.TE>=6) return {btn:"train",id:"DL",why:"Week "+c.week+" is a deload week."};
     if(strOK&&h.TE>=6&&h.DL>=2) return {btn:"train",id:"TE",why:"Deload done, now test your bests."};
-    if(F!=="str"&&h.RE>=2&&!h.ranToday) return {btn:"run",id:"RE",why:"Deload week: easy running only."};
+    if((F!=="str"||gRun())&&h.RE>=2&&!h.ranToday) return {btn:"run",id:"RE",why:"Deload week: easy running only."};
     return easyPick(h,"Deload week.");
   }
   var C=[],W={bal:{KA:10,KB:9,C:8,RH:7,RE:6,RI:0},str:{KA:10,KB:9,C:9,RH:0,RE:0,RI:0},run:{KA:7,KB:6,C:7,RH:8,RE:9,RI:8}}[F]||{},mS=F==="str"?4:6;
   var em0=emph();
   if(em0==="lower"||em0==="glutes"){W={KA:W.KA-1,KB:W.KB-1,C:(W.C||8)+3,RH:W.RH,RE:W.RE,RI:W.RI};}
   else if(em0==="upper"){W={KA:W.KA+1,KB:W.KB+1,C:Math.max(1,(W.C||8)-2),RH:W.RH,RE:W.RE,RI:W.RI};}
+  /* Run goal (P-2): at least 2 runs a week, one of them long, also with the strength focus; time goals add one fast run. */
+  var gr=gRun();if(gr){W={KA:W.KA,KB:W.KB,C:W.C,RH:Math.max(W.RH||0,7),RE:Math.max(W.RE||0,6),RI:GOALS[gr].g==="t"?Math.max(W.RI||0,6):W.RI};}
   function add(id,btn,wt,since,ok,why,min){ if(wt&&ok&&since>=(min||6)) C.push({id:id,btn:btn,sc:wt*cap(since)/7,why:why}); }
   var hardOK=!h.kcY&&!h.ranToday&&!kickT;
   add("KA","train",W.KA,h.KA,strOK&&!h.ranToday,"Strength A "+ago(h.KA)+".",mS);
   add("KB","train",W.KB,h.KB,strOK,"Strength B "+ago(h.KB)+".",mS);
   var lowE=em0==="lower"||em0==="glutes",kcId=(!lowE&&h.CH>=13&&h.KC<h.CH)?"CH":"KC";
   add(kcId,"train",W.C,lowE?h.KC:h.C,strOK&&!kickT&&!(F==="run"&&h.hardR<=1),kcId==="CH"?"The skill trial has been due for 2 weeks.":"Legs and full body "+ago(h.C)+".",mS);
-  add("RH","run",W.RH,h.RH,hardOK,(F==="run"?"Long run ":"Hard run ")+ago(h.RH)+".");
+  add("RH","run",W.RH,h.RH,hardOK,(F==="run"||gr?"Long run ":"Hard run ")+ago(h.RH)+".");
   add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2,"Intervals "+ago(h.RI)+".",5);
   add("RE","run",W.RE,h.RE,!h.ranToday&&h.runs7<(F==="run"?5:3),"Easy run "+ago(h.RE)+".",F==="run"?2:3);
+  if(gr&&h.runs7<2&&!h.ranToday&&h.run>=2&&!C.some(function(x){return x.btn==="run";})&&!strOK) C.push({id:"RE",btn:"run",sc:0.1,why:"Your goal needs 2 runs a week. Today an easy one."});
   C.sort(function(a,b){return b.sc-a.sc;});
   if(C.length){var w=C[0];return {btn:w.btn,id:w.id,why:w.why};}
   if(h.skN<h.skT) return skPick(h,"Weekly goals are met. Skill training only "+h.skN+"× in 7 days, the goal is "+h.skT+".");
@@ -863,6 +883,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   var pc=picFor(o.n);
   var h='<div class="ex'+(pc?" pose":"")+(on?" done":"")+(sk?" skip":"")+'"><input type="checkbox" id="c'+id+'" data-a="done" data-id="'+id+'"'+(on?" checked":"")+(sk?" disabled":"")+' aria-label="'+esc(o.n)+' done">'+(pc?'<div class="pw">'+pc+'</div>':'')+'<div class="exb">';
   h+='<label class="n" for="c'+id+'">'+((D.fav||[]).indexOf(o.n)>=0?'<span class="fvs" aria-label="favourite">★ </span>':'')+esc(o.n)+'</label>';
+  if(it.nh) h+='<div class="c muted nxn">On your never list, but it is your goal exercise and has no equivalent here. Change the goal under More to drop it.</div>';
   if(it.nx) h+='<div class="c muted nxn">Instead of '+esc(it.nx)+' · '+esc(W("never")).toLowerCase()+'</div>';
   if(sk) return h+'<div class="c">'+(pain?(it.add?"Hidden today: your pain filter is on.":"Skipped because of pain."):"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
   h+='<div class="tg">'+esc(tg)+'</div>';
@@ -901,6 +922,7 @@ function absHTML(ab,dy,loc,first){
 function rounds(b,c,id){
   if(!b.rounds) return 0;
   var last=D.logs.filter(function(l){return l.id===id;}).slice(-1)[0];
+  if(b.tr!=null) return b.tr;
   return (c.cyc<=2||D.short||lvl()===0||(last&&(last.rpe||0)>=10))?b.rounds[0]:b.rounds[1];
 }
 function pace(l){var p=l.min/l.km;return Math.floor(p)+":"+pad(Math.round((p%1)*60)%60)+"/km";}
@@ -982,7 +1004,7 @@ function goalPos(g){var s=goalSteps(g),i=0;while(i<s.length&&s[i].ok)i++;return 
 function goalVal(x){return x.stage?(x.ok?"done":"next "+x.l):(x.lo?(x.c?fmtKg(x.c):"–")+" / "+fmtKg(x.v)+" min":fmtKg(Math.round(x.c*10)/10)+"/"+fmtKg(x.v)+" "+x.l);}
 function goalLine(){var g=D.goal;if(!g||!GOALS[g.k])return "";var q=goalPos(g),n=q.s.length,c=q.cur;
   var tail=c.stage?(c.ok?"stage reached":"next "+c.l):goalVal(c);
-  return esc(W("goal"))+': '+esc(goalName(g))+' · step '+Math.min(n,q.done+1)+' of '+n+' · '+esc(tail);}
+  var tr=gTrend();return esc(W("goal"))+': '+esc(goalName(g))+' · step '+Math.min(n,q.done+1)+' of '+n+' · '+esc(tail)+(tr?' · '+tr:'');}
 function setGoal(k){D._gmsg="";if(k==="none"||!k){D.goal=null;return;}
   if(k==="legs")k=emph()==="glutes"?"ht":"sq";if(!GOALS[k])return;
   var G=GOALS[k],c=goalCur(k);D.goal={k:k,v:goalDef(k),b:c,s:TODAY,h:[[TODAY,c]]};D.goal.st=goalPos(D.goal).done;
@@ -1009,9 +1031,52 @@ function goalHTML(pre,full){var g=D.goal,h='';
   return h;}
 function goalArch(){var a=D.goalsDone||[];if(!a.length)return "";
   return '<ul class="garch">'+a.slice().reverse().slice(0,8).map(function(x){return '<li><b>'+esc(x.r==="f"?W("gdone"):"Ended")+'</b> · '+esc(goalName(x))+' · '+dLab(x.d)+'</li>';}).join("")+'</ul>';}
+/* ===== Goals II (P-2): the active goal steers selection, content and the date. Everything is gated on D.goal, so
+   without a goal the plan is exactly the same as before. ===== */
+function gKey(t){var g=D.goal;return g&&GOALS[g.k]&&(!t||t.indexOf(GOALS[g.k].g)>=0)?g.k:"";}
+function gSkill(){return gKey("s");}
+function gStr(){return gKey("rk");}
+function gRun(){return gKey("dt");}
+function gDays(s){var g=D.goal;return g&&g.d&&GOALS[g.k]?diff(s||TODAY,g.d):null;}
+/* Taper: the last 7 days before the goal date (volume about −40–60 %, same intensity); the date itself is the test day. */
+function gTaper(s){var x=gDays(s);return x!==null&&x>=1&&x<=7;}
+/* A deload week within the last 10 days before the date is replaced by the taper. */
+function gNear(s){var x=gDays(s);return x!==null&&x>=0&&x<=10;}
+/* Feasibility (passive): the trend of the last 3 check values, carried forward to the date. */
+function gTrend(){var g=D.goal;if(!g||!g.d||!g.h||g.h.length<3||goalMet(g))return "";var h=g.h.slice(-3),d0=h[0][0],t=diff(d0,h[2][0]);if(t<=0)return "";
+  var sl=(h[2][1]-h[0][1])/t,pr=h[2][1]+sl*Math.max(0,diff(h[2][0],g.d));return (goalLow(g.k)?pr<=g.v:pr>=g.v)?"on course":"tight";}
+/* Goal anchor for strength goals: early in the session (fresh), never trimmed by design(); upper-body goals ride on Strength
+   A/B and home strength, leg goals on Strength C, home strength and every session that carries a leg block. */
+var GANCH={
+  pull:function(){return P("gl_pull",3,8,"reps","Full hang, chin over the bar, 1–2 reps in reserve",["Clean pull-ups|k","Band-assisted pull-ups|bk","Negative pull-ups, 5 s down|k"],"more reps, then a weight vest","4",[1,0]);},
+  dips:function(){return P("gl_dip",4,10,"reps","Shoulders down, chest up, 1–2 reps in reserve",["Parallel bar dips","Dips between two chairs|s","Bench dips, feet on the floor|s"],"more reps, then a weight belt","4",[2,0]);},
+  push:function(){return P("gl_push",8,20,"reps","Body in one line, chest to the floor",["Push-ups","Incline push-ups on a chair|s","Knee push-ups"],"more reps, then slower","4",[1,0]);},
+  sq:function(){return P("gl_sq",5,8,"reps","Full depth, neutral back, 1–2 reps in reserve",["Barbell back squat|g|w","Goblet squat|d|w","Bulgarian split squat, foot on a chair|s"],"more weight","4");},
+  ht:function(){return P("gl_ht",6,10,"reps","Chin tucked, squeeze the glutes 2 s at the top",["Barbell hip thrust|g|w","Single-leg hip thrust, shoulders on a chair|s","Single-leg glute bridge"],"more weight","4");},
+  rdl:function(){return P("gl_rdl",6,10,"reps","Hips back, back long, bar close to the legs",["Romanian deadlift|g|w","Single-leg Romanian deadlift|d|w","Good mornings, hands behind head"],"more weight","4");}};
+var GUP={pull:1,dips:1,push:1};
+function goalBlock(id,out){var k=gStr();if(!k)return;var up=GUP[k],ok=up?{KA:1,KB:1,HO:1,CH:1}[id]:({KC:1,HO:1,CH:1}[id]||out.some(function(b){return b.legs||b.lowb;}));if(!ok)return;
+  var it=GANCH[k]();it.gx=1;var v=curVar(it,LOC()),nm=v>=0?it.opts[v].n:"";
+  out.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.filter(function(x){if(x.f||x.test||x.iso)return true;var w=curVar(x,LOC());return !(w>=0&&x.opts[w].n===nm);});});
+  /* A leg goal is leg work itself: the compact leg block gives up its exercise for the same movement (the block still counts). */
+  if(!up){var gg=kitGroup(it);out.forEach(function(b){if(!b.legs||b.items.length<2)return;var j=-1;b.items.forEach(function(x,i){if(j<0&&!x.f&&kitGroup(x)===gg)j=i;});if(j>=0)b.items.splice(j,1);});}
+  for(var j=out.length-1;j>=0;j--)if(!out[j].items.length)out.splice(j,1);
+  var at=out.length&&out[0].warm?1:0;out.splice(at,0,{name:W("goal")+": "+GOALS[k].n,info:"Fresh and early in the session · 2–3 min rest",p:1,rest:150,gx:1,items:[it]});}
+/* On the goal date: the test. Runs: the run itself; skills and strength: the Skill Trial (home: home strength). */
+function goalDay(s,td){var g=D.goal;if(!g||g.d!==s||!GOALS[g.k])return null;
+  if(gRun()){if(td.some(isRun))return null;return {btn:"run",id:"RH",why:"Goal day: "+goalName(g)+". Today is the test."};}
+  if(td.some(function(l){return STR[l.id];}))return null;return {btn:"train",id:"CH",why:"Goal day: "+goalName(g)+". Today is the test."};}
+/* After the date without reaching it: archived as "ended", no penalty, the next goal is suggested once. */
+function goalTick(){var g=D.goal;if(!g||!g.d||g.d>=TODAY||WK.sim)return;(D.goalsDone=D.goalsDone||[]).push({k:g.k,v:g.v,d:TODAY,r:"e"});if(D.goalsDone.length>30)D.goalsDone.splice(0,D.goalsDone.length-30);
+  D.goal=null;D._toast=goalName(g)+": the date has passed. Your progress stays. Choose your next goal under More.";save();}
+/* One-time focus hint: a run goal with the strength focus (one tap to Runner), a skill goal with the runner focus (note). */
+function goalFocusHTML(){var g=D.goal;if(!g||g.fh)return "";
+  if(gRun()&&D.focus==="str")return '<div class="favask" role="group" aria-label="Focus"><p>Your goal is a run, but your focus has no running. Switch focus to Runner? Without switching, the plan still keeps 2 runs a week.</p><div class="row"><button type="button" class="b red" data-a="goalfoc">Switch to Runner</button><button type="button" class="b" data-a="goalfh">Keep my focus</button></div></div>';
+  if(gSkill()&&D.focus==="run")return '<div class="favask" role="group" aria-label="Focus"><p>Your goal is a skill and your focus is running. Skill work stays short and frequent; running keeps its priority.</p><div class="row"><button type="button" class="b" data-a="goalfh">Understood</button></div></div>';
+  return "";}
 /* Status page: milestone ladder as SVG bars (CSP-safe) and the check values as a line. */
 function goalLadder(){var g=D.goal;if(!g||!GOALS[g.k])return "";var q=goalPos(g),h='';
-  h+='<div class="sec"><h3>'+esc(W("goal"))+': '+esc(goalName(g))+'</h3>'+(g.d?'<p class="muted">By '+dLab(g.d)+'</p>':'')+'<ol class="gl">';
+  h+='<div class="sec"><h3>'+esc(W("goal"))+': '+esc(goalName(g))+'</h3>'+(g.d?'<p class="muted">By '+dLab(g.d)+(gTrend()?' · '+gTrend():'')+(gTaper()?' · lighter week before the date':'')+'</p>':'')+'<ol class="gl">';
   q.s.forEach(function(x,i){var f=x.stage?(x.ok?1:0):(x.lo?(x.c?Math.max(0,Math.min(1,x.v/x.c)):0):Math.max(0,Math.min(1,x.v?x.c/x.v:0)));
     h+='<li class="'+(x.ok?"ok":(i===q.done?"now":""))+'"><span>'+(x.ok?"✓ ":"")+esc(x.stage?x.l:fmtKg(x.v)+" "+(x.lo?"min":x.l))+'</span><svg class="bt" viewBox="0 0 100 12" preserveAspectRatio="none" aria-hidden="true"><rect class="b0" x="0" y="0" width="100" height="12" rx="6"/><rect class="b1" x="0" y="0" width="'+(Math.round(f*1000)/10)+'" height="12" rx="6"/></svg><b>'+esc(x.stage?(x.ok?"✓":""):(x.c?fmtKg(Math.round(x.c*10)/10):"–"))+'</b></li>';});
   h+='</ol>';var pts=(g.h||[]).map(function(p){return {y:p[1],l:dLab(p[0]),t:dLab(p[0])+": "+fmtKg(p[1])};});
@@ -1049,7 +1114,9 @@ function vStart(){
   var dy=day(),r=recAll(TODAY,dy.noKick),td=onDay(TODAY),h="";
   function was(f){return td.some(f);}
   var dn={morgen:was(function(l){return l.id==="MO";}),train:was(function(l){return GYM.indexOf(l.id)>=0||HOME.indexOf(l.id)>=0;}),run:was(isRun),kick:was(function(l){return l.id==="KI";})};
+  goalTick();
   if(D._toast){h+='<div class="toast" role="status">'+esc(D._toast)+'</div>';D._toast="";}
+  h+=goalFocusHTML();
   h+=loveFinHTML();
   if(D.favQ&&D.favQ.length){var fq=D.favQ[0];h+='<div class="favask" role="group" aria-label="Keep as favourite"><p>You added <b>'+esc(fq)+'</b> today. Keep it as a favourite? Then it joins every strength session.</p><div class="row"><button type="button" class="b red" data-a="favkeep">★ Keep as favourite</button><button type="button" class="b" data-a="favnot">No, today only</button></div></div>';}
   if(!D.seenFav&&D.logs.length) h+='<button type="button" class="warn wbtn" data-tab="favs" data-from="start">New: pick a strength emphasis (legs & glutes, glutes, upper body, core) and star your favourite exercises →</button>';
@@ -1169,6 +1236,7 @@ function runRec(){var h0=hist(TODAY),a=recAll(TODAY,true);if(a.btn==="run")retur
   return (hardOK&&cap(h0.RH)>=cap(h0.RE)&&h0.RH>=6)?{id:"RH",why:NAMES.RH+" "+ago(h0.RH)+"."}:{id:"RE",why:"Easy run "+ago(h0.RE)+"."};}
 var RUNT={RE:"Easy",RI:"Intervals",RH:"Hard"};
 function runInfo(id){var R=D.focus==="run";
+  if(id==="RH"&&gRun()&&D.goal.d===TODAY) return {h:"Goal day: "+goalName(D.goal),p:"Your test. Warm up with 10 min easy jogging, start calmly and find your pace after the first kilometre. Drink, eat lightly 2–3 h before."};
   if(id==="RE"&&D.runKm<6&&!R) return {h:"20–30 min easy",p:"Easy enough to talk. Walking breaks are completely fine: e.g. 3 min jog, 1 min walk. Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RE") return {h:R?"30–45 min easy":"5 km easy",p:(R?"30–45 min. ":"30–35 min. ")+"Easy enough that you can speak in full sentences."+(R?" At the end 4–6 strides of 20 s: build speed smoothly, walk back.":"")+" Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RI") return {h:D.runI+" × 3 min fast",p:"10 min warm-up jog. Then "+D.runI+" × 3 min fast with 2 min jogging in between. 10 min cool-down jog. Fast means: only single words possible, but every rep equally quick. No strength training afterwards."};
@@ -1710,6 +1778,7 @@ document.addEventListener("click",function(e){
   else if(a==="favkeep"||a==="favnot"){var fq=(D.favQ||[]).shift();if(a==="favkeep"&&fq){D.fav=D.fav||[];if(D.fav.indexOf(fq)<0)D.fav.push(fq);D._toast="★ "+fq+" joins your strength sessions.";}}
   else if(a==="goal"){setGoal(t.dataset.k);save();keepRender();return;}
   else if(a==="goalx"){setGoal("none");}
+  else if(a==="goalfoc"||a==="goalfh"){if(D.goal)D.goal.fh=1;if(a==="goalfoc")D.focus="run";}
   else if(a==="xrun"){dy.run="RE";dy.xr=true;dy.fin={};D.tab="run";save();render();window.scrollTo(0,0);return;}
   else if(a==="blopen"){D._bl=!D._bl;D._blErr="";if(D.tab!=="verlauf"){D.tab="verlauf";D._bl=true;save();render();window.scrollTo(0,0);var bf=document.getElementById("blf");if(bf&&bf.scrollIntoView)bf.scrollIntoView();return;}}
   else if(a==="blsave"){if(saveBacklog())return;}
@@ -1817,5 +1886,5 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();

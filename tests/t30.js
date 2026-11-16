@@ -3,7 +3,7 @@
 // onboarding (step 2) or under More sets a complete goal (catalogue default, start value, set date); "No goal yet" leaves
 // the plan as it is; a skill goal switches the skill on with a hint; exactly 1 active goal; progress comes from existing
 // values (profile, D.ex, run records, time records from saveRun) without an extra tap; milestone and reached goal toast,
-// reached goal goes to the archive; Adjust (value, date, remove); the plan is unchanged by a goal (P-1 only shows it);
+// reached goal goes to the archive; Adjust (value, date, remove); "No goal" leaves the plan unchanged;
 // import whitelist; Plain theme without Warhammer words; Playwright 390×844 screenshots.
 const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
@@ -74,11 +74,12 @@ const sig=(k,id)=>JSON.stringify(k.S(id,k.ctx(k.today())).blocks.map(b=>[b.name,
  D.tab='mehr';k.render();z.click('[data-a=goalx]');if(D.goal!==null)issue('remove goal');
  D.tab='start';k.render();if(z.$('.gline'))issue('start line without a goal');
  if(z.errs.length)issue('More JS errors: '+z.errs.join('; '));}
-// 5 P-1 does not change the plan: same recommendation and sessions with and without a goal
+// 5 "No goal yet" leaves the plan as it is: choosing a goal and removing it again restores the same recommendation and sessions
+//   (since P-2 an active goal does change the plan; that is tested in t31)
 {const z=boot(),k=z.k,D=ready(k);Object.assign(D.profile,{pull:10,dips:15,expl:5});D.skills={hs:true,mu:true,ls:false,fl:false,pl:false};
  const ids=['KA','KB','KC','CH','SK','HO'],before=ids.map(id=>sig(k,id)).join('|'),rec0=JSON.stringify(k.recAll(TD,false));
- k.setGoal('pull');const after=ids.map(id=>sig(k,id)).join('|'),rec1=JSON.stringify(k.recAll(TD,false));
- if(before!==after)issue('plan changed by a goal (P-1 only shows it)');if(rec0!==rec1)issue('recommendation changed by a goal');}
+ k.setGoal('pull');k.setGoal('none');const after=ids.map(id=>sig(k,id)).join('|'),rec1=JSON.stringify(k.recAll(TD,false));
+ if(before!==after)issue('plan changed after "No goal"');if(rec0!==rec1)issue('recommendation changed after "No goal"');}
 // 6 backups: old backup without goal, round trip, junk refused
 {const z=boot(),k=z.k,D=ready(k);k.setGoal('mu');D.goal.d='2027-03-01';D.goalsDone=[{k:'d5',v:5,d:'2026-10-01',r:'f'}];D.pr['run:t5']={min:28.5,d:TD};
  const txt=k.bkJSON(),y=boot();y.k.today(TD);if(!y.k.restore(txt))issue('round trip rejected');else{const E=y.k.D();

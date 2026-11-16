@@ -1,0 +1,6 @@
+[
+ {"n":"Captain","prof":{"pull":10,"dips":15,"push":25,"expl":5,"mu":0,"hsw":30,"hsf":0,"tuck":30,"lsit":10,"hang":45,"pike":8},"focus":"bal","emph":"bal","skills":{"hs":true,"mu":true},"kick":[2,5],"fav":["Dumbbell lateral raises"]},
+ {"n":"Partner lower","prof":{"pull":0,"dips":0,"push":5,"expl":0,"mu":0,"hsw":0,"hsf":0,"tuck":5,"lsit":0,"hang":15,"pike":0},"focus":"bal","emph":"lower","skills":{},"kick":[]},
+ {"n":"Partner glutes","prof":{"pull":3,"dips":5,"push":12,"expl":0,"mu":0,"hsw":0,"hsf":0,"tuck":10,"lsit":0,"hang":25,"pike":2},"focus":"str","emph":"glutes","skills":{},"kick":[],"fav":["Barbell hip thrust"]},
+ {"n":"Runner","prof":{"pull":6,"dips":10,"push":20,"expl":2,"mu":0,"hsw":10,"hsf":0,"tuck":15,"lsit":0,"hang":30,"pike":5},"focus":"run","emph":"bal","skills":{"hs":true},"kick":[3]}
+]
