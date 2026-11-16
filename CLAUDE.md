@@ -41,6 +41,22 @@ Offen/Risiken: <oder "keine">
 Vorschläge: <Folgeaufträge, oder "keine">
 ```
 
+## Naming
+The app speaks its own language. **No terms from other training programmes, templates, brands or authors** in display texts
+(e.g. programme names, protocols named after researchers, device/brand names). Name everything yourself: English, in the
+crusade tone, but clear; explain the rhythm where needed (e.g. "20 s work, 10 s rest"). Generic exercise names
+(Squat, Hip Thrust, Muscle-up, Plank, Nordic curl …) stay. Every future order follows this rule; `t24 naming-doctrine`
+holds the list of banned terms (`BAN`) and scans sources and build.
+Internal IDs and data keys never change, only the display name:
+
+| Internal ID / key | Display name |
+|---|---|
+| `CH` (session, `NAMES.CH`) | Skill Trial |
+| `c.phase` (cycle part 1/2) | Phase 1 / Phase 2 |
+| `abs`, `abs-T`, `ABS`, `TB`, `tb*` (20 s / 10 s ab interval block and its timer) | Core Blitz (tag "Blitz", button "Start Blitz") |
+| honour `zealot` | default/Plain: Blitz Master · templar: Zealot of the Blitz (other themes keep their own names) |
+| run file import (`gfile`, `parseTrack`) | Import run file (GPX/TCX), settings section "Watch import" |
+
 ## Hard rules
 - **Strict CSP** (`default-src 'self'`, no inline script/style): no `style="…"` attributes, no inline event handlers, no external requests. Do widths/bars via SVG or CSS classes.
 - Escape all user text with `esc()`. Imports go through `cleanImport()` (whitelist and type check). Extend it for every new state field.
