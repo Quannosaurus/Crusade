@@ -173,7 +173,7 @@ function cleanGoal(g,DS){if(!g||typeof g!=="object"||typeof g.k!=="string"||!Obj
   var nv=function(v){v=+v;return isFinite(v)?Math.max(0,Math.min(999,v)):0;},o={k:g.k,v:nv(g.v),b:nv(g.b),s:DS.test(g.s)?g.s:TODAY};
   if(GOALS[g.k].u==="stage")o.v=Math.max(1,Math.min(4,Math.round(o.v)));if(!o.v)o.v=1;
   if(typeof g.d==="string"&&DS.test(g.d))o.d=g.d;if(g.st!=null)o.st=Math.max(0,Math.min(9,Math.floor(nv(g.st))));if(g.fh)o.fh=1;
-  if(g.np!=null)o.np=Math.max(0,Math.min(99,Math.floor(nv(g.np))));if(["e","s","v"].indexOf(g.pm)>=0)o.pm=g.pm;if(typeof g.pz==="string"&&DS.test(g.pz))o.pz=g.pz;if(g.pk)o.pk=1;if(typeof g.lp==="string"&&DS.test(g.lp))o.lp=g.lp;if(typeof g.cw==="string"&&DS.test(g.cw))o.cw=g.cw;if(g.nb&&GOALS[g.k].g==="k")o.nb=1;
+  if(g.np!=null)o.np=Math.max(0,Math.min(99,Math.floor(nv(g.np))));if(["e","s","v"].indexOf(g.pm)>=0)o.pm=g.pm;if(typeof g.pz==="string"&&DS.test(g.pz))o.pz=g.pz;if(g.pk)o.pk=1;if(typeof g.lp==="string"&&DS.test(g.lp))o.lp=g.lp;if(typeof g.cw==="string"&&DS.test(g.cw))o.cw=g.cw;if(g.ck!=null&&isFinite(+g.ck))o.ck=nv(g.ck);if(g.nb&&GOALS[g.k].g==="k")o.nb=1;
   o.h=(Array.isArray(g.h)?g.h:[]).filter(function(x){return Array.isArray(x)&&DS.test(x[0]);}).slice(-12).map(function(x){return [x[0],nv(x[1])];});
   return o;}
 /* Variant choice keys (A-022): "<loc>|<key>" with loc g gym, h home, m Field kit and key = vkey(it): an item key
@@ -1556,7 +1556,9 @@ function goalIsCheck(g,lg){if(!lg||lg.bl||lg.sim||lg.cb)return false;var t=GOALS
 /* Plateau age: days since the goal was set or last moved forward, paused days not counted. */
 function plAge(g){var d=g.lp&&g.lp>g.s?g.lp:g.s;return diff(d,TODAY)-pausedIn(d,TODAY);}
 function loadHigh(){var ls=loadStat();return (ls.n>=2&&ls.avg>0&&ls.cur>1.5*ls.avg)||hist(addD(TODAY,1)).lim7>=2;}
-function plStep(g,c,best){var up=goalLow(g.k)?(c>0&&c<best):c>best;
+function plStep(g,c,best){/* progress is measured against the value at the last check (g.ck), so a value that moved up through training logs
+     in between still counts as progress at the next check */var ref=g.ck!=null?g.ck:(+g.b||0),up=goalLow(g.k)?(c>0&&(!ref||c<ref)):c>ref;
+  if(c>0||!goalLow(g.k))g.ck=goalLow(g.k)?(ref?Math.min(ref,c):c):Math.max(ref,c);
   if(up){if(g.pz&&pzAge(g)<21)g.pk=1;g.np=0;g.lp=TODAY;delete g.pm;return;}
   g.np=Math.min(99,(g.np||0)+1);
   if(!g.pm&&g.np>=3&&plAge(g)>=21){if(loadHigh())g.pm="e";else{g.pm="s";g.pz=TODAY;delete g.pk;}}
@@ -1567,7 +1569,7 @@ function platHTML(){var g=D.goal;if(!g||!GOALS[g.k]||!(g.np>=3)||!g.pm)return ""
 function goalCheck(lg){var g=D.goal;if(!g||!GOALS[g.k])return "";var c=goalCur(g.k),h=g.h||(g.h=[]),m="",best=goalBest(g);
   /* A-035 (N-11): a kg goal set without any history takes its start value from the first logs, so the first log can never
      meet it at once; a target at or under that start moves up like a fresh goal would. */
-  if(g.nb){if(!(c>0))return "";delete g.nb;g.b=c;g.h=[[TODAY,c]];if(g.v<=c)g.v=Math.max(r25(c*1.1),c+2.5);g.st=goalPos(g).done;return "";}
+  if(g.nb){if(!(c>0))return "";delete g.nb;g.b=c;g.ck=c;g.h=[[TODAY,c]];if(g.v<=c)g.v=Math.max(r25(c*1.1),c+2.5);g.st=goalPos(g).done;return "";}
   if(goalIsCheck(g,lg)){var wk=blkStart(lg.d||TODAY);if(g.cw!==wk){g.cw=wk;plStep(g,c,best);}}
   if(!h.length||h[h.length-1][1]!==c){if(h.length&&h[h.length-1][0]===TODAY)h[h.length-1][1]=c;else h.push([TODAY,c]);if(h.length>12)h.splice(0,h.length-12);}
   if(goalMet(g)){(D.goalsDone=D.goalsDone||[]).push({k:g.k,v:g.v,d:TODAY,r:"f"});if(D.goalsDone.length>30)D.goalsDone.splice(0,D.goalsDone.length-30);D.goal=null;

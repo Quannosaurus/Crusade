@@ -44,6 +44,11 @@ const STR={KA:1,KB:1,KC:1,CH:1,HO:1,DL:1,TE:1};
  if(k.goalIsCheck({k:'sq',v:100,s:TD},{d:TD,id:'CH'})||!k.goalIsCheck({k:'sq',v:100,s:TD},{d:TD,id:'KC',ex:{'gl_sq#0':[8,80]}}))issue('goalIsCheck: kg goal rules');
  if(k.goalIsCheck({k:'mu',v:3,s:TD},{d:TD,id:'KA',ex:{}})||!k.goalIsCheck({k:'mu',v:3,s:TD},{d:TD,id:'TE'}))issue('goalIsCheck: skill goal rules');
  if(!k.goalIsCheck({k:'d10',v:10,s:TD},{d:TD,id:'RE'})||k.goalIsCheck({k:'d10',v:10,s:TD},{d:TD,id:'RE',bl:1}))issue('goalIsCheck: run goal as before');
+ // progress made through training logs between two checks counts at the next check (value at the last check, g.ck)
+ {const y=boot(),q=y.k,E=setup(q,prof('Captain'),START);q.today('2026-10-05');q.setGoal('pull');E.goal.v=99;E.goal.s='2026-09-01';E.goal.np=2;E.goal.ck=E.profile.pull;
+  E.profile.pull+=1;q.goalCheck({d:'2026-10-05',id:'KA',rpe:6});q.today('2026-10-06');q.goalCheck({d:'2026-10-06',id:'CH',rpe:6});
+  if(E.goal.np!==0||E.goal.ck!==E.profile.pull)issue('progress between two checks not counted at the next check: '+JSON.stringify(E.goal));
+  q.today('2026-10-13');q.goalCheck({d:'2026-10-13',id:'CH',rpe:6});if(E.goal.np!==1)issue('a check without progress after that: np '+E.goal.np);}
  if(z.errs.length)issue('plateau JS errors '+z.errs.join('; '));}
 
 // 2 Today follows the week preview: strength day → no recommended (hard) run, also after logging; run page = week plan
