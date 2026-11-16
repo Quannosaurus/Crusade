@@ -9,12 +9,19 @@ if(framed){document.body.textContent="";var fp=document.createElement("p");fp.cl
   var fl=document.createElement("a");fl.href=CANON;fl.target="_top";fl.rel="noopener noreferrer";fl.textContent=CANON;fp.appendChild(fl);
   document.body.appendChild(fp);return;}
 /* ================= Speicher ================= */
-var KEY="kz_app_v3", memOnly=false;
+var KEY="kz_app_v3", PREVK="kz_app_v3_prev", memOnly=false;
 function pad(n){return String(n).padStart(2,"0");}
 function ds(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
 function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
 function diff(a,b){return Math.round((pd(b)-pd(a))/864e5);}
+/* A-031: lookups only by own keys (a prototype name such as "constructor" or "__proto__" is never a table entry),
+   real calendar dates, and sane limits for distance and minutes. */
+function own(o,k){return o!=null&&typeof k==="string"&&Object.prototype.hasOwnProperty.call(o,k);}
+function okKey(k){return typeof k==="string"&&!(k in Object.prototype)&&k!=="prototype";}
+function dOK(s){return typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&ds(pd(s))===s;}
+var DSOK={test:dOK},KMMAX=300,MINMAX=1440,TRKMAX=20*1024*1024;
+function lim(v,hi){v=typeof v==="number"?v:num(v);return v!=null&&isFinite(v)&&v>0?Math.min(hi,v):null;}
 var TODAY=ds(new Date());
 function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],opt:{ready:false,rest:false,oa:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
@@ -27,20 +34,23 @@ function load(){
 var D=load();
 (function(){try{var q=new URLSearchParams(location.search).get("theme");if(q&&!D.onb&&!D.logs.length&&/^[a-z]+$/.test(q))D.pendingTheme=q;}catch(x){}})();
 (function(){delete D.loveOK;var f=fresh();if(D.skills==null&&D.onb)D.skills={hs:true,mu:true,ls:true,fl:false,pl:false};Object.keys(f).forEach(function(k){if(D[k]==null){D[k]=f[k];if(k==="focus")D.seenFocus=false;}});Object.keys(f.profile).forEach(function(k){if(D.profile[k]==null)D.profile[k]=f.profile[k];});Object.keys(f.skills).forEach(function(k){if(D.skills[k]==null)D.skills[k]=f.skills[k];});})();
+(function(){try{if(localStorage.getItem(PREVK)&&!prevSt())localStorage.removeItem(PREVK);}catch(x){}})();
 (function(){var cut=addD(TODAY,-14);Object.keys(D.days||{}).forEach(function(k){if(k<cut)delete D.days[k];});})();
-function save(){try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){memOnly=true;}}
+var holdSave=false;
+function save(){if(holdSave)return;try{localStorage.setItem(KEY,JSON.stringify(D));}catch(e){memOnly=true;}}
 function day(s){s=s||TODAY;if(!D.days[s])D.days[s]={done:{},inp:{},skip:{},pick:null,run:null,fin:{},noKick:false};var d=D.days[s];d.skip=d.skip||{};return d;}
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
 function num(v){var x=parseFloat(String(v==null?"":v).replace(",","."));return isNaN(x)?null:x;}
 /* Backup import: keep only known fields with the expected types, so a foreign backup cannot inject markup or odd values. */
-function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m){return typeof v==="string"?v.slice(0,m||300):"";},numv=function(v){v=+v;return isFinite(v)?v:0;};
+function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v==="string"?v.slice(0,m||300):"";},numv=function(v){v=+v;return isFinite(v)?v:0;};
   if(typeof n.start==="string"&&DS.test(n.start))b.start=n.start;
   Object.keys(b.profile).forEach(function(k){if(n.profile&&n.profile[k]!=null)b.profile[k]=Math.max(0,Math.min(999,numv(n.profile[k])));});
   ["onb","seenFocus","short"].forEach(function(k){if(typeof n[k]==="boolean")b[k]=n[k];});
   if(["bal","str","run"].indexOf(n.focus)>=0)b.focus=n.focus;
   if(n.skills&&typeof n.skills==="object")Object.keys(b.skills).forEach(function(k){if(typeof n.skills[k]==="boolean")b.skills[k]=n.skills[k];});
   if(n.home&&typeof n.home==="object")Object.keys(EQ).forEach(function(k){b.home[k]=n.home[k]===true;});
-  if(Array.isArray(n.kickDays))b.kickDays=n.kickDays.map(Number).filter(function(x){return x>=0&&x<=6;}).slice(0,7);
+  if(Array.isArray(n.kickDays))b.kickDays=n.kickDays.map(Number).filter(function(x,i,a){return x>=0&&x<=6&&x===Math.floor(x)&&a.indexOf(x)===i;}).slice(0,7);
+  else if(own(n,"kickDay")){var kd=n.kickDay;b.kickDays=(kd==null||kd===2)?[2,5]:(typeof kd==="number"&&kd>=0&&kd<=6&&kd===Math.floor(kd)?[kd]:[]);}
   ["runKm","runI"].forEach(function(k){if(n[k]!=null)b[k]=Math.max(0,Math.min(99,numv(n[k])));});
   if(n.opt&&typeof n.opt==="object")["ready","rest","oa"].forEach(function(k){b.opt[k]=n.opt[k]===true;});
   ["easy","easyP"].forEach(function(k){if(typeof n[k]==="string"&&DS.test(n[k]))b[k]=n[k];});
@@ -53,23 +63,23 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
   if(n.abs!=null)b.abs=Math.max(0,Math.min(ABS.length-1,Math.floor(numv(n.abs))));
   /* Only the regions the backup holds (an old one has wrist/shoulder/elbow only; missing regions count as off). */
   if(n.pain&&typeof n.pain==="object"){b.pain={};Object.keys(PAINN).forEach(function(k){if(Object.prototype.hasOwnProperty.call(n.pain,k))b.pain[k]=n.pain[k]===true;});}
-  if(typeof n.startP==="string"&&STARTP[n.startP])b.startP=n.startP;
+  if(own(STARTP,n.startP))b.startP=n.startP;
   b.days=cleanDays(n.days);
   if(n.loc==="h"||n.loc==="g")b.loc=n.loc; if(n.mlen==="k"||n.mlen==="n")b.mlen=n.mlen;
   b.logs=(Array.isArray(n.logs)?n.logs:[]).filter(function(l){return l&&typeof l==="object"&&DS.test(l.d)&&typeof l.id==="string"&&/^[A-Z]{2}$/.test(l.id);}).slice(-2000).map(function(l){
     var o={d:l.d,id:l.id,t:str(l.t,60)};if(l.rpe!=null)o.rpe=Math.max(0,Math.min(10,numv(l.rpe)));if(l.note!=null)o.note=str(l.note);if(l.sum!=null)o.sum=str(l.sum);if(l.abs!=null)o.abs=l.abs?1:0;
-    if(l.km!=null)o.km=numv(l.km);if(l.cb!=null)o.cb=l.cb?1:0;if(l.rd===1||l.rd===2||l.rd===3)o.rd=l.rd;if(l.min!=null)o.min=numv(l.min);if(l.lg!=null)o.lg=l.lg?1:0;if(l.bl!=null)o.bl=l.bl?1:0;
+    if(l.km!=null)o.km=lim(numv(l.km),KMMAX)||0;if(l.cb!=null)o.cb=l.cb?1:0;if(l.rd===1||l.rd===2||l.rd===3)o.rd=l.rd;if(l.min!=null)o.min=lim(numv(l.min),MINMAX)||0;if(l.lg!=null)o.lg=l.lg?1:0;if(l.bl!=null)o.bl=l.bl?1:0;
     if(l.vs&&typeof l.vs==="object"&&!o.bl){o.vs=vsZero();VPAT.forEach(function(p){o.vs[p]=Math.max(0,Math.min(60,Math.floor(numv(l.vs[p]))));});}if(o.vs&&l.vm!=null)o.vm=Math.max(0,Math.min(VMAP,Math.floor(numv(l.vm))));
     if(Array.isArray(l.sk))o.sk=l.sk.filter(function(x){return ["hs","mu","ls","fl","pl"].indexOf(x)>=0;});
-    if(Array.isArray(l.m))o.m=l.m.filter(function(x){return typeof x==="string"&&MMOD[x];});
+    if(Array.isArray(l.m))o.m=l.m.filter(function(x){return own(MMOD,x);});
     if(l.pr!=null)o.pr=Math.max(0,Math.min(20,Math.floor(numv(l.pr))));
-    if(l.ex&&typeof l.ex==="object"){o.ex={};Object.keys(l.ex).slice(0,60).forEach(function(k){var v=l.ex[k];if(/^[a-z0-9_:#]+$/.test(k)&&Array.isArray(v))o.ex[k]=[numv(v[0]),numv(v[1])];});}
-    if(l.tv&&typeof l.tv==="object"){o.tv={};Object.keys(l.tv).forEach(function(k){if(/^[a-z]+$/.test(k))o.tv[k]=numv(l.tv[k]);});}
+    if(l.ex&&typeof l.ex==="object"){o.ex={};Object.keys(l.ex).slice(0,60).forEach(function(k){var v=l.ex[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&Array.isArray(v))o.ex[k]=[numv(v[0]),numv(v[1])];});}
+    if(l.tv&&typeof l.tv==="object"){o.tv={};Object.keys(l.tv).forEach(function(k){if(/^[a-z]+$/.test(k)&&okKey(k))o.tv[k]=numv(l.tv[k]);});}
     return o;});
-  if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);}});
-  if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&e&&typeof e==="object"){var x=b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80)};if(e.p!=null)x.p=numv(e.p);if(e.km!=null)x.km=numv(e.km);if(e.min!=null)x.min=numv(e.min);}});
-  if(EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90;}).slice(0,20); if(THEMES[n.theme])b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
-  if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
+  if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);}});
+  if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80)};if(e.p!=null)x.p=numv(e.p);if(e.km!=null)x.km=lim(numv(e.km),KMMAX)||0;if(e.min!=null)x.min=lim(numv(e.min),MINMAX)||0;}});
+  if(typeof n.emph==="string"&&EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90;}).slice(0,20); if(own(THEMES,n.theme))b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string";}).slice(0,50);
+  if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&okKey(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
   if(Array.isArray(n.kit))b.kit=n.kit.filter(function(x){return typeof x==="string"&&"kbdsr".indexOf(x)>=0&&x.length===1;}).filter(function(x,i,a){return a.indexOf(x)===i;});
   ["never","favAsk","favQ"].forEach(function(k){if(Array.isArray(n[k])){var a=n[k].filter(function(x,i,arr){return typeof x==="string"&&x.length>0&&x.length<90&&arr.indexOf(x)===i;}).slice(-200);if(k==="never")a=a.slice(-100);if(k==="favQ")a=a.slice(-20);b[k]=a;}});
   b.goal=cleanGoal(n.goal,DS);
@@ -90,14 +100,14 @@ function cleanGoal(g,DS){if(!g||typeof g!=="object"||typeof g.k!=="string"||!Obj
 var VRK=/^(?:[ghm]\|)?(?:[a-z0-9_]{1,60}|f:[A-Za-z0-9 '\u2019(),.\/:+&\u00b0\u00d7\u2013-]{1,90})$/;
 function vrKeyOK(k){return typeof k==="string"&&VRK.test(k)&&!/(^|[|:])(__proto__|constructor|prototype)$/.test(k)&&k.indexOf("__proto__")<0;}
 /* Day progress (A-014): today's ticks, entries and choices, last 14 days, every value type-checked. */
-function cleanDays(n){var out={},DS=/^\d{4}-\d{2}-\d{2}$/,K=/^[A-Za-z0-9_:#-]{1,40}$/,cut=addD(TODAY,-14);if(!n||typeof n!=="object")return out;
+function cleanDays(n){var out={},DS=DSOK,K=/^[A-Za-z0-9_:#-]{1,40}$/,cut=addD(TODAY,-14);if(!n||typeof n!=="object")return out;
   function sv(v,m){return typeof v==="string"?v.slice(0,m):(typeof v==="number"&&isFinite(v)?v:"");}
-  function flags(o){var r={};if(o&&typeof o==="object")Object.keys(o).slice(0,400).forEach(function(k){if(K.test(k)&&o[k])r[k]=true;});return r;}
+  function flags(o){var r={};if(o&&typeof o==="object")Object.keys(o).slice(0,400).forEach(function(k){if(K.test(k)&&okKey(k)&&o[k])r[k]=true;});return r;}
   Object.keys(n).filter(function(k){return DS.test(k)&&k>=cut;}).slice(0,20).forEach(function(k){var d=n[k];if(!d||typeof d!=="object")return;
-    var o={done:flags(d.done),inp:{},skip:flags(d.skip),pick:typeof d.pick==="string"&&/^[A-Z]{2}$/.test(d.pick)?d.pick:null,run:typeof d.run==="string"&&RUNT[d.run]?d.run:null,fin:{},noKick:d.noKick===true};if(d.kit===true)o.kit=true;if(d.xr===true)o.xr=true;if(d.ready===1||d.ready===2||d.ready===3)o.ready=d.ready;
+    var o={done:flags(d.done),inp:{},skip:flags(d.skip),pick:typeof d.pick==="string"&&/^[A-Z]{2}$/.test(d.pick)?d.pick:null,run:own(RUNT,d.run)?d.run:null,fin:{},noKick:d.noKick===true};if(d.kit===true)o.kit=true;if(d.xr===true)o.xr=true;if(d.ready===1||d.ready===2||d.ready===3)o.ready=d.ready;
     if(Array.isArray(d.add)){var ad=d.add.filter(function(x,i,arr){return typeof x==="string"&&x.length>0&&x.length<90&&arr.indexOf(x)===i;}).slice(0,12);if(ad.length)o.add=ad;}
     if(d.open&&typeof d.open==="object")o.open=flags(d.open);
-    if(d.inp&&typeof d.inp==="object")Object.keys(d.inp).slice(0,400).forEach(function(q){var e=d.inp[q];if(!K.test(q)||!e||typeof e!=="object")return;var r={};
+    if(d.inp&&typeof d.inp==="object")Object.keys(d.inp).slice(0,400).forEach(function(q){var e=d.inp[q];if(!K.test(q)||!okKey(q)||!e||typeof e!=="object")return;var r={};
       if(Array.isArray(e.s))r.s=e.s.slice(0,20).map(function(x){return x==null?null:String(sv(x,12));});if(e.w!=null)r.w=String(sv(e.w,12));o.inp[q]=r;});
     var f=d.fin;if(f&&typeof f==="object"){if(f.rpe!=null&&isFinite(+f.rpe))o.fin.rpe=Math.max(0,Math.min(10,+f.rpe));if(typeof f.note==="string")o.fin.note=f.note.slice(0,300);
       ["km","min","dur"].forEach(function(x){if(f[x]!=null)o.fin[x]=sv(f[x],12);});if(typeof f.oan==="string")o.fin.oan=f.oan.slice(0,40);if(typeof f.gmsg==="string")o.fin.gmsg=f.gmsg.slice(0,200);}
@@ -117,7 +127,23 @@ function saveBackupFile(){var txt=bkJSON(),f=null;try{f=new File([txt],bkName(),
   markBk();
   var a=document.createElement("a");a.href=URL.createObjectURL(new Blob([txt],{type:"application/json"}));a.download=bkName();document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove();},1000);
   D._msg="Backup file saved to your downloads.";render();}
-function restoreText(txt,where){try{if(typeof txt!=="string"||txt.length>MAXBK)return false;var n=JSON.parse(txt);if(!n||!n.profile||!n.logs)throw 0;var b=cleanImport(n);b.onb=true;if(b.bkTs){b.bkAt=b.logs.length;b.bkDate=ds(new Date(b.bkTs));}D=b;D.tab=where||"start";D._toast="Restored: "+b.logs.length+" entries. Welcome back.";save();render();window.scrollTo(0,0);return true;}catch(x){return false;}}
+/* A-031: a restore is checked and rendered in memory first; only when that works is it saved. The replaced state is kept
+   one generation under PREVK ("Undo restore" for 1 day). Replacing a state that holds entries asks first with a preview line. */
+var RSP=null;
+function parseBk(txt){if(typeof txt!=="string"||txt.length>MAXBK)return null;try{var n=JSON.parse(txt);if(!n||typeof n!=="object"||!n.profile||!n.logs)return null;var b=cleanImport(n);b.onb=true;if(b.bkTs){b.bkAt=b.logs.length;b.bkDate=ds(new Date(b.bkTs));}return b;}catch(x){return null;}}
+function restoreText(txt,where){var b=parseBk(txt);if(!b)return false;
+  if(D.logs&&D.logs.length){RSP={b:b,where:where||"start"};D._msg="";render();window.scrollTo(0,0);var rq=document.getElementById("rsqt");if(rq){rq.tabIndex=-1;rq.focus({preventScroll:true});}return true;}
+  return applyState(b,where,rsToast(b),true);}
+function rsToast(b){return "Restored: "+b.logs.length+" entries. Welcome back.";}
+function bkLine(b){var n=b.logs.length,l=n?b.logs.reduce(function(m,x){return x.d>m?x.d:m;},""):"";return n+(n===1?" entry":" entries")+(l?", last "+dLab(l):"");}
+function rsHTML(){if(!RSP)return "";var cur=(D.logs||[]).length;
+  return '<div class="card rsq" role="alertdialog" aria-labelledby="rsqt"><div class="sec"><h2 id="rsqt">Restore this backup?</h2><p class="q">Backup: '+esc(bkLine(RSP.b))+'</p><p class="muted">It replaces your current data ('+cur+(cur===1?' entry':' entries')+'). You can undo this for one day.</p><div class="row"><button type="button" class="b red" data-a="rsok">Replace with backup</button><button type="button" class="b" data-a="rsno">Cancel</button></div></div></div>';}
+function keepPrev(o){try{var c={};Object.keys(o).forEach(function(k){if(k.charAt(0)!=="_")c[k]=o[k];});localStorage.setItem(PREVK,JSON.stringify({at:Date.now(),s:c}));}catch(x){}}
+function prevSt(){try{var p=JSON.parse(localStorage.getItem(PREVK));if(p&&typeof p.at==="number"&&p.s&&typeof p.s==="object"&&p.s.profile&&Array.isArray(p.s.logs)&&Date.now()-p.at<864e5&&Date.now()>=p.at)return p;}catch(x){}return null;}
+function applyState(b,where,toast,prev){var old=D;RSP=null;holdSave=true;D=b;D.tab=where||"start";D._toast=toast;
+  try{render0();}catch(e){rendering=false;holdSave=false;D=old;D._msg="This backup could not be shown, so nothing was changed.";render();return true;}
+  holdSave=false;if(prev)keepPrev(old);else{try{localStorage.removeItem(PREVK);}catch(x){}}save();window.scrollTo(0,0);return true;}
+function undoRestore(){var p=prevSt();if(!p)return false;var b=p.s;b.onb=true;applyState(b,"mehr","Restore undone. Your earlier data is back.",false);return true;}
 function askPersist(){try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persisted().then(function(p){if(!p)navigator.storage.persist();});}catch(x){}}
 function fmtKg(w){return String(w);}
 
@@ -1687,11 +1713,11 @@ var THX={
   notes:["Consistency beats intensity.","A short session is better than none.","Sleep is part of training.","Form first, then load.","Small steps add up.","Rest days are training days for recovery.","Drink water.","Progress is rarely linear. Keep going.","Move a little every day.","Your future self will thank you.","Showing up is half the work.","Easy days make hard days possible.","Track it, then improve it.","Don't compare, just improve.","Stretching counts.","Keep it simple."],
   ui:{rdx:"Daily readiness check",rdq:"How do you feel today?",pause:"Pause training",resume:"Resume training",paused:"Training paused",healed:"Healed",comeback:"Comeback",plat:"Plateau",goal:"Goal",gdone:"Goal reached",gstep:"Goal step",orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan",wsets:"Warm-up sets",anchor:"Anchor",focus:"Where to focus",honours:"Badges",records:"Personal records",rank:"Level",title:"Training Book",sub:"Set up your training",ready:"All set. Your first plan is ready.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Badge earned: "}}
 };
-Object.keys(THX).forEach(function(k){if(THEMES[k])Object.keys(THX[k]).forEach(function(f){THEMES[k][f]=THX[k][f];});});
-function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!loveOn())D.wantLove=true;else if(THEMES[D.pendingTheme])D.theme=D.pendingTheme;delete D.pendingTheme;}
+Object.keys(THX).forEach(function(k){if(own(THEMES,k))Object.keys(THX[k]).forEach(function(f){THEMES[k][f]=THX[k][f];});});
+function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!loveOn())D.wantLove=true;else if(own(THEMES,D.pendingTheme))D.theme=D.pendingTheme;delete D.pendingTheme;}
   return THEMES[thKey()];}
 // Effective theme: a chosen but locked love theme (e.g. an old device before the new code is entered) stays in D.theme, but renders as templar.
-function thKey(){var k=THEMES[D.theme]?D.theme:"templar";return k==="love"&&!loveOn()?"templar":k;}
+function thKey(){var k=own(THEMES,D.theme)?D.theme:"templar";return k==="love"&&!loveOn()?"templar":k;}
 var UIW={rdx:"Daily readiness check",rdq:"How fares the warrior today?",pause:"Stand down",resume:"Return to the crusade",paused:"Standing down",healed:"Wounds closed",comeback:"Return to arms",plat:"The vow stands still",goal:"Your vow",gdone:"Vow fulfilled",gstep:"Vow milestone",orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
     UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"},
     UIL={orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart"};
@@ -1976,6 +2002,13 @@ function extrasHTML(){var o=D.opt||{},c=ctx(TODAY),row=function(k,t,x){var on=!!
   else if(c.cyc===6)ez='<p class="muted">This is an easy week already.</p>';
   else{var en=easyNext();ez='<div class="xrow"><div><b>'+esc(W("easy"))+'</b><p class="muted">Tired or a busy week ahead? Brings the deload week forward'+(en>TODAY?' to '+WDN[pd(en).getDay()]+' '+dLab(en):' to this week')+'. The cycle, tests and Skill Trial move with it.</p></div><button type="button" class="b sm" data-a="easy">Start</button></div>';}
   return '<div class="sec"><h3>'+esc(W("extras"))+'</h3>'+row("ready",W("rdx"),"One tap before training: good, normal or tired. Tired means fewer rounds and sets, good uses room left in the week. Without a tap nothing changes.")+row("rest",W("rest"),"At most 6 active days in 7: the plan sets a rest day after six in a row.")+row("oa",W("oa"),"Log hiking, dancing, cycling and more with minutes and effort. Counts for the weekly load and the next day.")+ez+'</div>';}
+function bkHTML(){return '<div class="sec"><h3>Backup</h3><p class="muted">Your data lives only in this browser on this device.'+(dOK(D.bkDate)?' Last backup: '+dLab(D.bkDate)+'.':' No backup yet.')+'</p><div class="row"><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin">'+(prevSt()?'<button type="button" class="b" data-a="rsundo">Undo restore</button>':'')+'</div><details class="tv"><summary>Backup as text instead</summary><button type="button" class="b" data-a="exp">Create backup text</button><textarea id="bk" aria-label="Backup text" placeholder="The backup appears here. Paste text here to restore. Only restore backups you made yourself.">'+esc(D._bk)+'</textarea><div class="row"><button type="button" class="b" data-a="copy">Copy</button><button type="button" class="b" data-a="imp">Restore from text</button></div></details>'+(D._msg?'<p class="muted" role="status">'+esc(D._msg)+'</p>':'')+'</div>';}
+function resetHTML(){return '<div class="sec"><h3>Reset</h3><button type="button" class="b" data-a="reset">'+(D._rs?'Really delete everything':'Delete all data')+'</button></div>';}
+/* A-031: if saved data cannot be shown, the app still starts with Backup and Reset (nothing is changed or saved). */
+function rescue(){try{document.body.className="";document.body.setAttribute("data-theme","templar");document.getElementById("nav").innerHTML="";}catch(x){}
+  var h='<div class="card"><div class="sec"><h2>Saved data needs attention</h2><p class="muted">Part of the saved data could not be shown. Save a backup first, then restore a backup or delete all data.</p></div>';
+  try{h+=rsHTML()+bkHTML();}catch(x){h+='<div class="sec"><h3>Backup</h3><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"></div>';}
+  app.innerHTML=h+resetHTML()+'</div>';}
 function vMehr(){
   var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before Strength A.","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","After 14 days off or more, targets step back once, after 4 weeks twice.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: swap the variation. Three times at the limit in a week: a recovery day.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
   if(!D.seenFocus){D.seenFocus=true;save();}
@@ -1989,10 +2022,11 @@ function vMehr(){
     '<div class="sec"><h3>Basics</h3><p class="muted">Re-enter values, focus and equipment in three steps.</p><button type="button" class="b" data-a="reonb">Re-enter basics</button></div>'+
     '<div class="sec"><h3>Training doctrine</h3><ol class="why">'+R.map(function(r){return "<li>"+esc(r)+"</li>";}).join("")+'</ol></div>'+
     '<div class="sec"><h3>Watch import</h3><p class="muted">Runs: export a GPX or TCX file from your watch app and import it on the run screen. Values like sleep or recovery scores need a connection outside this file.</p></div>'+
-    '<div class="sec"><h3>Backup</h3><p class="muted">Your data lives only in this browser on this device.'+(D.bkDate?' Last backup: '+dLab(D.bkDate)+'.':' No backup yet.')+'</p><div class="row"><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"></div><details class="tv"><summary>Backup as text instead</summary><button type="button" class="b" data-a="exp">Create backup text</button><textarea id="bk" aria-label="Backup text" placeholder="The backup appears here. Paste text here to restore. Only restore backups you made yourself.">'+esc(D._bk)+'</textarea><div class="row"><button type="button" class="b" data-a="copy">Copy</button><button type="button" class="b" data-a="imp">Restore from text</button></div></details>'+(D._msg?'<p class="muted" role="status">'+esc(D._msg)+'</p>':'')+'</div>'+
-    '<div class="sec"><h3>Reset</h3><button type="button" class="b" data-a="reset">'+(D._rs?'Really delete everything':'Delete all data')+'</button></div></div>';
+    bkHTML()+
+    resetHTML()+'</div>';
 }
-function render(){
+function render(){try{render0();}catch(e){rendering=false;rescue();}}
+function render0(){
   updNames(); applyTheme(); setTimeout(wake,0);
   var c=ctx(TODAY),d=new Date();
   document.getElementById("subline").textContent=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" · Week "+c.week+" · "+LVN[lvl()];
@@ -2001,7 +2035,7 @@ function render(){
   document.body.className=D.onb?(["train","morgen","run","kick","other"].indexOf(D.tab)>=0?"train":""):"ob";
   if(!D.onb) document.getElementById("subline").textContent=W("sub");
   rendering=true;
-  app.innerHTML=D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,other:vOther,verlauf:vVerlauf,stand:vStand,mehr:vMehr,favs:vFavs}[D.tab]||vStart)()):vOnb();
+  app.innerHTML=rsHTML()+(D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,other:vOther,verlauf:vVerlauf,stand:vStand,mehr:vMehr,favs:vFavs}[D.tab]||vStart)()):vOnb());
   rendering=false;
 }
 
@@ -2076,11 +2110,11 @@ function blDays(){var a=[];for(var i=1;i<=BLMAX;i++)a.push(addD(TODAY,-i));retur
 var BLIDS=["KA","KB","KC","CH","SK","HO","HK","RS","DL","TE"];
 function saveBacklog(){var g=function(x){var e=document.getElementById(x);return e?e.value:"";};
   var d=g("bl_d"),id=g("bl_id"),rp=+g("bl_rpe"),o,prs=[],rk0=rankOf(xpTotal());
-  if(blDays().indexOf(d)<0||!(BLIDS.indexOf(id)>=0||RUNT[id]||id==="KI"||(id==="OA"&&D.opt&&D.opt.oa))){D._blErr="Please pick a day and what you did.";return false;}
+  if(blDays().indexOf(d)<0||!(BLIDS.indexOf(id)>=0||own(RUNT,id)||id==="KI"||(id==="OA"&&D.opt&&D.opt.oa))){D._blErr="Please pick a day and what you did.";return false;}
   if([4,6,8,10].indexOf(rp)<0){D._blErr="Please choose how hard it was.";return false;}
   o={d:d,id:id,t:NAMES[id],rpe:rp,note:(g("bl_note")||"").slice(0,300),bl:1};
   if(id==="KI"||id==="OA"){o.min=durOf(g("bl_min"),MINEST[id]);if(id==="OA")o.t=String(g("bl_oa")||"").trim().slice(0,40)||NAMES.OA;}
-  else if(isRun(o)){var km=num(g("bl_km")),mn=num(g("bl_min"));o.km=km&&km>0?Math.round(km*100)/100:0;o.min=mn&&mn>0?Math.round(mn*10)/10:0;
+  else if(isRun(o)){var km=lim(g("bl_km"),KMMAX),mn=lim(g("bl_min"),MINMAX);o.km=km?Math.round(km*100)/100:0;o.min=mn?Math.round(mn*10)/10:0;
     if(o.km&&o.min){runTimes(o.km,o.min,d);var pc=o.min/o.km,b=D.pr["run:pace5"],bl=D.pr["run:long"];if(o.km>=5&&(!b||pc<b.p)){if(b)prs.push("Fastest 5 km+ pace: "+pace(o));D.pr["run:pace5"]={p:pc,d:d};}
       if(!bl||o.km>bl.km){if(bl)prs.push("Longest run: "+fmtKg(Math.round(o.km*10)/10)+" km");D.pr["run:long"]={km:o.km,d:d};}}}
   else if(id!=="KI"){var T0=TODAY,sim=WK.sim;
@@ -2103,7 +2137,7 @@ function blHTML(){
 function runTimes(km,mn,d){[5,10].forEach(function(x){if(km>=x&&mn>0){var t=Math.round(mn/km*x*10)/10,b=D.pr["run:t"+x];if(!b||t<b.min)D.pr["run:t"+x]={min:t,d:d};}});}
 function saveRun(){
   var dy=day(); if(needRpe(dy)) return; var rk0=rankOf(xpTotal()),nl=D.logs.length;
-  var f=dy.fin,id=dy.run||runRec().id,km=num(f.km),mn=num(f.min);
+  var f=dy.fin,id=dy.run||runRec().id,km=lim(f.km,KMMAX),mn=lim(f.min,MINMAX);
   if(id==="RH"&&longMode()&&!(gRun()&&gTaper(TODAY))){var cp=Math.max(D.focus==="run"?16:10,gRun()?Math.min(24,GOALS[gRun()].km+2):0);if(f.rpe<=4)D.runKm=Math.min(cp,Math.max(D.runKm+0.5,Math.round(D.runKm*1.1*2)/2));else if(f.rpe>=10)D.runKm=Math.max(5,D.runKm-0.5);}
   else if(id==="RH"){ if(f.rpe<=4) D.runKm=Math.min(D.focus==="run"?16:10,D.runKm+0.5); else if(f.rpe>=10) D.runKm=Math.max(5,D.runKm-0.5); }
   if(id==="RI"){ if(f.rpe<=6) D.runI=Math.min(8,D.runI+1); else if(f.rpe>=10) D.runI=Math.max(3,D.runI-1); }
@@ -2128,7 +2162,10 @@ function parseTrack(txt){
 document.addEventListener("copy",function(e){var t=e.target;if(t&&t.id==="bk"&&D._bk&&t.value===D._bk)markBk();});
 document.addEventListener("click",function(e){
   var t=e.target.closest("[data-a],[data-tab]"); if(!t||t.tagName==="SELECT"||t.tagName==="INPUT") return;
-  var dy=day(),a=t.dataset.a;
+  var dy,a=t.dataset.a;try{dy=day();}catch(x){dy={done:{},inp:{},skip:{},fin:{}};}
+  if(a==="rsok"&&RSP){applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return;}
+  if(a==="rsno"){RSP=null;D._msg="Restore cancelled. Nothing was changed.";render();return;}
+  if(a==="rsundo"){if(!undoRestore()){D._msg="Nothing to undo.";render();}return;}
   if(t.dataset.tab){TB=null;if(t.dataset.tab==="favs")D._favFrom=t.dataset.from||D.tab;D.tab=t.dataset.tab;D._del=null;D._kitAsk=false;D._gmsg="";D._rs=false;D._msg="";dy.fin={};save();render();window.scrollTo(0,0);var h2=app.querySelector("h2");if(h2&&t.closest(".nav,.bk,.big")){h2.tabIndex=-1;h2.focus({preventScroll:true});}return;}
   if(a==="rpe"){dy.fin.rpe=+t.dataset.v;}
   else if(a==="onb"){askPersist();D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;D.seenFav=true;if(!D.logs.length)D.start=TODAY;D._toast=W("ready");}
@@ -2187,9 +2224,9 @@ document.addEventListener("click",function(e){
   else if(a==="edit"){D._edit=D._edit===+t.dataset.i?null:+t.dataset.i;D._del=null;}
   else if(a==="editsave"){var ei=D._edit,L=D.logs[ei];if(L){var g=function(id){var e=document.getElementById(id);return e?e.value:null;};
       var nd=g("e_d");if(/^\d{4}-\d{2}-\d{2}$/.test(nd)&&!isNaN(pd(nd))&&nd<=TODAY)L.d=nd;
-      var nt=g("e_id");if(nt&&NAMES[nt]){L.id=nt;L.t=NAMES[nt];}
+      var nt=g("e_id");if(own(NAMES,nt)){L.id=nt;L.t=NAMES[nt];}
       var rp=+g("e_rpe");if([0,4,6,8,10].indexOf(rp)>=0){if(rp)L.rpe=rp;else delete L.rpe;}
-      if(isRun(L)){var km=num(g("e_km")),mn=num(g("e_min"));L.km=km&&km>0?Math.round(km*100)/100:0;L.min=mn&&mn>0?Math.round(mn*10)/10:0;}
+      if(isRun(L)){var km=lim(g("e_km"),KMMAX),mn=lim(g("e_min"),MINMAX);L.km=km?Math.round(km*100)/100:0;L.min=mn?Math.round(mn*10)/10:0;}
       L.note=(g("e_note")||"").slice(0,300);
       D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});D._edit=null;D._toast="Entry updated.";}}
   else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);D._del=null;} else D._del=i;}
@@ -2199,7 +2236,7 @@ document.addEventListener("click",function(e){
   else if(a==="imp"){if(restoreText(document.getElementById("bk").value,"mehr"))return;D._msg="This text is not a valid backup.";}
   else if(a==="bkfile"){saveBackupFile();return;}
   else if(a==="obimp"){var ta=document.getElementById("obbk");if(ta&&restoreText(ta.value,"start"))return;D._msg="This text is not a valid backup.";}
-  else if(a==="reset"){if(D._rs){D=fresh();}else D._rs=true;}
+  else if(a==="reset"){if(D._rs){D=fresh();RSP=null;}else D._rs=true;}
   save(); render();
 });
 function keepRender(){var y=window.scrollY,ae=document.activeElement,sel=ae&&ae.id?"#"+ae.id:(ae&&ae.dataset&&ae.dataset.a?'[data-a="'+ae.dataset.a+'"]'+(ae.dataset.k?'[data-k="'+ae.dataset.k+'"]':'')+(ae.value&&ae.type==="radio"?'[value="'+ae.value+'"]':''):null);render();window.scrollTo(0,y);if(sel){var n=app.querySelector(sel);if(n)n.focus({preventScroll:true});}}
@@ -2220,14 +2257,14 @@ document.addEventListener("input",function(e){if(e.target.id!=="addq")return;var
 document.addEventListener("input",function(e){if(e.target.id!=="favq")return;var q=e.target.value.trim().toLowerCase();D._favq=q;
   app.querySelectorAll(".fvg:not(.adg)").forEach(function(g){var any=false;g.querySelectorAll(".fvr").forEach(function(b){var hit=!q||b.dataset.n.toLowerCase().indexOf(q)>=0;b.classList.toggle("hid",!hit);var fr=b.querySelector(".fvrow");if(fr)fr.classList.toggle("hid",!hit);if(hit)any=true;});g.classList.toggle("hid",!any);if(q&&any)g.open=true;var c=g.querySelector(".fvc");if(c)c.textContent=g.querySelectorAll(".fvr:not(.hid)").length;});});
 document.addEventListener("change",function(e){
-  var t=e.target,dy=day(),q=t.dataset;
+  var t=e.target,dy,q=t.dataset;try{dy=day();}catch(x){dy={done:{},inp:{},skip:{},fin:{}};}
   if(q.a==="done"){ if(t.checked) dy.done[q.id]=1; else delete dy.done[q.id]; save(); render(); }
   else if(q.a==="eq"){ D.home[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="focus"){ D.focus=t.value; save(); keepRender(); }
   else if(q.a==="emph"){ D.emph=t.value; save(); keepRender(); }
-  else if(q.a==="theme"){ D.theme=t.value; save(); keepRender(); }
+  else if(q.a==="theme"&&own(THEMES,t.value)){ D.theme=t.value; save(); keepRender(); }
   else if(q.a==="statex"){ D.statEx=t.value; save(); keepRender(); }
-  else if(q.a==="startp"){ D.startP=t.value; D.runKm={s0:4,s1:6,s2:7}[t.value]||7; var pp=STARTP[t.value][2]; Object.keys(pp).forEach(function(k){D.profile[k]=pp[k];}); save(); keepRender(); }
+  else if(q.a==="startp"&&own(STARTP,t.value)){ D.startP=t.value; D.runKm={s0:4,s1:6,s2:7}[t.value]||7; var pp=STARTP[t.value][2]; Object.keys(pp).forEach(function(k){D.profile[k]=pp[k];}); save(); keepRender(); }
   else if(q.a==="skill"){ D.skills[q.k]=t.checked; save(); keepRender(); }
   else if(q.a==="stage"){ D.profile[q.k]=+t.value; save(); keepRender(); }
   else if(q.a==="pain"){ if(PAINN[q.k])D.pain[q.k]=t.checked; WK.key=""; save(); render(); }
@@ -2249,6 +2286,7 @@ document.addEventListener("change",function(e){
   else if(q.start){ if(/^\d{4}-\d{2}-\d{2}$/.test(t.value)&&!isNaN(pd(t.value))){D.start=t.value; save(); render();} }
   else if(q.a==="bkin"&&t.files&&t.files[0]&&t.files[0].size>MAXBK){t.value="";D._msg="This file is too large for a backup (over 10 MB). Nothing was changed.";render();}
   else if(q.a==="bkin"&&t.files&&t.files[0]){var frb=new FileReader();frb.onload=function(){if(!restoreText(String(frb.result),D.onb?"mehr":"start")){D._msg="This file is not a valid backup.";render();}};frb.readAsText(t.files[0]);}
+  else if(q.a==="gfile"&&t.files&&t.files[0]&&t.files[0].size>TRKMAX){t.value="";dy.fin.gmsg="This run file is too large (over 20 MB). Nothing was imported.";save();render();}
   else if(q.a==="gfile"&&t.files&&t.files[0]){ var fr=new FileReader(), name=t.files[0].name;
     fr.onload=function(){ var r=null; try{r=parseTrack(String(fr.result));}catch(x){}
       if(r){dy.fin.km=r.km; if(r.min>0)dy.fin.min=r.min; dy.fin.gmsg="Imported from "+name+": "+fmtKg(r.km)+" km"+(r.min>0?" in "+fmtKg(r.min)+" min.":". Please enter the time by hand.");}
@@ -2289,5 +2327,5 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={applyState:applyState,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
