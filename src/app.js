@@ -261,7 +261,7 @@ function SHOULDER(p,rot){return {sh:1,name:"Shoulder stability",info:"Back to ba
 function FOREARM(){return {acc:1,name:"Forearms & elbows",info:"Back to back · protects the tendons for false grip and muscle-ups",p:3,rest:45,rounds:[2,2],items:[
   P("fa_rc",12,20,"reps","Lower slowly, elbows still",["EZ-bar reverse curls|g|w","Band reverse curls|b","Dumbbell reverse curls|d|w"],"more weight","2"),
   P("fa_wc",15,20,"reps","Alternate wrist flexors and extensors",["Dumbbell wrist curls|g|w","Band wrist curls|b"],"more weight","2")]};}
-function LEGMINI(why){return {legs:1,name:"Compact legs",info:(why==="week"?"Second leg day this week":"Strength C was a while ago")+" · 3 sets · 90 s rest",p:2,rest:90,items:[
+function LEGMINI(why){return {legs:1,name:"Compact legs",info:(why==="week"?"Second leg day this week":why==="ch"?"Legs on trial day too":"Strength C was a while ago")+" · 3 sets · 90 s rest",p:2,rest:90,items:[
   P("c_sq",6,10,"reps","",["Dumbbell Bulgarian split squat|g|w","Barbell back squat|g|w","Leg press|g|w","Assisted pistol squat"],"more weight","3",[3,0]),
   P("c_rdl",8,12,"reps","Hips back, back straight",["Romanian deadlift|g|w","Leg curl machine|g|w","Nordic Curls"],"more weight","3")]};}
 /* Lower-body emphasis: glute- and leg-focused exercises, rotated two per session. */
@@ -514,7 +514,12 @@ function design(s,id,c){s.ab=absFor(id);
   return s;}
 /* Skill Trial (P-3): test items for the goal and the active skills (values go into the profile and the log's tv), with a
    lower/glute emphasis also a lower-body test: max clean reps of the anchor exercise at its working weight (tv.lb). */
-function trialItems(){var sk=D.skills,g=D.goal&&GOALS[D.goal.k]?D.goal.k:"",out=[T("pull","reps",["Clean pull-ups"])];
+/* Beginners without a pull-up (A-024) test a fitting earlier stage instead of "0 reps": a dead hang in seconds (into the
+   profile's hang) while it is under 30 s, then a slow negative pull-up in seconds (only into tv.neg, like the lower-body test). */
+function pullTest(){if((D.profile.pull||0)>0)return T("pull","reps",["Clean pull-ups"]);
+  if((D.profile.hang||0)<30){var t=T("hang","s",["Dead hang"]);t.c="Hang from the bar, arms straight, shoulders active. Stop when the grip opens.";t.pre=1;return t;}
+  return {test:"neg",tvo:1,pre:1,unit:"s",opts:[{n:"Negative pull-ups",req:"",w:false}],c:"Jump to the top, chin over the bar, lower as slowly as you can. Count the seconds until the arms are straight."};}
+function trialItems(){var sk=D.skills,g=D.goal&&GOALS[D.goal.k]?D.goal.k:"",out=[pullTest()];
   if(sk.mu||g==="mu"){out.push(T("expl","reps",["Explosive chest-to-bar pull-ups"]));out.push(T("mu","reps",["Clean muscle-ups"]));}
   if(sk.hs||g==="hs"){out.push(T("hsw","s",["Chest-to-wall handstand"]));out.push(T("hsf","s",["Freestanding handstand"]));}
   if(sk.ls||g==="ls"){out.push(lsKey()==="lsit"?T("lsit","s",["Straight-leg L-sit hold"]):T("tuck","s",["Tuck L-sit hold"]));}
@@ -604,7 +609,10 @@ function S0(id,c){
       P("ch_row",8,12,"reps","Chest to the bar, shoulders down",["Bodyweight Rows","Cable row||w","Band rows|b","Inverted rows under a table|s"],"feet higher or more weight","",[0,0]),
       P("ch_push",6,15,"reps","Body in one line",["Push-ups","Knee push-ups","Incline push-ups on a chair|s"],"harder variation","",[1,0])]});
     if(D.skills.fl)b.blocks.splice(2,0,FLB(false,1));
-    if(lf) b.blocks.push(LEGMINI(c.legWhy));
+    /* A-024: the trial takes a Strength A/B slot, so without a lower/glute emphasis it always brings the compact leg block
+       (it keeps the leg contact that slot would have had). */
+    var lowT=emph()==="lower"||emph()==="glutes";
+    if(lf||!lowT) b.blocks.push(LEGMINI(lf?c.legWhy:"ch"));
     return b;
   case "SK": return {goal:"Calm technique session. Everything clean, nothing to failure.",blocks:[WARM(),HSB(true),
     {name:"L-sit & grip",info:"10 min",p:1,rest:60,items:[LSIT(),F("3 × 20–30 s","",["False grip hang","Active Hang"]),P("s_hang",30,60,"s","Shoulders active",["Active Hang"],"start single-arm","2")]},
@@ -715,6 +723,12 @@ function easyPick(h,why){
   if(F!=="str"&&h.runs7<3&&h.run>=2&&!h.rhY&&!h.ranToday) return {btn:"run",id:"RE",why:why+" Today just an easy run."};
   return {btn:"train",id:"RS",why:why+" Today recovery and mobility."};
 }
+/* Skill Trial due (A-024): 13 days since the last one (deload days not counted) and 2 weeks of strength history. */
+function chGap(s,h){if(!D.logs.some(function(l){return STR[l.id]&&diff(l.d,s)>=13;}))return 0;if(h.CH===Infinity){var f=D.logs.filter(function(l){return STR[l.id]&&l.d<s;})[0];return Math.max(13,diff(f.d,s)-1);}
+  var g=h.CH;if(g<13)return g;for(var q=1;q<h.CH&&q<60;q++)if(ctxCyc(addD(s,-q))===6)g--;return g;}
+function chDue(s,h){return chGap(s,h)>=13;}
+function ctxCyc(s){var n=Math.floor(Math.max(0,diff(D.start,s))/7),wk=0;for(var w=0;w<=n;w++){var a=addD(D.start,7*w),z=addD(a,6);
+  if(w===n||D.logs.some(function(l){return isTrain(l)&&l.d>=a&&l.d<=z;}))wk++;}return (wk-1)%6+1;}
 function recAll(s,noKick){
   var h=hist(s),c=ctx(s),td=onDay(s),F=D.focus,kickT=isKick(addD(s,1));
   var gd=goalDay(s,td);if(gd)return gd;
@@ -738,13 +752,17 @@ function recAll(s,noKick){
   var gr=gRun();if(gr){W={KA:W.KA,KB:W.KB,C:W.C,RH:Math.max(W.RH||0,7),RE:Math.max(W.RE||0,6),RI:GOALS[gr].g==="t"?Math.max(W.RI||0,6):W.RI};}
   function add(id,btn,wt,since,ok,why,min){ if(wt&&ok&&since>=(min||6)) C.push({id:id,btn:btn,sc:wt*cap(since)/7,why:why}); }
   var hardOK=!h.kcY&&!h.ranToday&&!kickT;
-  /* Skill Trial every 14 days for every emphasis (P-3). With a lower/glute emphasis it takes the slot of the more due of
-     Strength A/B, never Strength C; it needs 2 weeks of strength history first. */
-  var lowE=em0==="lower"||em0==="glutes",chAB=lowE&&h.CH>=13&&D.logs.some(function(l){return STR[l.id]&&diff(l.d,s)>=13;})?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
-  add(chAB==="KA"?"CH":"KA","train",W.KA,h.KA,strOK&&!h.ranToday,chAB==="KA"?chW:"Strength A "+ago(h.KA)+".",mS);
-  add(chAB==="KB"?"CH":"KB","train",W.KB,h.KB,strOK,chAB==="KB"?chW:"Strength B "+ago(h.KB)+".",mS);
-  var kcId=(!lowE&&h.CH>=13&&h.KC<h.CH)?"CH":"KC";
-  add(kcId,"train",W.C,lowE?h.KC:h.C,strOK&&!kickT&&!(F==="run"&&h.hardR<=1),kcId==="CH"?"The skill trial has been due for 2 weeks.":"Legs and full body "+ago(h.C)+".",mS);
+  /* Skill Trial every 14 ± 2 days for every emphasis (P-3, A-024): it takes the slot of the more due of Strength A/B, never
+     Strength C (the leg block of A/B comes along via ctx().legB), not the day before kickboxing (unless it is 16 days old, so
+     plans with kickboxing on alternate days still get it); it needs 2 weeks of strength
+     history first. Deload weeks keep their own plan (returned above). */
+  var lowE=em0==="lower"||em0==="glutes",chAB=chDue(s,h)&&(!kickT||chGap(s,h)>=16)?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
+  /* A due trial counts as a week-old session from its due day on and grows more urgent each day (A-024), so a recent
+     Strength A/B does not hold it back past 14 ± 2 days. */
+  var chS=chAB?7+chGap(s,h)-13:0;
+  add(chAB==="KA"?"CH":"KA","train",W.KA,chAB==="KA"?Math.max(h.KA,chS):h.KA,strOK&&!h.ranToday,chAB==="KA"?chW:"Strength A "+ago(h.KA)+".",mS);
+  add(chAB==="KB"?"CH":"KB","train",W.KB,chAB==="KB"?Math.max(h.KB,chS):h.KB,strOK,chAB==="KB"?chW:"Strength B "+ago(h.KB)+".",mS);
+  add("KC","train",W.C,h.KC,strOK&&!kickT&&!(F==="run"&&h.hardR<=1),"Legs and full body "+ago(h.KC)+".",mS);
   add("RH","run",W.RH,h.RH,hardOK,(F==="run"||gr?"Long run ":"Hard run ")+ago(h.RH)+".");
   add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2,"Intervals "+ago(h.RI)+".",5);
   add("RE","run",W.RE,h.RE,!h.ranToday&&h.runs7<(F==="run"?5:3),"Easy run "+ago(h.RE)+".",F==="run"?2:3);
@@ -898,8 +916,8 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
     if(q.lev<0) extra='<div class="c gold">Max under 11 s: pick an easier variation via “Swap”.</div>';
     if(q.lev>0) extra='<div class="c gold">Max over 33 s: pick a harder variation'+(it.iso==="hsw"?' or hands closer to the wall, only the toes touch':(it.iso==="tuck"?', so practise the straight-leg L-sit':''))+'.</div>';
     extra+='<div class="c">Your max: '+Math.round(m)+' s. Complete all sets and it goes up automatically.</div>';}
-  else if(it.test&&it.tvo){n=1;var lt=lastTv(it.test);tg="Max reps"+(it.lw?" · "+fmtKg(it.lw)+" kg":"")+(lt!=null?" · last trial "+lt:"");g={r:""};}
-  else if(it.test){n=1;isS=it.unit==="s";tg="Max · so far "+D.profile[it.test]+" "+it.unit;g={r:""};}
+  else if(it.test&&it.tvo){n=1;isS=it.unit==="s";var lt=lastTv(it.test);tg="Max "+(isS?"s":"reps")+(it.lw?" · "+fmtKg(it.lw)+" kg":"")+(lt!=null?" · last trial "+lt+(isS?" s":""):" · first trial");g={r:""};}
+  else if(it.test){n=1;isS=it.unit==="s";tg=(D.profile[it.test]||0)>0?"Max · so far "+D.profile[it.test]+" "+it.unit:"Max "+it.unit+" · first trial";g={r:""};}
   else {g=target(it,v);n=setsOf(it,b,c,sid);isS=it.unit.indexOf("s")===0;tg=n+" × "+g.r+" "+it.unit+(o.w&&g.w?" · "+fmtKg(g.w)+" kg":"");}
   var pc=picFor(o.n);
   var h='<div class="ex'+(pc?" pose":"")+(on?" done":"")+(sk?" skip":"")+'"><input type="checkbox" id="c'+id+'" data-a="done" data-id="'+id+'"'+(on?" checked":"")+(sk?" disabled":"")+' aria-label="'+esc(o.n)+' done">'+(pc?'<div class="pw">'+pc+'</div>':'')+'<div class="exb">';
@@ -1076,7 +1094,10 @@ var GANCH={
   ht:function(){return P("gl_ht",6,10,"reps","Chin tucked, squeeze the glutes 2 s at the top",["Barbell hip thrust|g|w","Single-leg hip thrust, shoulders on a chair|s","Single-leg glute bridge"],"more weight","4");},
   rdl:function(){return P("gl_rdl",6,10,"reps","Hips back, back long, bar close to the legs",["Romanian deadlift|g|w","Single-leg Romanian deadlift|d|w","Good mornings, hands behind head"],"more weight","4");}};
 var GUP={pull:1,dips:1,push:1};
-function goalBlock(id,out){var k=gStr();if(!k)return;var up=GUP[k],ok=up?{KA:1,KB:1,HO:1,CH:1}[id]:({KC:1,HO:1,CH:1}[id]||out.some(function(b){return b.legs||b.lowb;}));if(!ok)return;
+/* Upper-body sessions so far in this training week (weeks from D.start, like hist().legW). A-024: the Skill Trial no longer
+   stands in for Strength C, so an upper-body goal also rides on Strength C while the week has fewer than 2 of them. */
+function upWeek(s){var w0=addD(D.start,7*Math.floor(Math.max(0,diff(D.start,s))/7));return D.logs.filter(function(l){return l.d>=w0&&l.d<s&&{KA:1,KB:1,HO:1,CH:1}[l.id];}).length;}
+function goalBlock(id,out){var k=gStr();if(!k)return;var up=GUP[k],ok=up?({KA:1,KB:1,HO:1,CH:1}[id]||(id==="KC"&&upWeek(TODAY)<2)):({KC:1,HO:1,CH:1}[id]||out.some(function(b){return b.legs||b.lowb;}));if(!ok)return;
   var it=GANCH[k]();it.gx=1;var v=curVar(it,LOC()),nm=v>=0?it.opts[v].n:"";
   out.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.filter(function(x){if(x.f||x.test||x.iso)return true;var w=curVar(x,LOC());return !(w>=0&&x.opts[w].n===nm);});});
   /* A leg goal is leg work itself: the compact leg block gives up its exercise for the same movement (the block still counts). */

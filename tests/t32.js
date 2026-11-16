@@ -42,7 +42,7 @@ const names=(k,s,b)=>b.items.map(it=>it.opts[Math.max(0,k.curVar(it,k.LOC()))].n
  if(!s.blocks.some(b=>b.lowb))issue(pn+': no emphasis block in the Skill Trial');if(s.min>90||s.min<60)issue(pn+': Skill Trial '+s.min+' min');
  const all=[];s.blocks.forEach(b=>{if(!b.warm&&!b.cool)names(k,s,b).forEach(n=>all.push(n));});if(all.filter(n=>n==='Barbell hip thrust').length>1)issue(pn+': hip thrust twice');});
 // 3 values: tv and profile from the Skill Trial, re-rating from logs only upward, level toast, old CH logs
-{const z=boot(),k=z.k,D=setup(k,prof('Partner lower'),'2026-10-05');k.today('2026-11-16');D.ex['g_ht#0']={r:10,w:40,d:'2026-11-12',n:'Barbell hip thrust'};
+{const z=boot(),k=z.k,D=setup(k,prof('Partner lower'),'2026-10-05');D.profile.pull=1;/* A-024: without a pull-up the trial tests an earlier stage (t41); here the pull-up test */k.today('2026-11-16');D.ex['g_ht#0']={r:10,w:40,d:'2026-11-12',n:'Barbell hip thrust'};
  const dy=k.day();dy.pick='CH';dy.fin={rpe:6};const s=k.S('CH',k.ctx(k.today()));
  s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(!it.test)return;dy.inp['CH-'+bi+'-'+ii]={s:[it.test==='lb'?'14':'3']};}));const pr0=D.profile.pull;
  k.saveTrain();const l=D.logs[D.logs.length-1];if(!l||l.id!=='CH'||!l.tv||l.tv.pull!==3||l.tv.lb!==14)issue('trial values not in tv '+JSON.stringify(l&&l.tv));
@@ -67,7 +67,7 @@ const names=(k,s,b)=>b.items.map(it=>it.opts[Math.max(0,k.curVar(it,k.LOC()))].n
      D.days={};D.days[k.today()]={done:{},inp:{},skip:{},pick:'CH',run:null,fin:{},noKick:false,open:{}};localStorage.setItem('kz_app_v3',JSON.stringify(D));},[prof(pn),pn]);
    await p.reload();await p.waitForTimeout(150);const blk=await p.$('details[data-blk="CH-1"]');if(!blk){issue('playwright '+f+': Trial block missing');continue;}
    await p.evaluate(()=>{const d=document.querySelector('details[data-blk="CH-1"]');d.open=true;d.scrollIntoView();});await p.waitForTimeout(80);
-   const txt=await blk.textContent();if(!/Clean pull-ups/.test(txt))issue('playwright '+f+': no pull-up test');if(f==='lower'&&!/40 kg/.test(txt))issue('playwright: lower-body test without working weight');
+   const txt=await blk.textContent();if(!/Clean pull-ups|Dead hang|Negative pull-ups/.test(txt))issue('playwright '+f+': no pull-up test (or its earlier stage, A-024)');if(f==='lower'&&!/40 kg/.test(txt))issue('playwright: lower-body test without working weight');
    await p.screenshot({path:R+'/.build/t32-trial-'+f+'.png'});const ow=await p.evaluate(()=>document.documentElement.scrollWidth);if(ow>390)issue('playwright '+f+': overflow '+ow);}
  if(errs.length)issue('playwright errors: '+errs.join('; '));await b.close();done();})().catch(e=>{issue('crash: '+e.stack);done();});
 function done(){console.log(rep.join('\n'));console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(m=>console.log(' - '+m));process.exit(0);}
