@@ -1,7 +1,7 @@
 // @name daily-form
 // P-8: daily readiness tip, off by default. Off (and on without a tap): plans identical to the plan without P-8 for 4
 // profiles × Strength A/B/C and over a 6-week simulation, no bar on the training page. Tired: low round count, fewer sets,
-// no extra favourites/emphasis exercises, the hint "no reps to failure today", never under the floors (60 min, 2 working
+// no extra favourites/emphasis exercises, the hint "no reps to failure today", never under the floors (A-035: 45 min, as Tired is an explicit user wish; 2 working
 // sets, legs + hinge ≥ 10, a leg session keeps 6 leg sets). Good: high round count only where the week has room, level 0
 // never raised, 12 weeks of "good" every day keep the band tolerance (peak ≤ upper + 2 / + 4, average ≤ upper limit).
 // Log rd, passive stats line, backup fields, junk refused; Extras switch and bar in the UI, Plain wording; Playwright
@@ -39,11 +39,11 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
 PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);k.today(td);D.opt.ready=true;const c=k.ctx(td);
   ['KA','KB','KC'].forEach(id=>{k.day().ready=2;const sn=k.S(id,c),nn=tot(k,sn,c,id);k.day().ready=3;const st=k.S(id,c),nt=tot(k,st,c,id);
     if(nt>nn)issue(p.n+' '+id+': tired '+nt+' sets > normal '+nn);
-    if(st.min<60&&sn.min>=60)issue(p.n+' '+id+': tired '+st.min+' min, under the 60 min floor');
+    if(st.min<45&&sn.min>=45)issue(p.n+' '+id+': tired '+st.min+' min, under the 45 min floor (A-035: Tired as an explicit user wish)');
     st.blocks.forEach(b=>{if(b.rounds&&!b.lowb&&b.tr==null&&k.rounds(b,c,id)!==b.rounds[0])issue(p.n+' '+id+' '+b.name+': tired without the low round count');
       b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,'g')<0)return;if(k.setsOf(it,b,c,id)<2)issue(p.n+' '+id+' '+it.k+': under 2 sets when tired');});});
     if(k.legSets(sn,c,id)>=6&&k.legSets(st,c,id)<6)issue(p.n+' '+id+': tired leg session lost its leg sets');
-    const fb=st.blocks.find(b=>b.fav);if(fb&&fb.items.length>2&&st.min>60)issue(p.n+' '+id+': tired with '+fb.items.length+' favourites');
+    const fb=st.blocks.find(b=>b.fav);if(fb&&fb.items.length>2&&st.min>45)issue(p.n+' '+id+': tired with '+fb.items.length+' favourites');
     rep.push(p.n+' '+id+': normal '+nn+' sets / '+sn.min+' min · tired '+nt+' sets / '+st.min+' min');});
   D.tab='train';k.day().pick='KC';k.day().ready=3;k.render();if(!/no reps to failure today/.test(z.txt()))issue(p.n+': no "no reps to failure today" hint');
   if(z.errs.length)issue(p.n+' JS errors '+z.errs.join('; '));});
@@ -57,10 +57,10 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
       if(k.lvl()===0&&rg>rn)issue(p.n+' '+id+' '+b.name+': level 0 raised on a good day');});
     if(sg.min>90)issue(p.n+' '+id+': good day '+sg.min+' min');});});
 ['good','tired'].forEach(mode=>PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);D.opt.ready=true;const hotP=({lower:['legs','hinge'],glutes:['hinge']})[p.emph]||[];
-  simR(k,84,mode==='good'?1:3,(id,ss,s)=>{if(['KA','KB','KC','CH','HO'].includes(id)&&(ss.min<60||ss.min>90))issue(mode+' '+p.n+' '+s+' '+id+': '+ss.min+' min');});
+  simR(k,84,mode==='good'?1:3,(id,ss,s)=>{if(['KA','KB','KC','CH','HO'].includes(id)&&(ss.min<(mode==='tired'?45:60)||ss.min>90))issue(mode+' '+p.n+' '+s+' '+id+': '+ss.min+' min');});
   const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5),wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={pull:0,push:0,legs:0,hinge:0,core:0,dl:false});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.vs)V.forEach(q=>x[q]+=l.vs[q]);});
   const tw=Object.keys(wk).filter(w=>!wk[w].dl&&+w<11);const out=[];
-  V.forEach(q=>{const hot=hotP.includes(q),hi=hot?20:14,tol=hot?2:4;let peak=0;for(let i=6;i<84;i++){let h=0;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl)h+=l.vs[q];});peak=Math.max(peak,h);}
+  V.forEach(q=>{const hot=hotP.includes(q),hi=hot?20:(p.focus==='str'?16:14),tol=hot?2:4;let peak=0;for(let i=6;i<84;i++){let h=0;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl)h+=l.vs[q];});peak=Math.max(peak,h);}
     const avg=tw.reduce((a,w)=>a+wk[w][q],0)/(tw.length||1);out.push(q[0]+peak+'/'+avg.toFixed(1));
     if(peak>hi+tol)issue(mode+' '+p.n+': '+q+' peak '+peak+' over '+hi+' + '+tol);if(avg>hi)issue(mode+' '+p.n+': '+q+' average '+avg.toFixed(1)+' over '+hi);});
   tw.forEach(w=>{if(wk[w].legs+wk[w].hinge<10)issue(mode+' '+p.n+' week '+(+w+1)+': legs + hinge '+(wk[w].legs+wk[w].hinge));});

@@ -118,7 +118,8 @@ function step(k,s){const D=k.D();k.today(s);const r=k.recAll(s,false);if(r.pause
  kneeEx.forEach(n=>{if(!k.painHit(n))issue('knee exercise not filtered: '+n);});
  const dy=k.day();dy.pick='KC';dy.add=['Sumo squats','Cable lateral raises'];D.tab='train';k.render();const t=txt();
  if(!/Knee rehab/.test(t))issue('no knee rehab block');if(!/Pain rule/.test(t))issue('no pain rule text');
- if(!/Hidden today: your pain filter is on/.test(t))issue('addition not hidden by the knee filter');
+ if(!/Sumo squats: removed today|Instead of Sumo squats · pain-free choice/.test(t))issue('addition not filtered by the knee filter (A-035: replace or remove with a hint)');
+ {const sa=k.S('KC',k.ctx(k.today())),ab=sa.blocks.find(b=>b.add);if(!ab)issue('no additions block');else ab.items.forEach(it=>{const v=k.curVar(it,'g');if(v>=0&&k.painHit(it.opts[v].n))issue('painful addition still in the session: '+it.opts[v].n);});}
  kneeEx.slice(0,1).forEach(n=>{if(t.indexOf(n)>=0&&!/Skipped because of pain/.test(t))issue('knee exercise shown without the pain skip');});
  if(!/No runs are planned/.test(t))issue('no hint about runs');
  // lower back, ankle, hip filters

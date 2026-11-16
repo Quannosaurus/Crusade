@@ -4,7 +4,7 @@
 // (x_be bench, a_hyp), knee flexion (leg curl, Nordic curl) = legs, variant-dependent b_jump / x_be / u_cur, u_tri push,
 // calf raises and abduction pattern-free and outside the leg count (LEGK derived, legSets), Core Blitz counts for core,
 // fixed items with real load count by their pattern, Field kit / Never groups follow the pattern; old logs are read by
-// the new mapping (vm 2) without being changed.
+// the new mapping (vm 2; vm 3 since A-035 with b2_tr push) without being changed.
 const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const TBL=require('./fixtures/pattern-table.js');
@@ -58,14 +58,14 @@ TBL.ROWS.forEach(r=>{const leg=TBL.ROWS.some(x=>x[0]===r[0]&&(x[1]==='*'||x===TB
 // 8 old logs read by the new mapping, unchanged
 {const old={d:'2026-11-14',id:'KC',t:'KC',rpe:6,vm:1,abs:1,vs:{pull:6,push:3,legs:9,hinge:9,core:3},ex:{'c_calf#0':[15,40],'c_rdl#2':[6,0],'b_jump#1':[10,0],'x_be#0':[12,10],'u_tri#0':[12,15],'u_cur#3':[5,0],'c_sq#0':[8,60]}};
  const v0={d:'2026-11-13',id:'KB',t:'KB',rpe:6,vs:{pull:4,push:4,legs:3,hinge:9,core:0},ex:{'g_ab#0':[15,30]}};
- const neu={d:'2026-11-12',id:'KA',t:'KA',rpe:6,vm:2,vs:{pull:5,push:5,legs:0,hinge:0,core:4},ex:{'c_calf#0':[15,40]}};
+ const neu={d:'2026-11-12',id:'KB',t:'KB',rpe:6,vm:2,vs:{pull:5,push:5,legs:0,hinge:0,core:4},ex:{'c_calf#0':[15,40],'b2_tr#0':[12,20]}};
  D.logs=[{d:'2026-10-01',id:'KA',t:'KA',rpe:6,vs:{pull:0,push:0,legs:0,hinge:0,core:0}},neu,v0,old];const snap=JSON.stringify(D.logs);
- const t=k.vs7(TD);const want={pull:5+4+6+3,push:5+4+3+3,legs:0+3+(9-3+3+3),hinge:0+(9-3)+(9-3-3+3),core:4+0+(3-3+4)};
+ const t=k.vs7(TD);const want={pull:5+4+6+3,push:5+3+4+3+3,legs:0+3+(9-3+3+3),hinge:0+(9-3)+(9-3-3+3),core:4+0+(3-3+4)};
  Object.keys(want).forEach(q=>{if(t[q]!==want[q])issue('old logs by the new mapping: '+q+' '+t[q]+' (expected '+want[q]+')');});
  if(JSON.stringify(D.logs)!==snap)issue('old logs were changed');
- // a log written today carries vm 2
+ // a log written today carries vm 3 (A-035: b2_tr counts as push, vm 2 logs get its sets on push)
  D.logs=[];const dy=k.day();dy.pick='KC';dy.fin={rpe:6};const c=k.ctx(TD),s=k.S('KC',c);s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(k.curVar(it,'g')>=0)dy.done['KC-'+bi+'-'+ii]=true;}));dy.done['abs-T']=!!s.ab;k.saveTrain();
- const l=D.logs[D.logs.length-1];if(!l||l.vm!==2)issue('new log without vm 2');else{const pv=k.volSets(s,c,'KC');if(s.ab&&l.vs.core<Math.round(s.ab.rounds/2))issue('logged Core Blitz not in l.vs.core');}}
+ const l=D.logs[D.logs.length-1];if(!l||l.vm!==3)issue('new log without vm 3');else{const pv=k.volSets(s,c,'KC');if(s.ab&&l.vs.core<Math.round(s.ab.rounds/2))issue('logged Core Blitz not in l.vs.core');}}
 console.log('variants checked: '+nChecked+', items '+Object.keys(items).length);
 if(errs.length)issue('JS errors: '+errs.join('; '));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

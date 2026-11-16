@@ -35,7 +35,8 @@ PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);const hotP=({lower:['l
   const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5);
   const wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={pull:0,push:0,legs:0,hinge:0,core:0,dl:false,lg:0});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.vs)V.forEach(q=>x[q]+=l.vs[q]);if(l.lg)x.lg++;});
   const tw=Object.keys(wk).filter(w=>!wk[w].dl&&+w<11),sum=[];
-  V.forEach(q=>{const hot=hotP.includes(q),[lo,hi]=hot?BAND.hot:BAND.cold,tol=hot?2:4;let peak=0;
+  /* A-035/A-032: the band of the other patterns follows the strength sessions per week of the focus (+2 per session over 3). */
+  V.forEach(q=>{const hot=hotP.includes(q),[lo,hi]=hot?BAND.hot:[BAND.cold[0],BAND.cold[1]+(p.focus==='str'?2:0)],tol=hot?2:4;let peak=0;
     for(let i=6;i<84;i++){let h=0;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl)h+=l.vs[q];});peak=Math.max(peak,h);}
     const avg=tw.reduce((a,w)=>a+wk[w][q],0)/(tw.length||1);sum.push(q+' peak '+peak+' avg '+avg.toFixed(1)+' ('+lo+'–'+hi+(hot?', emphasis':'')+')');
     if(peak>hi+tol)issue(p.n+': '+q+' '+peak+' sets in 7 days (> '+hi+' + '+tol+')');
@@ -115,10 +116,10 @@ PROF.forEach(p=>{const {k,errs}=boot(),D=setup(k,p,START);const hotP=({lower:['l
  const t=k.vs7(TD);if(t.hinge!==13)issue('old log not read by the new mapping: hinge '+t.hinge+' (expected 7 + 6)');
  if(JSON.stringify(D.logs)!==snap)issue('reading the stats changed the logs');
  const ci=k.cleanImport({v:3,logs:[neu,old]});if(!ci||ci.logs[0].vm!==1||ci.logs[1].vm!=null)issue('cleanImport: vm not kept/added as sent');
- const ci2=k.cleanImport({v:3,logs:[Object.assign({},neu,{vm:'<b>'}),Object.assign({},neu,{vm:99})]});if(!ci2||ci2.logs.some(l=>l.vm!=null&&!(l.vm>=0&&l.vm<=2)))issue('cleanImport: junk vm accepted');
+ const ci2=k.cleanImport({v:3,logs:[Object.assign({},neu,{vm:'<b>'}),Object.assign({},neu,{vm:99})]});if(!ci2||ci2.logs.some(l=>l.vm!=null&&!(l.vm>=0&&l.vm<=3)))issue('cleanImport: junk vm accepted');
  // a logged session today carries vm
  D.logs=[vlog('2026-10-20','KA',{})];const dy=k.day();dy.pick='KA';dy.fin={rpe:6};const c=k.ctx(TD),s=k.S('KA',c);s.blocks.forEach((b,bi)=>{const bix=b.bi!=null?b.bi:bi;b.items.forEach((it,ii)=>{if(k.curVar(it,k.LOC())>=0)dy.done['KA-'+bix+'-'+ii]=true;});});
- k.saveTrain();const l=D.logs[D.logs.length-1];if(l.vm!==2)issue('new log without vm (A-027: VMAP 2)');
+ k.saveTrain();const l=D.logs[D.logs.length-1];if(l.vm!==3)issue('new log without vm (A-035: VMAP 3)');
  // pull far over the band: the circuit keeps its rounds, a pull item swaps for a pattern-free one
  const z=boot(),k2=z.k,E=setup(k2,prof('Partner glutes'));E.logs=[vlog('2026-10-20','KA',{}),vlog(addD(TD,-5),'KB',{pull:6,push:4,hinge:4}),vlog(addD(TD,-3),'KC',{pull:3,push:3,legs:6,hinge:4}),vlog(addD(TD,-1),'KB',{pull:6,push:4,hinge:4})];
  const c2=k2.ctx(TD),s2=k2.S('KA',c2),v2=k2.volSets(s2,c2,'KA'),sw=[];s2.blocks.forEach(b=>b.items.forEach(it=>{if(it.bx)sw.push([b,it]);}));

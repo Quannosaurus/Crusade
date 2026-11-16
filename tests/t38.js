@@ -1,7 +1,8 @@
 // @name add-exercise
 // A-021 part 1+2: "+ Add exercise" and "+ Easy run". Kickbacks join a session without a glute block in ≤ 3 taps, in the
 // block "Your additions" before the cool-down with targets from target(); design() leaves the rest unchanged, the header
-// shows the new duration and additions stay even beyond 90 min; only an active pain filter hides one (with a hint).
+// shows the new duration and additions stay even beyond 90 min; only an active pain filter changes one (A-035: pain-free variant,
+// else a replacement of the same group, else removed for today with a hint).
 // They survive a reload, are gone the next day, go with one tap (inputs of the others stay with them), are logged
 // normally and lead once to "Keep as favourite?". "+ Easy run" works on a day without a planned run and on top of a
 // training: both entries are saved, training progress is kept, the order hint shows, the next day keeps the day-before-
@@ -53,7 +54,11 @@ let taps=0;const tap=(x,sel)=>{const e=x.$(sel);if(!e)throw new Error('missing '
  // only the pain filter hides one, with a hint
  const dy=x.k.day();dy.add=[KB,'Dumbbell curls'];D.pain.e=true;x.k.render();
  const curl=x.$$('details[data-blk="KA-80"] .ex').find(e=>/Dumbbell curls/.test(e.textContent));
- if(!curl||!curl.classList.contains('skip')||!/pain filter/i.test(curl.textContent))issue('pain filter does not hide the curl addition with a hint');
+ /* A-035: an addition on the pain list is handled like painApply: pain-free variant, else a replacement of the same group
+    with the hint "pain-free choice", else removed for today with a hint. */
+ const curlRep=x.$$('details[data-blk="KA-80"] .ex').find(e=>/Instead of Dumbbell curls · pain-free choice/.test(e.textContent)),curlGone=x.$$('#app .note').some(e=>/Dumbbell curls: removed today/.test(e.textContent));
+ if(curl&&!curlRep)issue('painful curl addition still shown');if(!curlRep&&!curlGone)issue('pain filter: curl addition neither replaced nor removed with a hint');
+ if(curlRep&&x.k.painHit(curlRep.querySelector('.n').textContent))issue('addition replaced by a painful exercise');
  const kb=x.$$('details[data-blk="KA-80"] .ex').find(e=>/Cable kickbacks/.test(e.textContent));if(!kb||kb.classList.contains('skip'))issue('kickbacks hidden without pain');
  D.pain.e=false;x.k.render();
  // reload: still there; next day: gone

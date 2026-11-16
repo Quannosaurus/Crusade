@@ -5,7 +5,7 @@
 // pattern (patKey, not the name): any variant, Field kit replacements ("mx_") and kit days count, two weeks of kit days do
 // not step the gym variant back. Working sets per pattern on every log (l.vs) and the set band per 7 days in rounds()
 // (under → high, over → low, band +2 after a plateau, 60–90 min kept, additions kept). Plateau at the goal value: hint only
-// after 3 checks without progress, exactly one measure (easy week / +2 sets / swap), English, theme words. Logged past days
+// after 3 checks without progress (A-035: checks only where the goal value is measurable, 1 per training week, at the earliest after 3 weeks; boost at most 6 weeks), exactly one measure (easy week / +2 sets / swap), English, theme words. Logged past days
 // (bl) count for the pause rule and frequency but never for progression, stall, plateau or the bands. Captain 6-week
 // simulation: pull and push ≤ ~20 sets per week, legs ≥ 10. Backup round trip, junk refused, old backup.
 const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
@@ -135,22 +135,32 @@ PROF.forEach(p=>{const z=boot(),k=z.k,D=setup(k,p,'2026-09-21');const wk={};
  if(p.n==='Captain')Object.keys(wk).forEach(w=>{const x=wk[w];if(x.pull>22||x.push>22)issue('Captain week '+(+w+1)+': upper body pull '+x.pull+' / push '+x.push+' sets (> ~20)');if(!x.dl&&x.legs+x.hinge<10)issue('Captain week '+(+w+1)+': legs '+(x.legs+x.hinge)+' sets (< 10)');});
  if(z.errs.length)issue(p.n+' simulation JS errors '+z.errs.join('; '));});
 
-// 7 plateau at the goal value: only after 3 checks, exactly one measure, bl and other logs are no check
-{const z=boot(),k=z.k,D=setup(k,prof('Captain'));D.logs=[{d:'2026-10-26',id:'KA',t:'KA',rpe:6}];k.setGoal('pull');D.goal.v=99;
- const chk=lg=>{k.goalCheck(Object.assign({d:TD,t:'x',rpe:6},lg));};
- chk({id:'KA'});chk({id:'KB'});if(D.goal.np!==2||k.platHTML())issue('hint before 3 checks: np '+D.goal.np);
- chk({id:'KA',bl:1});chk({id:'RE'});chk({id:'KI'});if(D.goal.np!==2)issue('bl/run/kickboxing log counted as a check: np '+D.goal.np);
- chk({id:'KC'});if(D.goal.np!==3||D.goal.pm!=='s'||D.goal.pz!==TD)issue('3rd check, normal load: '+JSON.stringify(D.goal));
- let h=k.platHTML();if(!/The vow stands still/.test(h)||!/3 checks without progress/.test(h)||!/2 extra sets a week for 3 weeks/.test(h))issue('plateau hint (templar) '+h);
+// 7 plateau at the goal value (A-035, H-2): a check is only a session where the goal value is measurable (Skill Trial/test,
+// goal anchor at the top of its range), at most 1 per training week; the measure comes at the earliest 3 weeks after the
+// goal was set, the swap advice after 6 checks and 6 weeks without progress; bl, run, kickboxing and comeback logs no check
+{const z=boot(),k=z.k,D=setup(k,prof('Captain'),'2026-09-07');D.logs=[{d:'2026-09-01',id:'KA',t:'KA',rpe:6}];k.today('2026-09-07');k.setGoal('pull');D.goal.v=99;
+ const chk=(d,lg)=>{k.today(d);k.goalCheck(Object.assign({d,t:'x',rpe:6},lg));},np=()=>D.goal.np||0;
+ chk('2026-09-08',{id:'KA'});chk('2026-09-09',{id:'KB',ex:{'gl_pull#0':[6,0]}});if(np())issue('strength session without a measurable goal value counted as a check: np '+np());
+ chk('2026-09-10',{id:'KA',ex:{'gl_pull#0':[8,0]}});if(np()!==1)issue('goal anchor at the top of its range is no check: np '+np());
+ chk('2026-09-11',{id:'CH'});chk('2026-09-12',{id:'TE'});if(np()!==1)issue('more than 1 check in a training week: np '+np());
+ chk('2026-09-15',{id:'CH',bl:1});chk('2026-09-15',{id:'RE'});chk('2026-09-15',{id:'KI'});chk('2026-09-15',{id:'CH',cb:1});if(np()!==1)issue('bl/run/kickboxing/comeback log counted as a check: np '+np());
+ chk('2026-09-16',{id:'CH'});chk('2026-09-21',{id:'CH'});if(np()!==3||D.goal.pm||k.platHTML())issue('plateau before 3 weeks: '+JSON.stringify(D.goal));
+ chk('2026-09-28',{id:'TE'});if(np()!==4||D.goal.pm!=='s'||D.goal.pz!=='2026-09-28')issue('check in week 4, normal load: '+JSON.stringify(D.goal));
+ let h=k.platHTML();if(!/The vow stands still/.test(h)||!/4 checks without progress/.test(h)||!/2 extra sets a week for 3 weeks/.test(h))issue('plateau hint (templar) '+h);
  if(k.vBand('pull')[1]!==22)issue('measure +2 sets not in the band');
  D.tab='start';k.render();const el=z.$('.gplat');if(!el)issue('plateau hint not on the Today page');else if(z.$$('.gplat').length!==1)issue('more than one plateau line');
  D.theme='plain';k.render();h=z.$('.gplat')?z.$('.gplat').textContent:'';if(!/^Plateau · /.test(h)||/vow|crusade|emperor/i.test(h))issue('plain theme plateau text '+h);D.theme='templar';
- chk({id:'KA'});chk({id:'KB'});if(D.goal.pm!=='s')issue('measure changed before 3 more checks: '+D.goal.pm);chk({id:'KC'});if(D.goal.np!==6||D.goal.pm!=='v'||!/Swap the variation/.test(k.platHTML()))issue('6 checks: swap the variation '+JSON.stringify(D.goal));
- D.profile.pull+=2;chk({id:'KA'});if(D.goal.np!==0||D.goal.pm||k.platHTML())issue('progress did not clear the plateau '+JSON.stringify(D.goal));
+ chk('2026-10-05',{id:'CH'});chk('2026-10-12',{id:'CH'});if(np()!==6||D.goal.pm!=='s')issue('swap advice before 6 weeks without progress: '+JSON.stringify(D.goal));
+ chk('2026-10-19',{id:'CH'});if(np()!==7||D.goal.pm!=='v'||!/Swap the variation/.test(k.platHTML()))issue('6 weeks without progress: swap the variation '+JSON.stringify(D.goal));
+ D.profile.pull+=2;chk('2026-10-26',{id:'CH'});if(np()!==0||D.goal.pm||k.platHTML()||D.goal.lp!=='2026-10-26')issue('progress did not clear the plateau '+JSON.stringify(D.goal));
+ // the boost ends: 3 weeks, progress inside it extends it once to at most 6 weeks, never for good
+ k.today(TD);Object.assign(D.goal,{pz:addD(TD,-10)});delete D.goal.pk;D.profile.pull+=1;k.goalCheck({d:TD,id:'CH',rpe:6});if(!D.goal.pk)issue('progress inside the boost did not extend it');
+ D.goal.pz=addD(TD,-30);if(!k.plBoost())issue('extended boost over after 30 days');D.goal.pz=addD(TD,-42);if(k.plBoost()||k.vBand('pull')[1]!==20)issue('boost still on after 6 weeks '+k.vBand('pull'));
+ delete D.goal.pk;D.goal.pz=addD(TD,-21);if(k.plBoost())issue('boost without progress still on after 3 weeks');
  // high load → easy week
- const z2=boot(),k2=z2.k,D2=setup(k2,prof('Captain'),'2026-09-07');k2.setGoal('pull');D2.goal.v=99;
+ const z2=boot(),k2=z2.k,D2=setup(k2,prof('Captain'),'2026-09-07');k2.setGoal('pull');D2.goal.v=99;D2.goal.s=addD(TD,-30);
  for(let w=1;w<=4;w++)D2.logs.push({d:addD(TD,-7*w),id:'KA',t:'KA',rpe:6,min:60});[0,1,2].forEach(i=>D2.logs.push({d:addD(TD,-i),id:'KC',t:'KC',rpe:10,min:80}));D2.logs.sort((a,b)=>a.d<b.d?-1:1);
- [1,2,3].forEach(()=>k2.goalCheck({d:TD,id:'KA',rpe:6}));if(D2.goal.pm!=='e'||D2.goal.pz||!/easy week/i.test(k2.platHTML()))issue('high load: measure '+D2.goal.pm+' '+k2.platHTML());
+ [14,7,0].forEach(x=>k2.goalCheck({d:addD(TD,-x),id:'CH',rpe:6}));if(D2.goal.pm!=='e'||D2.goal.pz||!/easy week/i.test(k2.platHTML()))issue('high load: measure '+D2.goal.pm+' '+k2.platHTML());
  if(z.errs.length||z2.errs.length)issue('JS errors '+z.errs.concat(z2.errs).join('; '));}
 
 // 8 logged past days (bl): count for the pause rule and frequency, never for progression, stall, plateau or bands
@@ -169,14 +179,14 @@ PROF.forEach(p=>{const z=boot(),k=z.k,D=setup(k,p,'2026-09-21');const wk={};
  if(z.errs.length)issue('JS errors '+z.errs.join('; '));}
 
 // 9 backup: vs and plateau fields round trip, junk refused, bl logs carry no vs, old backup
-{const z=boot(),k=z.k,D=setup(k,prof('Captain'));k.setGoal('pull');Object.assign(D.goal,{np:4,pm:'s',pz:addD(TD,-3),pk:1});
+{const z=boot(),k=z.k,D=setup(k,prof('Captain'));k.setGoal('pull');Object.assign(D.goal,{np:4,pm:'s',pz:addD(TD,-3),pk:1,lp:addD(TD,-40),cw:addD(TD,-7)});
  D.logs=[{d:addD(TD,-2),id:'KA',t:'KA',rpe:6,vs:{pull:9,push:6,legs:3,hinge:3,core:2}},{d:addD(TD,-1),id:'KC',t:'KC',rpe:6,bl:1,vs:{pull:50}}];
  const txt=k.bkJSON();const y=boot();y.k.today(TD);if(!y.k.restore(txt))issue('backup refused');else{const E=y.k.D();
   if(JSON.stringify(E.logs[0].vs)!==JSON.stringify({pull:9,push:6,legs:3,hinge:3,core:2}))issue('vs lost '+JSON.stringify(E.logs[0].vs));
-  if(E.logs[1].vs)issue('bl log kept vs after import');const g=E.goal;if(!g||g.np!==4||g.pm!=='s'||g.pz!==addD(TD,-3)||g.pk!==1)issue('plateau fields lost '+JSON.stringify(g));}
- const junk=JSON.parse(txt);junk.logs[0].vs={pull:'<b>',push:1e9,legs:-4,x:3};Object.assign(junk.goal,{np:'x',pm:'<i>',pz:'tomorrow',pk:0});
+  if(E.logs[1].vs)issue('bl log kept vs after import');const g=E.goal;if(!g||g.np!==4||g.pm!=='s'||g.pz!==addD(TD,-3)||g.pk!==1||g.lp!==addD(TD,-40)||g.cw!==addD(TD,-7))issue('plateau fields lost '+JSON.stringify(g));}
+ const junk=JSON.parse(txt);junk.logs[0].vs={pull:'<b>',push:1e9,legs:-4,x:3};Object.assign(junk.goal,{np:'x',pm:'<i>',pz:'tomorrow',pk:0,lp:'__proto__',cw:'2026-02-30',nb:1});
  const j=boot();j.k.today(TD);if(!j.k.restore(JSON.stringify(junk)))issue('junk backup refused as a whole');else{const v=j.k.D().logs[0].vs,g=j.k.D().goal;
-  if(!v||v.pull!==0||v.push!==60||v.legs!==0||'x' in v)issue('junk vs '+JSON.stringify(v));if(g.pm||g.pz||g.pk||g.np!==0)issue('junk plateau fields '+JSON.stringify(g));}
+  if(!v||v.pull!==0||v.push!==60||v.legs!==0||'x' in v)issue('junk vs '+JSON.stringify(v));if(g.pm||g.pz||g.pk||g.np!==0||g.lp||g.cw||g.nb)issue('junk plateau fields '+JSON.stringify(g));}
  const old={v:3,onb:true,start:'2026-08-03',profile:{pull:6,dips:10},focus:'bal',ex:{'c_sq#1':{r:8,w:60,d:'2026-11-01',hold:false,n:'Barbell back squat',stall:1}},logs:[{d:'2026-11-12',id:'KC',t:'Strength C',rpe:6},{d:'2026-11-14',id:'KA',t:'Strength A',rpe:6}],kickDays:[],theme:'templar',goal:{k:'sq',v:100,b:60,s:'2026-11-01',h:[['2026-11-01',60]]}};
  const o=boot();o.k.today(TD);if(!o.k.restore(JSON.stringify(old)))issue('old backup refused');else{['start','train','verlauf','stand'].forEach(t=>{o.k.D().tab=t;o.k.render();});
   const t=o.k.vs7(TD);if(t.legs!==9||t.pull!==14)issue('old logs: estimate per session type '+JSON.stringify(t));if(o.errs.length)issue('old backup JS errors '+o.errs.join('; '));}

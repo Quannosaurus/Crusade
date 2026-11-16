@@ -35,7 +35,10 @@ PROF.forEach(p=>{const {k,errs}=boot();setup(k,p);const D=k.D(),T=k.today();
         checked++;const s=k.S(id,c),sv=vis(k,s,'m').filter(x=>!x.b.warm&&!x.b.cool),tag=p.n+' '+id+' ['+kn+']'+(lw?' wk'+lw:'');
         if(kn==='Nothing'){sv.concat(vis(k,s,'m').filter(x=>x.b.warm||x.b.cool)).forEach(x=>{if(GEAR.test(x.n))issue(tag+': equipment exercise "'+x.n+'"');});}
         if(kn==='Pull-up bar'&&!sv.some(x=>BAR.test(x.n)))issue(tag+': no pull on the bar');
-        const sGroups=new Set(sv.filter(x=>x.it.k).map(x=>x.it.kx||TBL.group(x.it.k,x.n)));gGroups.forEach(gr=>{if(!sGroups.has(gr))issue(tag+': muscle group "'+gr+'" not covered');});
+        /* A-035: a pattern group also counts as covered by an exercise of its pattern by the shown variant (doctrine table),
+           e.g. jumping squats (b_jump, pattern legs) cover "knee". */
+        const PG={pull:'pull',push:'push',legs:'knee',hinge:'hip',core:'core'};
+        const sGroups=new Set(sv.filter(x=>x.it.k).map(x=>x.it.kx||TBL.group(x.it.k,x.n)));sv.forEach(x=>{if(x.it.k&&!x.it.kx){const pt=TBL.pattern(x.it.k,x.n);if(pt&&PG[pt])sGroups.add(PG[pt]);}});gGroups.forEach(gr=>{if(!sGroups.has(gr))issue(tag+': muscle group "'+gr+'" not covered');});
         if(gLeg&&!s.blocks.some(b=>b.legs&&vis(k,{blocks:[b]},'m').length))issue(tag+': leg block lost');
         if(gAnc&&!sv.some(x=>x.it.anc))issue(tag+': anchor lost');
         if(s.min<60||s.min>90)issue(tag+': estimate '+s.min+' min');
