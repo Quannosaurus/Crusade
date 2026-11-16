@@ -145,6 +145,7 @@ body.ob .nav{display:none}
 .tgl .sw::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--bone)}
 .tgl.on .sw{background:var(--red)}.tgl.on .sw::after{left:18px;background:#fff}
 .tgl .muted{font-weight:400}
+.tgl+.tgl{margin-top:6px}
 .tag{font-style:normal;font-size:.7rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;background:var(--red);color:#fff;border-radius:4px;padding:2px 7px}
 .tag.ok{background:none;border:1px solid var(--ok);color:#a8d6b1}
 .big.rec{border-color:var(--red);background:linear-gradient(180deg,var(--tint),var(--panel))}
@@ -266,6 +267,10 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .wkd.dl{border-style:dashed}.wkd.on{background:var(--tint);border-color:var(--red)}
 .wkx{margin-top:8px;padding:10px 12px;border-radius:10px;background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--acc-l)}.wkx p{margin:4px 0 0}
 .wkf{margin-top:8px}
+.kitq{margin:8px 0 4px;padding:12px;border-radius:12px;background:var(--panel);border:1px solid var(--line)}.kitq .q{margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+.chip{padding:9px 12px;border-radius:999px;border:1px solid var(--edge);background:var(--panel2);color:var(--bone);font:inherit;font-size:.9rem;cursor:pointer;min-height:40px}
+.chip.on{background:var(--tint);border-color:var(--red);color:var(--bone);font-weight:600}.chip.on::before{content:"✓ ";color:var(--acc-t)}
 </style>
 </head>
 <body>
