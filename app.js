@@ -137,7 +137,7 @@ function cleanImport(n){var b=fresh(),DS=/^\d{4}-\d{2}-\d{2}$/,str=function(v,m)
   b.logs=(Array.isArray(n.logs)?n.logs:[]).filter(function(l){return l&&typeof l==="object"&&DS.test(l.d)&&typeof l.id==="string"&&/^[A-Z]{2}$/.test(l.id);}).slice(-2000).map(function(l){
     var o={d:l.d,id:l.id,t:str(l.t,60)};if(l.rpe!=null)o.rpe=Math.max(0,Math.min(10,numv(l.rpe)));if(l.note!=null)o.note=str(l.note);if(l.sum!=null)o.sum=str(l.sum);if(l.abs!=null)o.abs=l.abs?1:0;
     if(l.km!=null)o.km=numv(l.km);if(l.min!=null)o.min=numv(l.min);if(l.lg!=null)o.lg=l.lg?1:0;if(l.bl!=null)o.bl=l.bl?1:0;
-    if(l.vs&&typeof l.vs==="object"&&!o.bl){o.vs=vsZero();VPAT.forEach(function(p){o.vs[p]=Math.max(0,Math.min(60,Math.floor(numv(l.vs[p]))));});}
+    if(l.vs&&typeof l.vs==="object"&&!o.bl){o.vs=vsZero();VPAT.forEach(function(p){o.vs[p]=Math.max(0,Math.min(60,Math.floor(numv(l.vs[p]))));});}if(o.vs&&l.vm!=null)o.vm=Math.max(0,Math.min(VMAP,Math.floor(numv(l.vm))));
     if(Array.isArray(l.sk))o.sk=l.sk.filter(function(x){return ["hs","mu","ls","fl","pl"].indexOf(x)>=0;});
     if(Array.isArray(l.m))o.m=l.m.filter(function(x){return typeof x==="string"&&MMOD[x];});
     if(l.pr!=null)o.pr=Math.max(0,Math.min(20,Math.floor(numv(l.pr))));
@@ -850,19 +850,28 @@ var VPAT=["pull","push","legs","hinge","core"];
 var VSEST={KA:{pull:8,push:8,core:3},KB:{pull:8,push:8,core:3},KC:{legs:9,hinge:3,pull:6,core:3},CH:{pull:6,push:4,legs:4},HO:{pull:6,push:6,legs:6,core:3},DL:{pull:4,push:4},TE:{pull:2,push:2}};
 /* Pattern per item key (patKey, so gym, home, Field kit "mx_" and favourite "fav_" copies share it). Arms, shoulder care,
    forearms, mobility and skill holds count for no pattern. Leg keys match LEGK. */
+/* A-026: hip abduction (abductor machine, banded abduction, side-lying leg raises, fire hydrants: key g_ab) is leg
+   accessory and counts for no pattern, like the running prehab abduction c_gm; it is no hip hinge. Logs written since
+   carry vm = VMAP; for older logs logVs() reads their sets by the new mapping (the logs themselves stay as they are). */
+var VMAP=1,VREMAP={g_ab:"hinge"};
 var PATK=(function(){var m={},t={pull:"a2_com a2_row a2_wpu a_expu a_lat a_row b2_lr b2_sw b_er b_fr b_neg c_pu ch_row fl_pull gl_pull h_pull mu_neg mu_pro u_row",
   push:"a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh",
-  legs:"c_sq c_lu c_calf g_bss g_su gl_sq h_sq",hinge:"c_rdl g_ht g_kb g_ab g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl",
+  legs:"c_sq c_lu c_calf g_bss g_su gl_sq h_sq",hinge:"c_rdl g_ht g_kb g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl",
   core:"x_aw x_db x_lr x_pal x_sp x_be kp_pal kp_rot"};Object.keys(t).forEach(function(p){t[p].split(" ").forEach(function(k){m[k]=p;});});return m;})();
 var EMPAT={lower:["legs","hinge"],glutes:["hinge"],upper:["pull","push"],core:["core"]};
 var GPAT={pull:"pull",dips:"push",push:"push",sq:"legs",ht:"hinge",rdl:"hinge",mu:"pull",fl:"pull",hs:"push",pl:"push",ls:"core"};
 function itPat(it){if(!it||it.f||it.iso||it.test||!it.k)return "";var k=patKey(it.k);return Object.prototype.hasOwnProperty.call(PATK,k)?PATK[k]:"";}
 function vsZero(){return {pull:0,push:0,legs:0,hinge:0,core:0};}
+/* Sets per pattern of a strength log by today's mapping. A log from before A-026 (no vm) still counts the sets of a
+   remapped exercise under its old pattern; they are taken off it (its default 3 sets, as the log keeps no set count). */
+function logVs(l){var v=l.vs;if(!v)return VSEST[l.id]||null;if((l.vm||0)>=VMAP||!l.ex)return v;var o=null;
+  Object.keys(l.ex).forEach(function(k){var p=VREMAP[patKey(k.split("#")[0])];if(!p)return;o=o||{pull:v.pull||0,push:v.push||0,legs:v.legs||0,hinge:v.hinge||0,core:v.core||0};o[p]=Math.max(0,o[p]-3);});
+  return o||v;}
 function volSets(s,c,id){var t=vsZero();s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){var p=itPat(it);if(!p||curVar(it,LOC())<0)return;t[p]+=setsOf(it,b,c,id);});});
   VPAT.forEach(function(p){t[p]=Math.min(60,t[p]);});return t;}
 var VSC={};
 function vs7(s){var n=D.logs.length,key=s+"|"+n+"|"+(n?D.logs[n-1].d+D.logs[n-1].id:"");if(VSC.L===D.logs&&VSC.k===key)return VSC.v;
-  var t=vsZero(),first="";D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;if(!first||l.d<first)first=l.d;var x=diff(l.d,s);if(x<0||x>6)return;var v=l.vs||VSEST[l.id];if(v)VPAT.forEach(function(p){t[p]+=v[p]||0;});});
+  var t=vsZero(),first="";D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;if(!first||l.d<first)first=l.d;var x=diff(l.d,s);if(x<0||x>6)return;var v=logVs(l);if(v)VPAT.forEach(function(p){t[p]+=v[p]||0;});});
   t.on=!!first&&diff(first,s)>=7;VSC={L:D.logs,k:key,v:t};return t;}
 function goalPat(){var g=D.goal;return g&&GOALS[g.k]?(GPAT[g.k]||""):"";}
 function plBoost(){var g=D.goal;return !!(g&&g.pz&&goalPat()&&(g.pk||diff(g.pz,TODAY)<21));}
@@ -887,7 +896,7 @@ function volBias(b){var P={};b.items.forEach(function(it){var p=itPat(it);if(p&&
    60 min (outside Limited time) and never below 6 leg sets in a session that is a leg session. */
 var NDEF={str:3,bal:3,run:2};
 function bandCaps(){var t=vsZero(),n=vsZero(),f=vsZero(),cap={};
-  D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;var x=diff(l.d,TODAY);if(x<1||x>14)return;var v=l.vs||VSEST[l.id];if(!v)return;VPAT.forEach(function(p){if(v[p]){f[p]++;if(x<7){t[p]+=v[p];n[p]++;}}});});
+  D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;var x=diff(l.d,TODAY);if(x<1||x>14)return;var v=logVs(l);if(!v)return;VPAT.forEach(function(p){if(v[p]){f[p]++;if(x<7){t[p]+=v[p];n[p]++;}}});});
   var on=vs7(TODAY).on;cap._n={};VPAT.forEach(function(p){var hi=vBand(p)[1],nw=on&&!vHot(p)?n[p]+1:Math.max(n[p]+1,NDEF[D.focus]||3,Math.ceil(f[p]/2));cap[p]=Math.max(0,Math.min(hi-t[p],Math.floor(hi/nw)));cap._n[p]=nw;});
   cap._u=t;return cap;}
 /* A cut keeps a pattern at its band lower limit: over the 7 days, or at least its share of it per session. */
@@ -908,6 +917,11 @@ function bandFit(s,c,id,cap,est){var u=cap._u,U=[],ch=false,lb=null,lg0=legSets(
     if(best){var o=best.r?best.b.tr:best.its[0].ts,n=cur(best)-1;if(best.r)best.b.tr=n;else best.its[0].ts=n;
       /* The 60–90 min frame stays the hard limit (concept 5.3) and a leg session stays one (≥ 6 leg sets, A-009). */
       if((!D.short&&est()<DURLO)||(lg0>=6&&legSets(s,c,id)<6)){if(best.r)best.b.tr=o;else best.its[0].ts=o;best.no=1;}else ch=true;continue;}
+    /* A-026: an exercise of a full pattern outside the emphasis block (circuits mix patterns, so their rounds cannot be cut
+       for one of them) swaps for a pattern-free one of the same body area and the same sets: rear delts for a pull,
+       lateral raises for a push, hip abduction, adductors or shins for legs and hinge. Same order as the cuts. Only for a
+       real surplus: the 7 days with today's session would go over the band upper limit, not just over the fair share. */
+    if(bandSwap(s,c,id,cap,v,over,est,lg0)){ch=true;continue;}
     /* Before dropping: an emphasis exercise of a full pattern swaps for one whose pattern has room (same time, fewer sets
        of the full pattern), e.g. a split squat for a kickback once hinge is full. */
     var sw=lb?lb.items.filter(function(it){var p=itPat(it);return !it.anc&&!isFavIt(it)&&!it.sw&&p&&over.indexOf(p)>=0;}).pop():null;
@@ -925,6 +939,25 @@ function bandFit(s,c,id,cap,est){var u=cap._u,U=[],ch=false,lb=null,lg0=legSets(
       lb.more=[drop].concat(lb.more||[]);lb.vcut=1;ch=true;continue;}
     break;}
   return ch;}
+var BSWAP={pull:["Reverse fly machine","Cable face pulls","Bent-over dumbbell reverse fly","Band face pulls","Band pull-aparts","Prone T-raises","Prone Y-Raises"],
+  push:["Cable lateral raises","Dumbbell lateral raises","Band lateral raises","Scapula Push-Ups Plus"],
+  legs:["Abductor machine","Lateral band walks","Copenhagen Plank","Wall tibialis raises","Side-lying leg raises"],
+  hinge:["Abductor machine","Banded hip abduction","Lateral band walks","Copenhagen Plank","Fire hydrants"],core:[]};
+function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},C=[],cat=null;
+  s.blocks.forEach(function(b){b.items.forEach(function(it){var q=curVar(it,loc);if(q>=0)used[it.opts[q].n]=1;if(it.k)keys[patKey(it.k)]=1;});});
+  s.blocks.forEach(function(b,bi){if(b.warm||b.cool||b.add||b.trial||b.gx||b.skill||b.mu||b.hsb||b.lng||b.lowb||(D.short&&b.p>1))return;
+    var pr=b.acc?0:(b.legs?4:(b.fav?3:(b.p>1?1:2)));
+    b.items.forEach(function(it,ii){var p=itPat(it);if(!p||over.indexOf(p)<0||u[p]+v[p]<=vBand(p)[1]||it.anc||it.gx||it.add||it.bx||isFavIt(it)||curVar(it,loc)<0)return;C.push({b:b,it:it,ii:ii,p:p,pr:pr,i:bi});});});
+  C.sort(function(a,b){return a.pr-b.pr||b.i-a.i||b.ii-a.ii;});
+  for(var j=0;j<C.length;j++){var x=C[j],n0=setsOf(x.it,x.b,c,id),lh=(x.p==="legs"||x.p==="hinge")?n0:0;
+    if(!bandLoOK(cap,v,x.p,n0)||(lh&&u.legs+u.hinge+v.legs+v.hinge-lh<10))continue;
+    cat=cat||favCatalog();var pick=null;
+    BSWAP[x.p].some(function(nm){var y=cat[nm];if(!y||used[nm]||keys[patKey(y.it.k)]||isNever(nm)||painHit(nm)||y.it.f||y.it.iso||y.it.test||itPat(y.it)||!can(y.it.opts[y.v],loc))return false;pick=y;return true;});
+    if(!pick)continue;var n={};Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});delete n.def;delete n.lv;delete n.up;n.fx=pick.v;n.bx=x.it.opts[curVar(x.it,loc)].n;
+    if(!x.b.rounds)n.ts=n0;var old=x.b.items;x.b.items=old.map(function(it){return it===x.it?n:it;});
+    if((!D.short&&est()<DURLO)||(lg0>=6&&legSets(s,c,id)<6)){x.b.items=old;continue;}
+    return true;}
+  return false;}
 function legLog(l){return l.lg!=null?!!l.lg:(l.id==="KC"||l.id==="HO");}
 function ago(n){return n===Infinity?"still to do":(n===1?"was yesterday":"last done "+n+" days ago");}
 function cap(n){return n===Infinity?21:Math.min(n,21);}
@@ -1156,6 +1189,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   h+='<label class="n" for="c'+id+'">'+((D.fav||[]).indexOf(o.n)>=0?'<span class="fvs" aria-label="favourite">★ </span>':'')+esc(o.n)+'</label>';
   if(it.nh) h+='<div class="c muted nxn">On your never list, but it is your goal exercise and has no equivalent here. Change the goal under More to drop it.</div>';
   if(it.nx) h+='<div class="c muted nxn">Instead of '+esc(it.nx)+' · '+esc(W("never")).toLowerCase()+'</div>';
+  if(it.bx) h+='<div class="c muted nxn">Instead of '+esc(it.bx)+' · enough of these sets this week</div>';
   if(sk) return h+'<div class="c">'+(pain?(it.add?"Hidden today: your pain filter is on.":"Skipped because of pain."):"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
   h+='<div class="tg">'+esc(tg)+'</div>';
   var wu=wuSets(it,v); if(wu) h+='<div class="wus"><span class="wub">'+esc(W("wsets"))+'</span> '+esc(wuText(wu))+' <span class="muted">· not counted</span></div>';
@@ -2025,7 +2059,7 @@ function saveTrain(){
   var absDone=!!dy.done["abs-T"]; if(absDone) D.abs=(absFor(id).i+1)%ABS.length;
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
   var rk0=rankOf(xpTotal());
-  var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};addLog(lgo);
+  var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,vm:VMAP,lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};addLog(lgo);
   /* Keep as favourite? Asked once per added exercise, on the Today page after logging. */
   var fa=D.favAsk||[];addN.forEach(function(n){if((D.fav||[]).indexOf(n)<0&&fa.indexOf(n)<0){fa.push(n);(D.favQ=D.favQ||[]).push(n);}});if(addN.length)D.favAsk=fa.slice(-200);
   afterLog(rk0,prs,lgo); if(lvl()>L0)D._toastX=(D._toastX?D._toastX+" ":"")+"Level up: "+LVN[lvl()]+"."; finish(dy);
