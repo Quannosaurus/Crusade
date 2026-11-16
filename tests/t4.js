@@ -76,8 +76,9 @@ const pullIn=tin.find(i=>/Clean pull-ups/.test(i.closest('.exb').textContent));A
 A.click('[data-a=rpe][data-v="8"]');A.click('[data-a=savetr]');if(A.k.D().profile.pull!==12)issue('Test schreibt Wert nicht in den Stand');
 // 5 backup banner
 const D5=A.k.D();for(let i=0;i<10;i++)D5.logs.push({d:'2026-10-0'+(i%9+1),id:'MO',t:'Morgenroutine'});A.k.render();A.click('.nav [data-tab=start]');
-if(!/since the last backup/.test(A.txt()))issue('Sicherungshinweis fehlt');
-A.click('.nav [data-tab=mehr]');A.click('[data-a=exp]');A.click('.nav [data-tab=start]');if(/since the last backup/.test(A.txt()))issue('Sicherungshinweis verschwindet nach Sicherung nicht');
+if(!A.$('#bkrem')||!/backup/.test(A.$('#bkrem').textContent))issue('Sicherungshinweis fehlt');
+A.click('.nav [data-tab=mehr]');A.click('[data-a=exp]');A.click('.nav [data-tab=start]');if(!A.$('#bkrem'))issue('Sicherungshinweis verschwindet schon beim Erzeugen des Texts');
+A.click('.nav [data-tab=mehr]');A.click('[data-a=exp]');A.$('#bk').dispatchEvent(new A.w.Event('copy',{bubbles:true}));A.click('.nav [data-tab=start]');if(A.$('#bkrem'))issue('Sicherungshinweis verschwindet nach Sicherung nicht');
 // 6 home
 A.click('[data-tab=train]');A.click('[data-a=loc][data-v=h]');console.log('Zuhause:',A.$('.hero h2').textContent,'|',A.$$('.ex .n').map(x=>x.textContent).slice(0,12).join(', '));
 // 7 short mode

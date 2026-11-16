@@ -97,4 +97,8 @@ Internal IDs and data keys never change, only the display name:
     2. Run `python3 tools/encrypt_love.py` and type the new code twice (at least 12 characters). It writes `src/love.enc.json` with a fresh salt and prints only the number of notes.
     3. Run `python3 tools/build.py`, `sh tests/run.sh`, then commit `src/love.enc.json` + build and push. On each phone, enter the code once (theme gate or start card).
 - **Backup:** `saveBackupFile`, `restoreText`, `askPersist`.
+  - A-014: `bkJSON()` writes the full user state incl. day progress `days` (file and text alike) and stamps `bkTs` (time the backup was made). Left out: keys starting with `_` and `BKSKIP` (tab, obStep, pendingTheme, wantLove, statEx, loveOK); the love key `kz_love_k` lives outside `D`. `cleanImport()` whitelists `days` (`cleanDays`, last 14 days), `abs`, `pain`, `startP`, `bkDate`, `bkTs`, `bkAt`; optional log/record fields only when present. A restore with `bkTs` counts as backed up.
+  - `markBk()` records a successful backup (`bkTs`, `bkAt` = entries, `bkDate`): share resolved, download, text copied (button or by hand via the `copy` event). Creating the text alone does not count.
+  - `bkDue()` drives the quiet start-page reminder `#bkrem` (`W("bkrem")`): last backup > 7 days ago or ≥ 5 new entries; without any backup from the 3rd entry. One tap = `bkfile`.
+  - `MAXBK` (10 MB): larger files or texts are refused with a hint before reading.
 - **Test hook:** `window.__kz` exposes internals for tests.
