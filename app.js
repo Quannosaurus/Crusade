@@ -381,7 +381,7 @@ function COREX(){return [
 /* Anchor (lower/glutes emphasis): one fixed exercise per session type that stays the same week after week, so it can
    progress (repeated exposure is what progressive overload needs), plus one rotating exercise. First match that is not
    already in the session wins; Hip thrust is shared by Strength A and C, so it is trained twice a week on one progression. */
-var ANCH={lower:{KA:["g_ht","g_bss"],KB:["g_rdl","g_bss"],KC:["g_ht","g_su"],HO:["g_su","g_ab"]},glutes:{KA:["g_ht","g_45"],KB:["g_45","g_su"],KC:["g_ht","g_45"],HO:["g_su","g_fp"]}};
+var ANCH={lower:{KA:["g_ht","g_bss"],KB:["g_rdl","g_bss"],KC:["g_ht","g_su"],HO:["g_su","g_ab"],CH:["g_rdl","g_bss"]},glutes:{KA:["g_ht","g_45"],KB:["g_45","g_su"],KC:["g_ht","g_45"],HO:["g_su","g_fp"],CH:["g_45","g_su"]}};
 function EMB(id,pres){var e=emph();var cfg={lower:[GLUTES,"Lower body focus","Glutes & legs"],glutes:[GLUTEX,"Glute focus","Glutes"],upper:[UPPERX,"Upper body focus","Arms & shoulders"],core:[COREX,"Core focus","Core & back"]}[e];if(!cfg)return null;
   pres=pres||[];var all=cfg[0]().filter(function(it){return !it.opts.some(function(o){return pres.indexOf(o.n)>=0;});});
   var big=(e==="lower"||e==="glutes")?id==="KC":(e==="upper"&&(id==="KA"||id==="KB"));
@@ -453,7 +453,7 @@ function postBlocks(id,bl){var sk=D.skills,out=[];
     if(id==="HO"&&sk.hs) ex=[];
     var at=out.length&&out[0].name==="Warm-up"?1:0; Array.prototype.splice.apply(out,[at,0].concat(ex.slice(0,id==="HO"?1:2)));}
   var em=emph();
-  if(em!=="bal"&&(id==="KA"||id==="KB"||id==="HO"||id==="KC")){
+  if(em!=="bal"&&(id==="KA"||id==="KB"||id==="HO"||id==="KC"||(id==="CH"&&(em==="lower"||em==="glutes")))){
     if((em==="lower"||em==="glutes")&&id!=="KC")out.forEach(function(b){if(b.rounds&&!b.lowb&&/Strength|Circuit|Pull|Push|Transitions|Base strength|Explosive/.test(b.name))b.rounds=[Math.max(2,b.rounds[0]-1),Math.max(2,b.rounds[1]-1)];});
     if(em==="upper"&&id==="KC")out.forEach(function(b){if(b.name==="Legs"&&b.items.length>3)b.items=b.items.slice(0,3);});
     var pr0=[];out.forEach(function(b){b.items.forEach(function(it){it.opts.forEach(function(o){pr0.push(o.n);});});});var eb=EMB(id,pr0);if(eb)out.push(eb);}
@@ -586,7 +586,7 @@ function design(s,id,c){s.ab=absFor(id);
   var fill=[
     function(){var b=blk(function(x){return x.fav;});if(b&&b.more&&b.more.length&&b.items.length<6){b.items.push(b.more.shift());return true;}},
     function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<3){b.items.push(b.more.shift());return true;}},
-    function(){if(s.ab&&s.ab.mini&&id!=="CH"){s.ab.rounds=8;s.ab.mini=false;return true;}},
+    function(){if(s.ab&&s.ab.mini&&(id!=="CH"||!D.skills.mu)){s.ab.rounds=8;s.ab.mini=false;return true;}},
     function(){var b=blk(function(x){return x.lowb;});if(b&&b.rounds&&b.rounds[0]<4){b.rounds=[4,4];return true;}},
     function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<4){b.items.push(b.more.shift());return true;}}];
   for(var k=0;k<4;k++)fill.push(fill[0]);
@@ -594,6 +594,18 @@ function design(s,id,c){s.ab=absFor(id);
     if(!fill[j]())continue;var m=est();
     if(m>DURMAX){s.blocks.forEach(function(b,x){var add=b.items.slice(keep[x].length);if(add.length&&b.more)b.more=add.concat(b.more);b.items=keep[x];b.rounds=rd[x];});s.ab=ab0;}else s.min=m;}
   return s;}
+/* Skill Trial (P-3): test items for the goal and the active skills (values go into the profile and the log's tv), with a
+   lower/glute emphasis also a lower-body test: max clean reps of the anchor exercise at its working weight (tv.lb). */
+function trialItems(){var sk=D.skills,g=D.goal&&GOALS[D.goal.k]?D.goal.k:"",out=[T("pull","reps",["Clean pull-ups"])];
+  if(sk.mu||g==="mu"){out.push(T("expl","reps",["Explosive chest-to-bar pull-ups"]));out.push(T("mu","reps",["Clean muscle-ups"]));}
+  if(sk.hs||g==="hs"){out.push(T("hsw","s",["Chest-to-wall handstand"]));out.push(T("hsf","s",["Freestanding handstand"]));}
+  if(sk.ls||g==="ls"){out.push(lsKey()==="lsit"?T("lsit","s",["Straight-leg L-sit hold"]):T("tuck","s",["Tuck L-sit hold"]));}
+  if(g==="dips")out.push(T("dips","reps",["Dips"]));if(g==="push")out.push(T("push","reps",["Push-ups"]));
+  var lb=lbTest();if(lb)out.push(lb);return out;}
+function lbTest(){var e=emph();if(e!=="lower"&&e!=="glutes")return null;var key=(ANCH[e].KC||[])[0],src=(e==="lower"?GLUTES():GLUTEX()).filter(function(it){return it.k===key;})[0];if(!src)return null;
+  var v=curVar(src,LOC());if(v<0)return null;var o=src.opts[v],st=D.ex[src.k+"#"+v],w=o.w&&st?st.w:0;
+  return {test:"lb",tvo:1,unit:"reps",lw:w,opts:[{n:o.n,req:o.req,w:false}],c:"Max clean reps"+(w?" with your working weight "+fmtKg(w)+" kg":" at your working weight")+". Stop when the form breaks."};}
+function lastTv(k){for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(l.tv&&l.tv[k]!=null)return l.tv[k];}return null;}
 function S0(id,c){
   var ph=c.phase,L=lvl(),lf=c.legB!=null?!!c.legB:(c.lowFreq&&c.kcGap>=10),pr=D.profile,b;
   switch(id){
@@ -664,11 +676,16 @@ function S0(id,c){
       P("c_dip",8,15,"reps","",["Dips","Weighted dips||w","Negative parallel bar dips|p"],"add weight","",[2,1]),
       P("c_rf",8,12,"reps","Anti-hunchback",["Reverse Butterfly||w","Dumbbell reverse flyes||w","Ring reverse flyes|r"],"more weight")]},
     KPOW()]};
-  case "CH": b={goal:"A check-in every two weeks. Note time and clean attempts in the note.",blocks:[WARM(),
+  case "CH": b={goal:"A check-in every two weeks: test what you train for, then practise. Values you enter become your new status.",blocks:[WARM(),
+    {name:"Trial",info:"2–3 min rest between tests · only clean reps count",p:1,rest:150,trial:1,items:trialItems()},
     {name:"Muscle-Up EMOM",info:"2 attempts every minute for 10 minutes",p:1,rest:0,items:[F("10 × 2",L===0?"Basic: 2 negative pull-ups each":"Sloppy? Switch to transitions",L===0?["Negative pull-ups"]:["Explosive chest-to-bar pull-ups","Transition on a Smith machine","Strict muscle-ups (high bar)","Ring muscle-up with foot assist"])]},
     {name:"Block 2",info:"60 s rest between exercises",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"]),F("30","",["Push-Ups"]),F("5","5 s lowering",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
-    {name:"Block 3",info:"60 s rest",p:1,rest:60,items:[F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"]),F("30","",["Bodyweight Rows","Cable row"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
-    {name:"Block 4",info:"60 s rest",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"]),F("30","",["Jumping Squats"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]}]};
+    {name:"Block 3",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"]),F("30","",["Bodyweight Rows","Cable row"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
+    {name:"Block 4",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"]),F("30","",["Jumping Squats"]),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]}]};
+    if(!D.skills.mu)b.blocks.splice(2,0,{name:"Pull & push",info:"Exercises back to back · 60 s rest after the round",p:1,rest:60,rounds:[3,3],items:[
+      P("ch_row",8,12,"reps","Chest to the bar, shoulders down",["Bodyweight Rows","Cable row||w","Band rows|b","Inverted rows under a table|s"],"feet higher or more weight","",[0,0]),
+      P("ch_push",6,15,"reps","Body in one line",["Push-ups","Knee push-ups","Incline push-ups on a chair|s"],"harder variation","",[1,0])]});
+    if(D.skills.fl)b.blocks.splice(2,0,FLB(false,1));
     if(lf) b.blocks.push(LEGMINI(c.legWhy));
     return b;
   case "SK": return {goal:"Calm technique session. Everything clean, nothing to failure.",blocks:[WARM(),HSB(true),
@@ -803,9 +820,12 @@ function recAll(s,noKick){
   var gr=gRun();if(gr){W={KA:W.KA,KB:W.KB,C:W.C,RH:Math.max(W.RH||0,7),RE:Math.max(W.RE||0,6),RI:GOALS[gr].g==="t"?Math.max(W.RI||0,6):W.RI};}
   function add(id,btn,wt,since,ok,why,min){ if(wt&&ok&&since>=(min||6)) C.push({id:id,btn:btn,sc:wt*cap(since)/7,why:why}); }
   var hardOK=!h.kcY&&!h.ranToday&&!kickT;
-  add("KA","train",W.KA,h.KA,strOK&&!h.ranToday,"Strength A "+ago(h.KA)+".",mS);
-  add("KB","train",W.KB,h.KB,strOK,"Strength B "+ago(h.KB)+".",mS);
-  var lowE=em0==="lower"||em0==="glutes",kcId=(!lowE&&h.CH>=13&&h.KC<h.CH)?"CH":"KC";
+  /* Skill Trial every 14 days for every emphasis (P-3). With a lower/glute emphasis it takes the slot of the more due of
+     Strength A/B, never Strength C; it needs 2 weeks of strength history first. */
+  var lowE=em0==="lower"||em0==="glutes",chAB=lowE&&h.CH>=13&&D.logs.some(function(l){return STR[l.id]&&diff(l.d,s)>=13;})?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
+  add(chAB==="KA"?"CH":"KA","train",W.KA,h.KA,strOK&&!h.ranToday,chAB==="KA"?chW:"Strength A "+ago(h.KA)+".",mS);
+  add(chAB==="KB"?"CH":"KB","train",W.KB,h.KB,strOK,chAB==="KB"?chW:"Strength B "+ago(h.KB)+".",mS);
+  var kcId=(!lowE&&h.CH>=13&&h.KC<h.CH)?"CH":"KC";
   add(kcId,"train",W.C,lowE?h.KC:h.C,strOK&&!kickT&&!(F==="run"&&h.hardR<=1),kcId==="CH"?"The skill trial has been due for 2 weeks.":"Legs and full body "+ago(h.C)+".",mS);
   add("RH","run",W.RH,h.RH,hardOK,(F==="run"||gr?"Long run ":"Hard run ")+ago(h.RH)+".");
   add("RI","run",W.RI,h.RI,hardOK&&h.RH>=2,"Intervals "+ago(h.RI)+".",5);
@@ -960,6 +980,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
     if(q.lev<0) extra='<div class="c gold">Max under 11 s: pick an easier variation via “Swap”.</div>';
     if(q.lev>0) extra='<div class="c gold">Max over 33 s: pick a harder variation'+(it.iso==="hsw"?' or hands closer to the wall, only the toes touch':(it.iso==="tuck"?', so practise the straight-leg L-sit':''))+'.</div>';
     extra+='<div class="c">Your max: '+Math.round(m)+' s. Complete all sets and it goes up automatically.</div>';}
+  else if(it.test&&it.tvo){n=1;var lt=lastTv(it.test);tg="Max reps"+(it.lw?" · "+fmtKg(it.lw)+" kg":"")+(lt!=null?" · last trial "+lt:"");g={r:""};}
   else if(it.test){n=1;isS=it.unit==="s";tg="Max · so far "+D.profile[it.test]+" "+it.unit;g={r:""};}
   else {g=target(it,v);n=setsOf(it,b,c,sid);isS=it.unit.indexOf("s")===0;tg=n+" × "+g.r+" "+it.unit+(o.w&&g.w?" · "+fmtKg(g.w)+" kg":"");}
   var pc=picFor(o.n);
@@ -1647,7 +1668,7 @@ function vStand(){
   var p=D.profile,c=ctx(TODAY),L=lvl(),F2=[["pull","Clean pull-ups"],["dips","Dips"],["push","Push-ups"],["expl","Explosive chest-to-bar pull-ups"],["negmu","Negative Muscle-Ups (5 s)"],["mu","Clean muscle-ups"],["hang","Active Hang (s)"],["tuck","Tuck L-Sit (s)"],["lsit","Straight-leg L-sit (s)"],["hollow","Hollow Body (s)"],["hsw","Chest-to-wall handstand (s)"],["hsf","Freestanding handstand (s)"],["pike","Pike Push-Ups"]];
   var mu=L===0?"Basic: build pull-ups and dips":(p.mu>=3?"Advanced: build muscle-ups":(p.mu>=1?"Consolidate the muscle-up":(p.pull>=10&&p.expl>=5?"Free muscle-up attempts":"Build explosive strength")));
   var hq=isoP(p.hsw),lq=isoP(p[lsKey()]);
-  return '<div class="card"><div class="sec"><h2>Your status</h2><div class="tally"><div class="t"><b>'+LVN[L]+'</b>Level</div><div class="t"><b>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+'</b>Focus</div>'+(D.skills.mu?'<div class="t"><b>'+mu+'</b>Muscle-Up</div>':'')+(D.skills.hs?'<div class="t"><b>Stage '+hsStage()+' · '+hq.n+' × '+hq.h+' s</b>Handstand</div>':'')+(D.skills.ls?'<div class="t"><b>'+(lsKey()==="lsit"?"L-Sit ":"Tuck ")+lq.n+' × '+lq.h+' s</b>L-Sit</div>':'')+(D.skills.fl?'<div class="t"><b>'+FLN[D.profile.flSt||0]+'</b>Front Lever</div>':'')+(D.skills.pl?'<div class="t"><b>'+PLN[D.profile.plSt||0]+'</b>Planche</div>':'')+'<div class="t"><b>Week '+c.week+(c.cyc===6?' · Deload':'')+'</b>Phase '+c.phase+'</div>'+(D.focus!=="str"?'<div class="t"><b>'+fmtKg(D.runKm)+' km · '+D.runI+' × 3 min</b>Hard run · intervals</div>':'')+'</div><p class="muted">How the app learns: hold times adapt after every session, targets follow your last entry, front lever and planche stages rise once you manage the next variation, run length and intervals follow how hard it felt. Rep maxes are measured by the test every 6 training weeks.</p></div>'+goalLadder()+
+  return '<div class="card"><div class="sec"><h2>Your status</h2><div class="tally"><div class="t"><b>'+LVN[L]+'</b>Level</div><div class="t"><b>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+'</b>Focus</div>'+(D.skills.mu?'<div class="t"><b>'+mu+'</b>Muscle-Up</div>':'')+(D.skills.hs?'<div class="t"><b>Stage '+hsStage()+' · '+hq.n+' × '+hq.h+' s</b>Handstand</div>':'')+(D.skills.ls?'<div class="t"><b>'+(lsKey()==="lsit"?"L-Sit ":"Tuck ")+lq.n+' × '+lq.h+' s</b>L-Sit</div>':'')+(D.skills.fl?'<div class="t"><b>'+FLN[D.profile.flSt||0]+'</b>Front Lever</div>':'')+(D.skills.pl?'<div class="t"><b>'+PLN[D.profile.plSt||0]+'</b>Planche</div>':'')+'<div class="t"><b>Week '+c.week+(c.cyc===6?' · Deload':'')+'</b>Phase '+c.phase+'</div>'+(D.focus!=="str"?'<div class="t"><b>'+fmtKg(D.runKm)+' km · '+D.runI+' × 3 min</b>Hard run · intervals</div>':'')+'</div><p class="muted">How the app learns: hold times adapt after every session, targets follow your last entry, front lever and planche stages rise once you manage the next variation, run length and intervals follow how hard it felt. Rep maxes are measured by the Skill Trial every 2 weeks and the test every 6 training weeks; clean sets in training can raise them, never lower them.</p></div>'+goalLadder()+
     '<div class="sec"><h3>Test values</h3><div class="grid2">'+F2.map(function(x){return '<label for="p_'+x[0]+'">'+x[1]+'</label><input type="number" id="p_'+x[0]+'" inputmode="numeric" data-prof="'+x[0]+'" value="'+Math.round(p[x[0]]*10)/10+'">';}).join("")+'</div></div>'+
     '<div class="sec"><h3>Cycle</h3><p class="muted">6 weeks phase 1, 6 weeks phase 2, every 6th training week is a deload with a test. Weeks without training do not count.</p><div class="row"><label class="lab" for="p_start">Start date</label><input type="text" id="p_start" data-start="1" value="'+D.start+'" inputmode="numeric" aria-describedby="sth"></div><p class="muted" id="sth">Format YYYY-MM-DD</p></div></div>';
 }
@@ -1679,7 +1700,7 @@ function vFavs(){
     '</div></div>';
   return h;}
 function vMehr(){
-  var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before Strength A.","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","After more than 10 days off, targets step back once, after 4 weeks twice.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: swap the variation. Three times at the limit in a week: a recovery day.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
+  var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before Strength A.","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","After 14 days off or more, targets step back once, after 4 weeks twice.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: swap the variation. Three times at the limit in a week: a recovery day.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
   if(!D.seenFocus){D.seenFocus=true;save();}
   return '<div class="card"><div class="sec"><h2>'+esc(W("goal"))+'</h2><p class="muted">One active goal. It is shown on the start page and on the status page; reached goals stay in the list below.</p>'+goalHTML("m",true)+goalArch()+'</div>'+
     '<div class="sec"><h2>Focus & skills</h2>'+focusHTML("m")+'</div>'+
@@ -1722,8 +1743,9 @@ function finish(dy,keep){LV.fin=thKey()==="love"?TODAY:"";var tl=TH().toast;D._t
   else{dy.open={};dy.pick=null;delete dy.add;Object.keys(dy.done).forEach(function(k){if(k.indexOf("m-")!==0)delete dy.done[k];});dy.inp={};dy.skip={};}
   D.tab="start";save();render();window.scrollTo(0,0);}
 function needRpe(dy){if(!dy.fin.rpe){dy.fin.err="Please choose how hard it was.";save();render();return true;}dy.fin.err="";return false;}
+var PATP={"Clean pull-ups":"pull","Pull-ups":"pull","Parallel bar dips":"dips","Dips":"dips","Push-ups":"push","Explosive chest-to-bar pull-ups":"expl","Clean muscle-ups":"mu"};
 function saveTrain(){
-  var dy=day(); if(needRpe(dy)) return;
+  var dy=day(); if(needRpe(dy)) return; var L0=lvl();
   var loc=LOC(),kit=loc==="m",c=ctx(TODAY),id=trainId(dy).id,s=S(id,c),f=dy.fin,wts=[],hold=f.rpe>=10,isoDone={},exl={},tv={},prs=[];
   function rec(key,r,w,nm){exl[key]=[r,w||0];var sc=(w||0)*1000+r,b=D.pr[key];if(b&&sc>b.sc)prs.push(nm+": "+r+(w?" × "+fmtKg(w)+" kg":""));if(!b||sc>b.sc)D.pr[key]={sc:sc,r:r,w:w||0,d:TODAY,n:nm};}
   var addN=[];
@@ -1738,7 +1760,7 @@ function saveTrain(){
         if(mx>D.profile[it.iso]) D.profile[it.iso]=mx; rec("iso:"+it.iso,mx,0,it.opts[v].n+" (s)"); }
       else if(dy.done[iid]&&!hold){ isoDone[it.iso]=1; D.profile[it.iso]=cur+1; }
       return; }
-    if(it.test){ if(sets.length){ D.profile[it.test]=sets[0]; tv[it.test]=sets[0]; rec("test:"+it.test,sets[0],0,it.opts[0].n); } return; }
+    if(it.test){ if(sets.length){ if(!it.tvo)D.profile[it.test]=sets[0]; tv[it.test]=sets[0]; rec("test:"+it.test,sets[0],it.lw||0,it.opts[0].n); } return; }
     if(it.f) return;
     var g=target(it,v), r, w=num(inp.w);
     if(sets.length) r=Math.min.apply(null,sets); else if(dy.done[iid]) r=g.r; else return;
@@ -1749,6 +1771,8 @@ function saveTrain(){
     if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};
     else D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:kit?(pv&&pv.stall||0):stall};
     if((it.k==="fl_h"||it.k==="pl_h")&&v<=4&&r>=it.lo){var pk=it.k==="fl_h"?"flSt":"plSt";if(v>D.profile[pk])D.profile[pk]=v;}
+    /* Re-rating from logs (P-3): a clean set of a pattern variant above the status raises it, never lowers it. */
+    var pk=PATP[it.opts[v].n];if(pk&&!(w>0)&&sets.length){var mxs=Math.max.apply(null,sets);if(mxs>(D.profile[pk]||0))D.profile[pk]=mxs;}
     if(it.opts[v].w&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
     if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
   });});
@@ -1758,7 +1782,7 @@ function saveTrain(){
   addLog({d:TODAY,id:id,t:NAMES[id],lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length});
   /* Keep as favourite? Asked once per added exercise, on the Today page after logging. */
   var fa=D.favAsk||[];addN.forEach(function(n){if((D.fav||[]).indexOf(n)<0&&fa.indexOf(n)<0){fa.push(n);(D.favQ=D.favQ||[]).push(n);}});if(addN.length)D.favAsk=fa.slice(-200);
-  afterLog(rk0,prs); finish(dy);
+  afterLog(rk0,prs); if(lvl()>L0)D._toastX=(D._toastX?D._toastX+" ":"")+"Level up: "+LVN[lvl()]+"."; finish(dy);
 }
 /* Log a past day (A-021): a training, run or kickboxing for one of the last 14 days ("bl":1, no exercise values).
    A training gets its leg flag and skills from the session as planned for that day (simulated like the week preview,
@@ -1968,7 +1992,7 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

@@ -41,7 +41,8 @@ PROF.forEach(p=>{const {w,k,errs}=boot();const D=k.D();
     ['KA','KB','KC'].forEach(id=>{const a=ancSeen[id]||[];if(a.length<2)issue(p.n+': '+id+' anchor seen only '+a.length+'×');if(new Set(a).size>1)issue(p.n+': '+id+' anchor changes: '+a.join(','));});
     Object.keys(ancProg).forEach(key=>{const v=ancProg[key];for(let j=1;j<v.length;j++)if(v[j]<v[j-1])issue(p.n+': anchor '+key+' went back '+v[j-1]+'→'+v[j]);
       if(v.length>=3&&!(v[v.length-1]>v[0]))issue(p.n+': anchor '+key+' did not progress '+v.join(','));});
-    const kcN=D.logs.filter(l=>l.id==='KC').length,chN=D.logs.filter(l=>l.id==='CH').length;if(chN)issue(p.n+': CH replaced KC '+chN+'×');if(kcN<4)issue(p.n+': KC only '+kcN+'× in 6 weeks');
+    // Since P-3 the Skill Trial is back for these emphases, but it takes a Strength A/B slot: Strength C stays every training week.
+    const kcN=D.logs.filter(l=>l.id==='KC').length;weeks.forEach((x,i)=>{if(!x.deload&&!x.ids.some(t=>t.startsWith('KC')))issue(p.n+': week '+(i+1)+' without KC (CH replaced KC?)');});if(kcN<4)issue(p.n+': KC only '+kcN+'× in 6 weeks');
   }else{
     // Balanced: no anchor marks, no emphasis block
     const s=k.S('KA',k.ctx(k.today()));if(s.blocks.some(b=>b.items.some(it=>it.anc)))issue(p.n+': anchor in balanced plan');
