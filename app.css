@@ -216,6 +216,7 @@ body[data-theme=plain] header h1,body[data-theme=plain] .big b,body[data-theme=p
 .thc .sw4{display:flex;gap:3px}.thc .sw4 i{width:8px;height:20px;border-radius:3px;display:block}
 .rkline{width:100%;text-decoration:none;display:flex;justify-content:space-between;gap:10px;align-items:center;font-size:.88rem;color:var(--muted);padding:2px 2px 0}
 .rkline b{color:var(--bone)}
+.gplat{margin:4px 2px 0;font-size:.85rem;color:var(--muted)}
 .gline{margin-top:4px;text-align:left;white-space:normal}.gline span:first-child{min-width:0;overflow-wrap:anywhere}
 .gl{list-style:none;padding:0;margin:8px 0 12px;display:grid;gap:8px}.gl li{display:grid;grid-template-columns:minmax(96px,40%) 1fr 42px;gap:10px;align-items:center;font-size:.88rem;color:var(--muted)}.gl li.ok,.gl li.now{color:var(--bone)}.gl li.now span{font-weight:600}.gl li b{text-align:right;font-variant-numeric:tabular-nums;color:var(--bone)}
 .garch{list-style:none;padding:0;margin:8px 0 0;font-size:.88rem;color:var(--muted)}.garch li{padding:3px 0}.garch b{color:var(--bone)}

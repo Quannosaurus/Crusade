@@ -1,7 +1,7 @@
 // @name goals-plan
 // P-2 goals II: the goal steers selection, content and the date. Regression: without a goal the 6-week simulation of 4
 // profiles (3 audit profiles + runner) gives exactly the recommendations and sessions recorded before P-2
-// (fixtures/t31-nogoal.json). 6-week simulations per goal type: skill goal first and in its long form (shortened only after favourites
+// (fixtures/t31-nogoal.json; re-recorded with P-5: the set band raises a round in some sessions, same exercises). 6-week simulations per goal type: skill goal first and in its long form (shortened only after favourites
 // are down to 2, D1), 5 skill contacts as the weekly target (≥ 2 per training week reached); strength goals (pull-ups, squat kg, hip thrust kg) get a goal anchor right after the warm-up at least
 // twice per training week that is never trimmed, every session ≤ 90 min; run goal (10 km with the strength focus) keeps
 // ≥ 2 runs and 1 long run per week, time goal adds fast runs. Date: taper only in the 7 days before it (about half the
