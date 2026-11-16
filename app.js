@@ -214,7 +214,7 @@ function skillPlan(id,s){var rot=selSk(),n={KA:D.skills.mu?1:2,KB:1,KC:1,SK:3}[i
   if(rot.length===1)return rot.slice();
   return rot.map(function(k,i){return {k:k,sc:skLast(k,s)+(k==="hs"?1:0)-i*0.01};}).sort(function(a,b){return b.sc-a.sc;}).slice(0,n).map(function(x){return x.k;});}
 function SKB(k,longer,p){var b=k==="hs"?HSB(longer,p):(k==="fl"?FLB(longer,p):PLB(longer,p));b.skill=k;return b;}
-function skBlocks(id,longer,p){var pl=skillPlan(id,TODAY),one=selSk().length===1;return pl.map(function(k){return SKB(k,longer||one,p);});}
+function skBlocks(id,longer,p){var pl=skillPlan(id,TODAY),one=selSk().length===1;var lg=(longer||one)&&!D.short;return pl.map(function(k){var b=SKB(k,lg,p);if(lg)b.lng=[k,p];return b;});}
 function LSIT(){var full=D.profile.lsit>=11,n=full?"L-Sit":"Tuck L-Sit";return I(lsKey(),full?"Legs straight, shoulders down":"Knees to chest, shoulders down. Then 3 short attempts with straight legs",[n+" on parallel bars|p",n+" between chairs|s",n+" on the floor","Hanging "+n+"|k"]);}
 function MUB(){var L=lvl(),mu=D.profile.mu;
   if(L===0) return {name:"Pulling base",info:"2 min rest · the base before muscle-ups make sense",p:1,rest:120,items:[
@@ -224,11 +224,11 @@ function MUB(){var L=lvl(),mu=D.profile.mu;
     P("mu_pro",Math.max(2,Math.round(mu*0.5)),Math.max(4,mu),"reps","Strict, no kipping, deep dip at the top",["Strict muscle-ups (high bar, e.g. park)|k","Ring-Muscle-Ups|r","Weighted vest muscle-ups|k|w","Weighted explosive pull-ups (gym substitute)|g|w"],"add a vest","4")]};
   return {mu:1,name:"Muscle-Up-Skill",info:"fresh, 2–3 min rest · stop when technique gets sloppy",p:1,rest:150,items:[
     F(mu>=1?"EMOM 10 × 1–2":"5 × 1–2","Pull explosively to the hips, elbows fast forward",["Transition on a Smith machine, low bar, feet on floor|g","Explosive chest-to-bar pull-ups|k","Band-assisted muscle-up on a high bar|kb","Ring muscle-up with foot assist|r"])]};}
-function SHOULDER(p,rot){return {name:"Shoulder stability",info:"Back to back · 60 s rest after the round",p:p||3,rest:60,rounds:[2,2],items:[
+function SHOULDER(p,rot){return {sh:1,name:"Shoulder stability",info:"Back to back · 60 s rest after the round",p:p||3,rest:60,rounds:[2,2],items:[
   rot?P("sh_y",12,15,"reps","Lower traps, thumbs up",["Prone Y-Raises","Cable Y-raises|g|w","Reverse Butterfly|g|w"],"add weight","2"):P("sh_fp",10,15,"reps","Elbows high, hands next to the head",["Cable face pulls|g|w","Band face pulls|b","Reverse Butterfly|g|w"],"more weight","2"),
   P("sh_er",10,15,"each side","Rotator cuff, elbow at your side",["Cable external rotation|g|w","Band external rotation|b","Side-lying dumbbell external rotation|d|w"],"more weight","2"),
   P("sh_sa",8,12,"reps","Serratus: at the top, push the shoulders far forward",["Scapula Push-Ups Plus","Serratus Wall Slides|w","Landmine Serratus Press|g|w"],"slower or add weight","2")]};}
-function FOREARM(){return {name:"Forearms & elbows",info:"Back to back · protects the tendons for false grip and muscle-ups",p:3,rest:45,rounds:[2,2],items:[
+function FOREARM(){return {acc:1,name:"Forearms & elbows",info:"Back to back · protects the tendons for false grip and muscle-ups",p:3,rest:45,rounds:[2,2],items:[
   P("fa_rc",12,20,"reps","Lower slowly, elbows still",["EZ-bar reverse curls|g|w","Band reverse curls|b","Dumbbell reverse curls|d|w"],"more weight","2"),
   P("fa_wc",15,20,"reps","Alternate wrist flexors and extensors",["Dumbbell wrist curls|g|w","Band wrist curls|b"],"more weight","2")]};}
 function LEGMINI(why){return {legs:1,name:"Compact legs",info:(why==="week"?"Second leg day this week":"Strength C was a while ago")+" · 3 sets · 90 s rest",p:2,rest:90,items:[
@@ -277,7 +277,8 @@ function EMB(id,pres){var e=emph();var cfg={lower:[GLUTES,"Lower body focus","Gl
   if(ANCH[e]&&all.length){var anc=null;(ANCH[e][id]||[]).some(function(k){anc=all.filter(function(it){return it.k===k;})[0]||null;return !!anc;});if(!anc)anc=all[0];
     anc.anc=1;out.push(anc);var rest=all.filter(function(it){return it!==anc;});if(rest.length)out.push(rest[cnt%rest.length]);}
   else for(var i=0;i<n;i++)out.push(all[(cnt*n+i)%all.length]);
-  return out.length?{name:cfg[1],info:cfg[2]+" · your emphasis · 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,items:out}:null;}
+  var more=all.filter(function(it){return out.indexOf(it)<0;});more=more.slice(cnt%(more.length||1)).concat(more.slice(0,cnt%(more.length||1)));
+  return out.length?{name:cfg[1],info:cfg[2]+" · your emphasis · 60–90 s rest",p:1,rest:75,rounds:[3,3],lowb:1,items:out,more:more}:null;}
 /* Favourite exercises: always included in strength sessions. */
 var FAVIDS={KA:1,KB:1,KC:1,CH:1,HO:1};
 function favCatalog(){var cat={};function add(it,v){var n=it.opts[v].n;if(!cat[n])cat[n]={it:it,v:v};}
@@ -286,9 +287,9 @@ function favCatalog(){var cat={};function add(it,v){var n=it.opts[v].n;if(!cat[n
   return cat;}
 function FAVB(id,present){var fav=(D.fav||[]).filter(function(n){return present.indexOf(n)<0;});if(!fav.length)return null;var cat=favCatalog(),items=[];
   var off=fav.length>4?(D.logs.filter(function(l){return STR[l.id];}).length*4)%fav.length:0;fav=fav.slice(off).concat(fav.slice(0,off));
-  fav.slice(0,4).forEach(function(n){var c=cat[n];if(!c)return;var it={};Object.keys(c.it).forEach(function(k){it[k]=c.it[k];});it.k="fav_"+c.it.k;it.def=(function(v){return function(){return v;};})(c.v);it.sets=it.sets||"3";items.push(it);});
-  return items.length?{name:"★ Your favourites",info:((D.fav||[]).length>4?"Up to 4 per session, they take turns":"Always in your plan")+" · 60–90 s rest",p:1,rest:75,fav:1,items:items}:null;}
-function KPOW(){return {name:"Kickboxing power",info:"60 s rest",p:3,rest:60,rounds:[2,3],items:[
+  var more=[];fav.forEach(function(n,i){var c=cat[n];if(!c)return;var it={};Object.keys(c.it).forEach(function(k){it[k]=c.it[k];});it.k="fav_"+c.it.k;it.def=(function(v){return function(){return v;};})(c.v);it.sets=it.sets||"3";(items.length<4?items:more).push(it);});
+  return items.length?{name:"★ Your favourites",info:((D.fav||[]).length>4?"Up to 4 per session, they take turns":"Always in your plan")+" · 60–90 s rest",p:1,rest:75,fav:1,items:items,more:more}:null;}
+function KPOW(){return {acc:1,name:"Kickboxing power",info:"60 s rest",p:3,rest:60,rounds:[2,3],items:[
   P("kp_rot",6,10,"each side","Rotate from the hips",["Cable Woodchopper|g|w","Medicine ball rotational throw|g|w","Landmine rotation|g|w","Band Woodchopper|b"],"more weight"),
   P("kp_pal",8,12,"each side","The torso does not rotate",["Cable Pallof press|g|w","Band Pallof press|b"],"more weight"),
   P("kp_cop",20,40,"s each side","Adductors, stabilises the standing leg",["Copenhagen Plank","Adductor machine|g|w"],"Leg straight"),
@@ -316,6 +317,7 @@ var PAINRX={w:/Handstand|Push-up|Shoulder taps|Bail|wrist|Frog stand|Wall Walk|P
 var NAMES={KA:"Strength A: Muscle-up",KB:"Strength B: Volume",KC:"Strength C: Full body & legs",CH:"Skill Trial",SK:"Skill session",RS:"Recovery & kick mobility",DL:"Deload",TE:"Test",HO:"Home strength",HK:"Home skills",RE:"Easy run",RH:"Hard run",RI:"Interval run",KI:"Kickboxing",MO:"Morning routine"};
 function homeB(){return D.logs.filter(function(l){return l.id==="HO";}).length%2===1;}
 function updNames(){NAMES.HO=homeB()?"Home strength B":"Home strength A";NAMES.KA=D.skills.mu?"Strength A: Muscle-up":"Strength A: Pull & push";}
+function favDef(b){b.items.forEach(function(it){if(it.f||it.test||it.iso)return;var a=avail(it,D.loc);for(var j=0;j<it.opts.length;j++){if((D.fav||[]).indexOf(it.opts[j].n)>=0&&a.indexOf(j)>=0){it.def=(function(v){return function(){return v;};})(j);break;}}});}
 function postBlocks(id,bl){var sk=D.skills,out=[];
   bl.forEach(function(b){
     if(b.hsb){ skBlocks(id,b.lg,b.p).forEach(function(x){out.push(x);}); return; }
@@ -343,7 +345,7 @@ function postBlocks(id,bl){var sk=D.skills,out=[];
     if((em==="lower"||em==="glutes")&&id!=="KC")out.forEach(function(b){if(b.rounds&&!b.lowb&&/Strength|Circuit|Pull|Push|Transitions|Base strength|Explosive/.test(b.name))b.rounds=[Math.max(2,b.rounds[0]-1),Math.max(2,b.rounds[1]-1)];});
     if(em==="upper"&&id==="KC")out.forEach(function(b){if(b.name==="Legs"&&b.items.length>3)b.items=b.items.slice(0,3);});
     var pr0=[];out.forEach(function(b){b.items.forEach(function(it){it.opts.forEach(function(o){pr0.push(o.n);});});});var eb=EMB(id,pr0);if(eb)out.push(eb);}
-  if(FAVIDS[id]&&(D.fav||[]).length){out.forEach(function(b){b.items.forEach(function(it){if(it.f||it.test||it.iso)return;var a=avail(it,D.loc);for(var j=0;j<it.opts.length;j++){if(D.fav.indexOf(it.opts[j].n)>=0&&a.indexOf(j)>=0){it.def=(function(v){return function(){return v;};})(j);break;}}});});}
+  if(FAVIDS[id]&&(D.fav||[]).length)out.forEach(favDef);
   if(FAVIDS[id]){var pres=[];out.forEach(function(b){b.items.forEach(function(it){var v=curVar(it,D.loc);if(v>=0)it.opts.forEach(function(o){pres.push(o.n);});});});var fb=FAVB(id,pres);if(fb)out.push(fb);}
   if(COOLK[id]) out.push(COOL(COOLK[id]));
   return out;}
@@ -356,7 +358,8 @@ function S(id,c){
   if(id==="HO"&&homeB()){s.goal="Home strength B: same muscles, different variations and legs first.";s.blocks.forEach(function(b){if(b.rounds){b.items=b.items.slice(2).concat(b.items.slice(0,2));b.items.forEach(function(it){if(!it.def&&it.opts.length>1)it.def=function(){return 1;};});}});}
   s.blocks=postBlocks(id,s.blocks);
   if(legDay(id)) s.blocks.forEach(function(b){if(b.warm){b.items=b.items.concat(LEGWARM());b.min=11;b.info="approx. 11 min · hips, knees and ankles too";}});
-  capDur(s,id,c);
+  if(D.short) shortLegs(s,c);
+  design(s,id,c);
   return s;
 }
 /* V4 (A-010): leg days warm up hips, knees and ankles as well, not only wrists and shoulders. */
@@ -390,25 +393,55 @@ function blockSec(b,c,id){if(b.warm)return (b.min||8)*60;if(b.cool)return 300;
     var n=it.f?fSets(it.f):setsOf(it,b,c,id);t+=n*(40+(b.rest||0));});
   return t+wu;}
 function estMin(s,c,id){var t=0;s.blocks.forEach(function(b){if(D.short&&b.p>1)return;t+=blockSec(b,c,id);});if(s.ab)t+=(s.ab.rounds/2+1)*60;return Math.round(t/60);}
-/* Cap at 90 min: trim the extra blocks in a fixed order, one step at a time. Warm-up, cool-down and the anchor stay. */
-var DURMAX=90,DURMIN=45;
+/* Session design (A-013): every session is put together so that its estimate lands in the 60–90 min band. Nothing is
+   trimmed afterwards and no trim list is shown. Precedence when shaping: warm-up, cool-down, anchor and a needed leg block
+   > favourites and shoulder prevention > pure accessory work. Over 90 min pure accessory gives way first (fewer rounds,
+   compact form), then circuit rounds, Core Blitz, emphasis extras, favourites down to 2; then the compact accessory goes,
+   the long skill block takes its standard form, Shoulder stability its compact form, and finally secondary blocks. Under 60 min it adds sensible extras (favourites, emphasis, Core Blitz) but never filler.
+   Limited time, deload, test and non-strength sessions are only kept under 90 min, never filled up. */
+var DURMAX=90,DURLO=60,DURMIN=45,BANDIDS={KA:1,KB:1,KC:1,CH:1,HO:1};
 function isFavIt(it){var v=curVar(it,D.loc);return v>=0&&(D.fav||[]).indexOf(it.opts[v].n)>=0;}
-function capDur(s,id,c){s.ab=absFor(id);s.cut=[];
+function shMini(b){if(b.shm)return false;b.shm=1;b.items=b.items.slice(0,2);b.rounds=[2,2];b.name="Shoulder stability";b.info="Compact · 2 exercises back to back · 60 s rest after the round";return true;}
+/* Limited time keeps a needed leg block (week < 2 leg sessions or Strength C over 7 days ago). One upper-body round goes instead. */
+function shortLegs(s,c){var lb=s.blocks.filter(function(b){return b.legs;})[0];if(!lb||!c.legB)return;lb.p=1;
+  s.blocks.some(function(b){if(b.p===1&&b.rounds&&!b.legs&&!b.lowb&&!b.warm&&!b.cool&&b.rounds[0]>2){b.rounds=[b.rounds[0]-1,b.rounds[0]-1];return true;}});}
+function design(s,id,c){s.ab=absFor(id);
   function blk(f){return s.blocks.filter(f)[0];}
-  var steps=[
-    ["favourites",function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>2){b.items=b.items.slice(0,2);b.info="2 today, to stay within "+DURMAX+" min";return true;}}],
-    ["favourites",function(){var b=blk(function(x){return x.fav;});if(b){s.blocks.splice(s.blocks.indexOf(b),1);return true;}}],
-    ["emphasis",function(){var b=blk(function(x){return x.lowb;});if(b&&b.rounds&&b.rounds[1]>2){b.rounds=[2,2];return true;}}],
-    ["emphasis",function(){var b=blk(function(x){return x.lowb;});if(b&&b.items.length>1){var a=b.items.filter(function(it,i){return it.anc||isFavIt(it)||(i===0&&!b.items.some(function(x){return x.anc;}));});if(a.length<b.items.length){b.items=a;return true;}}}],
-    ["Core Blitz",function(){if(s.ab&&!s.ab.mini){s.ab.rounds=4;s.ab.mini=true;return true;}}],
-    ["Core Blitz",function(){if(s.ab){s.ab=null;return true;}}],
-    // Still too long: fewer rounds in the secondary circuits, then in the main ones, then drop accessory blocks from the end.
-    ["fewer rounds",function(){var ch=false;s.blocks.forEach(function(b){if(b.p>1&&b.rounds&&!b.lowb&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;}],
-    ["fewer rounds",function(){var ch=false;s.blocks.forEach(function(b){if(b.rounds&&!b.lowb&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;}]];
-  [3,2].forEach(function(pp){steps.push(["accessory blocks",function(){for(var j=s.blocks.length-1;j>=0;j--){var b=s.blocks[j];if(b.p>=pp&&!b.warm&&!b.cool&&!b.legs&&!b.lowb&&!b.fav){s.blocks.splice(j,1);return true;}}}]);});
-  for(var r=0;r<6;r++)steps.push(steps[steps.length-1]);
-  s.min=estMin(s,c,id);
-  for(var i=0;i<steps.length&&s.min>DURMAX;i++){if(steps[i][1]()){if(s.cut.indexOf(steps[i][0])<0)s.cut.push(steps[i][0]);s.min=estMin(s,c,id);}}
+  function est(){return estMin(s,c,id);}
+  function drop(f){for(var j=s.blocks.length-1;j>=0;j--){if(f(s.blocks[j])){s.blocks.splice(j,1);return true;}}return false;}
+  var free=function(b){return !b.warm&&!b.cool&&!b.legs&&!b.lowb&&!b.fav&&!b.sh&&!b.acc;};
+  var trim=[
+    function(){var ch=false;s.blocks.forEach(function(b){if(b.acc&&b.rounds&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
+    function(){var b=blk(function(x){return x.acc&&!x.accm&&/Kickboxing|Power/.test(x.name);});if(!b)return false;var k=b.items.filter(function(it){return it.k==="kp_cop"||/Neck/.test(it.opts[0].n);});if(!k.length||k.length===b.items.length)return false;b.items=k;b.accm=1;b.info="Compact · tendons, adductors and neck · 60 s rest";return true;},
+    function(){var b=blk(function(x){return x.acc&&!x.accm&&x.name==="Forearms & elbows";});if(!b)return false;b.items=b.items.slice(0,1);b.accm=1;b.info="Compact · protects the tendons for false grip and muscle-ups";return true;},
+    function(){var ch=false;s.blocks.forEach(function(b){if(b.p>1&&b.rounds&&!b.lowb&&!b.legs&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
+    function(){var ch=false;s.blocks.forEach(function(b){if(b.rounds&&!b.lowb&&!b.legs&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
+    function(){if(s.ab&&!s.ab.mini){s.ab.rounds=4;s.ab.mini=true;return true;}},
+    function(){if(s.ab){s.ab=null;return true;}},
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.rounds&&b.rounds[1]>2){b.rounds=[2,2];return true;}},
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.items.length>1){var a=b.items.filter(function(it,i){return it.anc||isFavIt(it)||(i===0&&!b.items.some(function(x){return x.anc;}));});if(a.length<b.items.length){b.items=a;return true;}}},
+    function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>2){b.items=b.items.slice(0,2);b.info="2 today, they take turns · 60–90 s rest";return true;}},
+    function(){return drop(function(b){return b.acc&&b.name==="Forearms & elbows";});},
+    function(){return drop(function(b){return b.acc;});},
+    function(){var j=-1;s.blocks.forEach(function(b,x){if(b.lng&&j<0)j=x;});if(j<0)return false;var o=s.blocks[j],nb=SKB(o.lng[0],false,o.lng[1]);if(FAVIDS[id])favDef(nb);s.blocks[j]=nb;return true;},
+    function(){var b=blk(function(x){return x.sh;});return b?shMini(b):false;}];
+  for(var r=0;r<8;r++)trim.push(function(){return drop(function(b){return b.p>=2&&free(b);});});
+  /* Last resort, only once all pure accessory work is gone: one favourite today. */
+  trim.push(function(){var b=blk(function(x){return x.fav;});if(b&&b.items.length>1&&!blk(function(x){return x.acc;})){b.items=b.items.slice(0,1);b.info="1 today, they take turns · 60–90 s rest";return true;}});
+  s.min=est();
+  for(var i=0;i<trim.length&&s.min>DURMAX;i++){if(trim[i]())s.min=est();}
+  if(D.short||!BANDIDS[id]||c.cyc===6)return s;
+  /* Under 60 min: sensible extras only, each kept only if the session stays within 90 min. */
+  var fill=[
+    function(){var b=blk(function(x){return x.fav;});if(b&&b.more&&b.more.length&&b.items.length<6){b.items.push(b.more.shift());return true;}},
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<3){b.items.push(b.more.shift());return true;}},
+    function(){if(s.ab&&s.ab.mini&&id!=="CH"){s.ab.rounds=8;s.ab.mini=false;return true;}},
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.rounds&&b.rounds[0]<4){b.rounds=[4,4];return true;}},
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<4){b.items.push(b.more.shift());return true;}}];
+  for(var k=0;k<4;k++)fill.push(fill[0]);
+  for(var j=0;j<fill.length&&s.min<DURLO;j++){var keep=s.blocks.map(function(b){return b.items.slice();}),ab0=s.ab&&{i:s.ab.i,rounds:s.ab.rounds,mini:s.ab.mini},rd=s.blocks.map(function(b){return b.rounds;});
+    if(!fill[j]())continue;var m=est();
+    if(m>DURMAX){s.blocks.forEach(function(b,x){var add=b.items.slice(keep[x].length);if(add.length&&b.more)b.more=add.concat(b.more);b.items=keep[x];b.rounds=rd[x];});s.ab=ab0;}else s.min=m;}
   return s;}
 function S0(id,c){
   var ph=c.phase,L=lvl(),lf=c.legB!=null?!!c.legB:(c.lowFreq&&c.kcGap>=10),pr=D.profile,b;
@@ -898,7 +931,7 @@ function vTrain(){
   var dy=day(),loc=D.loc,c=ctx(TODAY),Tt=trainId(dy),id=Tt.id,s=S(id,c),ab=s.ab,f=dy.fin,list=loc==="g"?GYM:HOME,pn=D.pain||{};
   var h=back()+'<div class="seg"><button type="button" class="b'+(loc==="g"?" on":"")+'" data-a="loc" data-v="g" aria-pressed="'+(loc==="g")+'">Gym</button><button type="button" class="b'+(loc==="h"?" on":"")+'" data-a="loc" data-v="h" aria-pressed="'+(loc==="h")+'">Home</button></div><button type="button" class="tgl'+(D.short?" on":"")+'" data-a="short" aria-pressed="'+D.short+'"><span class="sw" aria-hidden="true"></span>Limited time <span class="muted">· '+(D.short?"on, essentials only":"off, full session")+'</span></button>';
   var pnL=Object.keys(pn).filter(function(k){return pn[k];}).map(function(k){return {w:"Wrist",s:"Shoulder",e:"Elbow"}[k];});
-  h+='<div class="hero"><span class="eyebrow">Week '+c.week+(c.cyc===6?' · Deload':' · Phase '+c.phase)+' · '+LVN[lvl()]+(D.short?' · shortened':'')+'</span><h2>'+NAMES[id]+'</h2><p class="dur">⏱ ≈ '+s.min+' min'+(s.cut.length?' · trimmed to stay within '+DURMAX+' min: '+esc(s.cut.join(', ')):'')+'</p>'+(s.min<DURMIN&&STR[id]?'<p class="muted">A short one today. Nothing gets padded: shorter is fine.</p>':'')+'<p>'+esc(s.goal)+'</p>'+(Tt.rec?'<p class="muted">'+esc(Tt.rec.why[0])+'</p>':'')+(pnL.length?'<p class="c gold">Rehab active: '+pnL.join(", ")+'</p>':'')+'</div>';
+  h+='<div class="hero"><span class="eyebrow">Week '+c.week+(c.cyc===6?' · Deload':' · Phase '+c.phase)+' · '+LVN[lvl()]+(D.short?' · shortened':'')+'</span><h2>'+NAMES[id]+'</h2><p class="dur">⏱ ≈ '+s.min+' min'+'</p>'+(s.min<DURMIN&&STR[id]?'<p class="muted">A short one today. Nothing gets padded: shorter is fine.</p>':'')+'<p>'+esc(s.goal)+'</p>'+(Tt.rec?'<p class="muted">'+esc(Tt.rec.why[0])+'</p>':'')+(pnL.length?'<p class="c gold">Rehab active: '+pnL.join(", ")+'</p>':'')+'</div>';
   if(FAVIDS[id]){var nf=(D.fav||[]).length,emn=EMPH.filter(function(x){return x[0]===emph();})[0][1];h+='<button type="button" class="favcard" data-tab="favs" data-from="train"><span class="fvi" aria-hidden="true">★</span><span><b>'+(nf?nf+' favourite'+(nf>1?"s":"")+' in your plan':'Add your favourite exercises')+'</b><span class="muted">Emphasis: '+emn+(nf?'':' · starred exercises join every strength session')+'</span></span><span class="go">Edit →</span></button>';}
   h+='<details class="opt"><summary>Other session · pain'+(loc==="h"?' · equipment':'')+'</summary><label class="lab" for="pick">Session</label><select id="pick" data-a="pick">'+list.map(function(k){return '<option value="'+k+'"'+(k===id?" selected":"")+'>'+NAMES[k]+'</option>';}).join("")+'</select>'+
      '<p class="muted">Pain? Affected exercises are skipped and a rehab block is added.</p>'+[["w","Wrist"],["s","Shoulder"],["e","Elbow"]].map(function(x){return '<label class="chk"><input type="checkbox" data-a="pain" data-k="'+x[0]+'"'+(pn[x[0]]?" checked":"")+'>'+x[1]+'</label>';}).join("")+
@@ -1486,7 +1519,7 @@ function startHold(sec,sides){audio();stop();var side=1,end=Date.now()+sec*1000,
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={blockSec:blockSec,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:restoreText,love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

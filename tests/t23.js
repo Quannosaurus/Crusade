@@ -1,5 +1,5 @@
 // @name duration-warmup
-// A-010: estimated duration with a 90-min cap (V3), leg warm-up and warm-up sets (V4).
+// A-010: estimated duration (V3, designed for 60–90 min since A-013, no trim list), leg warm-up and warm-up sets (V4).
 // Simulates 6 weeks for the three audit profiles with the real recommender and saveTrain(), then checks that no
 // session is estimated over 90 min, warm-up comes first and cool-down last, leg days warm up the legs, heavy lifts
 // show warm-up sets that never reach volume, records or XP, and old backups still load.
@@ -35,7 +35,7 @@ PROF.forEach(p=>{const {w,k,errs}=boot();const D=k.D();
   for(let i=0;i<42;i++){const s=addD(START,i);k.today(s);const r=k.recAll(s,false);
     if(r.btn==='kick'){D.logs.push({d:s,id:'KI',t:'KI',rpe:6});continue;}
     if(r.btn==='run'){D.logs.push({d:s,id:r.id,t:r.id,rpe:6,km:5,min:32});continue;}
-    const c=k.ctx(s),S=k.S(r.id,c);line.push(r.id+' '+S.min+(S.cut.length?'('+S.cut.join('/')+')':''));
+    const c=k.ctx(s),S=k.S(r.id,c);line.push(r.id+' '+S.min);if('cut' in S)issue(p.n+' '+r.id+': trim list still present');
     if(S.min>k.DURMAX)issue(p.n+' '+s+' '+r.id+' estimated '+S.min+' min');
     if(GYMS.includes(r.id)){if(!S.blocks[0].warm)issue(p.n+' '+s+' '+r.id+': warm-up not first');if(!S.blocks[S.blocks.length-1].cool)issue(p.n+' '+s+' '+r.id+': cool-down not last');}
     if(k.legDay(r.id)){const wu=S.blocks[0].items.map(it=>it.opts[0].n).join();if(!/Ankle rocks/.test(wu)||!/Leg swings/.test(wu))issue(p.n+' '+r.id+': no leg warm-up');}
