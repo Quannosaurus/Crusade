@@ -289,6 +289,7 @@ body[data-theme=love] .big.rec{border-color:var(--acc-l)}body[data-theme=love] .
 .fvrow[disabled]{opacity:.55;cursor:default}
 .addb{margin-top:4px}
 .favask{border:1px solid var(--gold-t);border-radius:10px;padding:10px 12px;background:var(--tint)}
+.rdbar{margin:0 0 12px}.rdbar .chips{margin:6px 0}.rdbar p{margin:4px 0 0}
 .pausecard{border:1px solid var(--gold-t);border-radius:10px;padding:10px 12px;background:var(--tint);margin:0 0 12px}.pausecard p{margin:0 0 8px}
 .favask p{margin:0}
 .xrun{margin-top:-4px}
