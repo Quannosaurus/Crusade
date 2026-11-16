@@ -272,3 +272,16 @@ body[data-theme=love] .toast{border-color:var(--acc-l);background:var(--tint);co
 body[data-theme=love] .tag.ok,body[data-theme=love] .pill.ok{border-color:var(--gold-t);color:var(--gold-t)}
 body[data-theme=love] details.blk.fin{border-color:var(--gold-t)}body[data-theme=love] details.blk.fin .bc{color:var(--gold-t)}
 body[data-theme=love] .big.rec{border-color:var(--acc-l)}body[data-theme=love] .hero .eyebrow{color:var(--acc-t2)}
+/* A-021: additions, never suggest, extra run, backlog */
+.acts{flex-wrap:wrap;row-gap:0}
+.lnk.nv{color:var(--muted)}
+.fvr{display:flex;gap:6px;align-items:stretch}
+.fvr .fvrow{flex:1}
+.fvx{min-width:46px;border:1px solid var(--line);border-radius:10px;background:transparent;color:var(--muted);font:inherit;font-size:1.1rem;cursor:pointer}
+.fvx.on{border-color:var(--red);color:var(--bone)}
+.fvrow[disabled]{opacity:.55;cursor:default}
+.addb{margin-top:4px}
+.favask{border:1px solid var(--gold-t);border-radius:10px;padding:10px 12px;background:var(--tint)}
+.favask p{margin:0}
+.xrun{margin-top:-4px}
+.nxn{font-style:italic}
