@@ -559,6 +559,7 @@ function S(id,c){
   neverApply(s);
   painApply(s);
   if(D.short) shortLegs(s,c);
+  if(id==="CH") trialDay(s,c);
   design(s,id,c);
   var adb=ADDIDS[id]&&ADDB();
   if(adb){var ci=-1;s.blocks.forEach(function(b,i){if(b.cool&&ci<0)ci=i;});if(ci<0)s.blocks.push(adb);else s.blocks.splice(ci,0,adb);s.min=estMin(s,c,id);s.addMin=1;}
@@ -764,6 +765,26 @@ function lbTest(){var e=emph();if(e!=="lower"&&e!=="glutes")return null;var key=
   var v=curVar(src,LOC());if(v<0)return null;var o=src.opts[v],st=D.ex[src.k+"#"+v],w=o.w&&st?st.w:0;
   return {test:"lb",tvo:1,unit:"reps",lw:w,opts:[{n:o.n,req:o.req,w:false}],c:"Max clean reps"+(w?" with your working weight "+fmtKg(w)+" kg":" at your working weight")+". Stop when the form breaks."};}
 function lastTv(k){for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(l.tv&&l.tv[k]!=null)return l.tv[k];}return null;}
+/* A-033 (M-5): blocks 2–4 of the Skill Trial follow skills and level. Lever, planche and dragon-flag work only with the front
+   lever / planche skill (the back lever goes with the front lever); without any skill the trial brings the "Pull & push"
+   circuit plus one core block; at level 0 every item starts with its easy variant (it.lv). */
+function trialBlocks(L){var sk=D.skills,fl=!!sk.fl,pl=!!sk.pl,any=["hs","mu","ls","fl","pl"].some(function(k){return sk[k];});
+  function ez(it){it.lv=[1,0];return it;}
+  function core(cue){return ez(F("5",cue,fl?["Negative Dragon Flags","Lying leg lowers (easier)"]:["Lying leg lowers","Bent-knee leg lowers (easier)"]));}
+  if(!any)return [{name:"Core",info:"60 s rest between exercises",p:1,rest:60,items:[ez(F("3 × 30 s","Lower back on the floor, ribs down",["Hollow body hold","Dead bug (easier)"])),ez(F("3 × 8 each side","Straight line from head to heels",["Side plank","Side plank on knees (easier)"])),ez(F("3 × 10","5 s lowering, lower back stays down",["Lying leg lowers","Bent-knee leg lowers (easier)"]))]}];
+  var b2=[ez(FL(F("30","",["Push-Ups","Knee push-ups (easier)"]),"push",3)),core("5 s lowering")],b3=[FL(F("30","",["Bodyweight Rows","Cable row"]),"pull",3),core("")],b4=[ez(FL(F("30","",["Jumping Squats","Bodyweight squats (easier)"]),"legs",3)),core("")];
+  b2.unshift(fl?ez(F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"])):F("60 s accumulated","Arms straight, pull the bar to the thighs and hold",["Straight-arm pulldown hold","Band straight-arm pulldown hold|b"]));
+  b3.unshift(pl?ez(F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"])):ez(F("60 s accumulated","Lower back on the floor, ribs down",["Hollow body hold","Dead bug (easier)"])));
+  b4.unshift(fl?ez(F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"])):F("60 s accumulated","",["Reverse hyperextension hold","Superman hold"]));
+  return [{name:"Block 2",info:"60 s rest between exercises",p:1,rest:60,items:b2},{name:"Block 3",info:"60 s rest",p:2,rest:60,items:b3},{name:"Block 4",info:"60 s rest",p:2,rest:60,jump:1,items:b4}];}
+/* A-033 (M-6 and the kick rule): a Skill Trial the day after a hard other activity carries only the emphasis anchor with 2
+   sets; after a hard other activity and the day before kickboxing (also the 16-day fallback) it has no jump block, and on the
+   day before kickboxing every Romanian deadlift has at most 2 sets. */
+function trialDay(s,c){var oa=hist(TODAY).oaY,kt=isKick(addD(TODAY,1));if(!oa&&!kt)return;
+  /* the jump block loses its jumps (its hold and core work stay, so the trial keeps its time) */
+  if(oa||kt)s.blocks.forEach(function(b){if(b.jump){b.items=b.items.filter(function(it){return it.fp!=="legs";});b.jump=0;b.nojump=1;}});
+  if(oa)s.blocks.forEach(function(b){if(!b.lowb)return;var a=b.items.filter(function(it){return it.anc;});if(a.length)b.items=a.slice(0,1);b.items.forEach(function(it){it.ts=2;});b.more=[];b.oa=1;});
+  if(kt)s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items.forEach(function(it){var v=curVar(it,LOC());if(v>=0&&it.k&&/romanian deadlift/i.test(it.opts[v].n)){var n=setsOf(it,b,c,"CH");if(n>2)it.ts=2;}});});}
 function S0(id,c){
   var ph=c.phase,L=lvl(),lf=c.legB!=null?!!c.legB:(c.lowFreq&&c.kcGap>=10),pr=D.profile,b;
   switch(id){
@@ -837,9 +858,7 @@ function S0(id,c){
   case "CH": b={goal:"A check-in every two weeks: test what you train for, then practise. Values you enter become your new status.",blocks:[WARM(),
     {name:"Trial",info:"2–3 min rest between tests · only clean reps count",p:1,rest:150,trial:1,items:trialItems()},
     {name:"Muscle-Up EMOM",info:"2 attempts every minute for 10 minutes",p:1,rest:0,items:[FL(F("10 × 2",L===0?"Basic: 2 negative pull-ups each":"Sloppy? Switch to transitions",L===0?["Negative pull-ups"]:["Explosive chest-to-bar pull-ups","Transition on a Smith machine","Strict muscle-ups (high bar)","Ring muscle-up with foot assist"]),"pull",2)]},
-    {name:"Block 2",info:"60 s rest between exercises",p:1,rest:60,items:[F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"]),FL(F("30","",["Push-Ups"]),"push",3),F("5","5 s lowering",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
-    {name:"Block 3",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck planche on parallettes","Planche lean (easier)"]),FL(F("30","",["Bodyweight Rows","Cable row"]),"pull",3),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]},
-    {name:"Block 4",info:"60 s rest",p:2,rest:60,items:[F("60 s accumulated","",["Tuck Back Lever","Reverse hyperextension hold"]),FL(F("30","",["Jumping Squats"]),"legs",3),F("5","",["Negative Dragon Flags","Lying leg lowers (easier)"])]}]};
+    ].concat(trialBlocks(L))};
     if(!D.skills.mu)b.blocks.splice(2,0,{name:"Pull & push",info:"Exercises back to back · 60 s rest after the round",p:1,rest:60,rounds:[3,3],items:[
       P("ch_row",8,12,"reps","Chest to the bar, shoulders down",["Bodyweight Rows","Cable row||w","Band rows|b","Inverted rows under a table|s"],"feet higher or more weight","",[0,0]),
       P("ch_push",6,15,"reps","Body in one line",["Push-ups","Knee push-ups","Incline push-ups on a chair|s"],"harder variation","",[1,0])]});
@@ -1287,7 +1306,7 @@ function recAll(s,noKick,noPause){
      Strength C (the leg block of A/B comes along via ctx().legB), not the day before kickboxing (unless it is 16 days old, so
      plans with kickboxing on alternate days still get it); it needs 2 weeks of strength
      history first. Deload weeks keep their own plan (returned above). */
-  var lowE=em0==="lower"||em0==="glutes",chAB=chDue(s,h)&&!cb.noTest&&!painU("test")&&(!kickT||chGap(s,h)>=16)?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
+  var lowE=em0==="lower"||em0==="glutes",chAB=chDue(s,h)&&!cb.noTest&&!painU("test")&&!h.oaY&&(!kickT||chGap(s,h)>=16)?(cap(h.KA)>=cap(h.KB)?"KA":"KB"):"",chW="The skill trial has been due for 2 weeks.";
   /* A due trial counts as a week-old session from its due day on and grows more urgent each day (A-024), so a recent
      Strength A/B does not hold it back past 14 ± 2 days. */
   var chS=chAB?7+chGap(s,h)-13:0;
