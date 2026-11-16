@@ -19,14 +19,14 @@ for fam,file,wt in [('Cinzel','cinzel',600),('Cinzel','cinzel',800),('Source San
 open(O+'/app.css','w').write(fonts+css)
 for lic in glob.glob(B+'/fonts/LICENSE-*'): shutil.copy(lic,O+'/fonts/')
 csp="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
-h=re.sub(r'<link rel="preconnect"[^>]*>\n?','',h)
-h=re.sub(r'<link href="https://fonts.googleapis.com[^>]*>\n?','',h)
+# Safety net: drop any <link> that points off-site (preconnect, remote stylesheets). The app loads nothing external.
+h=re.sub(r'<link\b[^>]*\bhref="(?:https?:)?//[^"]*"[^>]*>\n?','',h)
 h=re.sub(r'<link rel="icon"[^>]*>\n<link rel="apple-touch-icon"[^>]*>\n','',h)
 h=re.sub(r'<style>[\s\S]*?</style>','<link rel="stylesheet" href="app.css">',h)
 h=h.replace('<meta charset="utf-8">','<meta charset="utf-8">\n<meta http-equiv="Content-Security-Policy" content="%s">\n<meta name="referrer" content="no-referrer">\n<link rel="icon" type="image/svg+xml" href="icon.svg">\n<link rel="apple-touch-icon" href="icon-192.png">\n<link rel="manifest" href="manifest.webmanifest">'%csp,1)
 assert 'Content-Security-Policy' in h
 open(O+'/index.html','w').write(h+'\n<script src="app.js"></script>\n</body>\n</html>\n')
-js=open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read().replace(LM,LJ)+'\nif("serviceWorker" in navigator){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}\n'
+js=open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read().replace(LM,LJ)+'\nif("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}\n'
 open(O+'/app.js','w').write(js)
 import hashlib
 ver=hashlib.sha256((h+js+fonts+css).encode()).hexdigest()[:8]

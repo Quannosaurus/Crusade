@@ -8,8 +8,8 @@ Stand: 2026-11-16 · Basis: Commit `b93d7e9`, `src/app.js` · Nur Bericht, kein 
 - Dazu kommt eine Simulation über 4–7 Wochen mit den echten Funktionen aus dem Build (`recAll`, `recTrain`, `S`, `rounds`, `ctx`). Jeder empfohlene Tag wurde als erledigt geloggt (RPE 6).
 - Drei Profile:
   - **Captain:** Fokus `bal`, Skills hs+mu, Kickboxen Di/Fr, Intermediate.
-  - **Partnerin A:** Fokus `bal`, Schwerpunkt `lower`, Basic, keine Skills, kein Kickboxen.
-  - **Partnerin B:** Fokus `str`, Schwerpunkt `glutes`.
+  - **Partner-Profil A:** Fokus `bal`, Schwerpunkt `lower`, Basic, keine Skills, kein Kickboxen.
+  - **Partner-Profil B:** Fokus `str`, Schwerpunkt `glutes`.
 - Dauer-Schätzung:
   - Circuit: Runden × (Übungen × 45 s) + Runden × Pause.
   - Satzweise: Sätze × (40 s + Pause).
@@ -21,10 +21,10 @@ Stand: 2026-11-16 · Basis: Commit `b93d7e9`, `src/app.js` · Nur Bericht, kein 
 | Profil | Wochenbild (Einheit, geschätzte min) | Unterkörper-Sätze/Woche | Oberkörper-Sätze/Woche |
 |---|---|---|---|
 | Captain | W1: KA 93 · KI 90 · KB 80 · RE · KI · KC 81 · RE<br>W2: KA 93 · KI · RH · SK 58 · KI · KB 80 · RE<br>W4: KB 92 · KI · KA 102 · SK · KI · KC 90 · RE | Quad 0–13, Hinge 0–8, Glute 0–7 (KC nur in W1 und W4 von 7) | Zug 12–28, Druck 8–21 |
-| Partnerin A | W1: KC 65 · RE · KA 66 · RH · RS · KB 49 · RE<br>W2: CH 31 · RS · KA 66 · RH · RS · KB 49 · RE | Quad 3–17, Glute 6–19 (Wechsel ungerade/gerade Woche) | Zug 13–16, Druck 8–12 |
-| Partnerin B | 3 Kraft + CH alle 2 Wochen + RS dazwischen | Glute 14–25, Quad 2–14 | Zug 13–25 |
+| Partner-Profil A | W1: KC 65 · RE · KA 66 · RH · RS · KB 49 · RE<br>W2: CH 31 · RS · KA 66 · RH · RS · KB 49 · RE | Quad 3–17, Glute 6–19 (Wechsel ungerade/gerade Woche) | Zug 13–16, Druck 8–12 |
+| Partner-Profil B | 3 Kraft + CH alle 2 Wochen + RS dazwischen | Glute 14–25, Quad 2–14 | Zug 13–25 |
 
-**Wiederkehr der Schwerpunkt-Übungen bei Partnerin A** (Tage zwischen zwei Einsätzen, aus `EMB()`):
+**Wiederkehr der Schwerpunkt-Übungen bei Partner-Profil A** (Tage zwischen zwei Einsätzen, aus `EMB()`):
 
 - `g_ht` Hip Thrust: 2, 12, 2, 12, 17
 - `g_rdl` RDL: 21, 14
@@ -85,7 +85,7 @@ Drei Regeln drücken KC zusätzlich:
 
 Die Beschreibung im Onboarding verspricht „leg day more often“ (`EMPH`, Z. 156). Das hält der Code nicht ein.
 
-Bei Partnerin A und B sorgt der EMB-Block für 3 Glute-Kontakte pro Woche.
+Bei Partner-Profil A und B sorgt der EMB-Block für 3 Glute-Kontakte pro Woche.
 
 ### 4. Deload-Logik
 
@@ -139,7 +139,7 @@ Die Steigerung hängt an einzelnen Einheiten (`saveRun`, Z. 1134–1135):
 
 Wochen-Kilometer, langer Lauf und Umfangsdeckel fehlen. Bei Fokus `run` heißt RH zwar „Long run“ (Z. 466), der Text in `runInfo` beschreibt aber einen harten Lauf.
 
-Gewichte bei `bal`: RH 7, RE 6, RI 0. In der Simulation kommt RH beim Captain jede zweite Woche, bei Partnerin A jede Woche, neben 1–2 RE.
+Gewichte bei `bal`: RH 7, RE 6, RI 0. In der Simulation kommt RH beim Captain jede zweite Woche, bei Partner-Profil A jede Woche, neben 1–2 RE.
 
 ### 8. Gesamtbelastung inkl. Kickboxen
 
@@ -172,7 +172,7 @@ Die Regeln in `recAll()`/`hist()` (Z. 409–428, 444–448):
 
 Das ist schlüssig und vermeidet zwei Krafttage hintereinander. Es fehlt nur die Kopplung an die Gesamtlast (Abschnitt 8).
 
-### 11. Unterkörper-Schwerpunkt der Partnerin
+### 11. Unterkörper-Schwerpunkt des Partner-Profils
 
 Der Schwerpunkt wirkt über drei Wege:
 
@@ -224,7 +224,7 @@ Weitere Befunde:
 | Aufwärmen | `WARM()` Z. 90–97 nur Oberkörper, auch an Beintagen | Aufwärmen verbessert die Leistung in der Mehrzahl der Studien [Q26]. Spezifisches Aufwärmen der Zielgelenke [Q27] | mittel | Bein-Variante des Warm-ups an KC und bei Unterkörper-Schwerpunkt → V4 |
 | Aufwärmsätze | Keine; erster Satz direkt mit Zielgewicht | Spezifische Aufwärmsätze mit steigender Last verbessern die Leistung bei schweren Übungen [Q27][Q28] | mittel | I-13 bestätigen, Prio hoch: 2–3 Ramp-up-Sätze (z. B. 50 % × 8, 70 % × 4, 85 % × 2) bei `w`-Übungen ab 20 kg → V4 |
 | Erholung zwischen harten Tagen | `strY`, `rhY`, `limitY`, `hardRun` (Z. 413–415, 445–448) | ~48 h vor erneuter Belastung derselben Muskelgruppe [Q3]; Kraft vor Ausdauer oder Abstand [Q25] | keine | — |
-| Unterkörper-Schwerpunkt (Partnerin) | `EMB()` rotiert Übungen → Wiederkehr nach 10–21 Tagen → Rückschritt (Z. 182, 386); KC nur jede 2. Woche; Versprechen „leg day more often“ nicht eingehalten (Z. 156) | Hip Thrust und Kniebeuge bringen ähnliche Glute-Hypertrophie [Q29]. Frauen und Männer reagieren relativ gleich, keine eigene Verschreibung nötig [Q30][Q31]. Wiederholte Exposition ist Voraussetzung für Progression [Q1] | groß | V2: feste Anker-Übung pro Einheit plus 1 rotierende; Rückschritt erst ab 14 Tagen. V1 gilt auch hier |
+| Unterkörper-Schwerpunkt (Partner-Profil) | `EMB()` rotiert Übungen → Wiederkehr nach 10–21 Tagen → Rückschritt (Z. 182, 386); KC nur jede 2. Woche; Versprechen „leg day more often“ nicht eingehalten (Z. 156) | Hip Thrust und Kniebeuge bringen ähnliche Glute-Hypertrophie [Q29]. Frauen und Männer reagieren relativ gleich, keine eigene Verschreibung nötig [Q30][Q31]. Wiederholte Exposition ist Voraussetzung für Progression [Q1] | groß | V2: feste Anker-Übung pro Einheit plus 1 rotierende; Rückschritt erst ab 14 Tagen. V1 gilt auch hier |
 | Einheitsdauer 45–90 min | Keine Dauerberechnung; Captain KA/KB/KC geschätzt 80–102 min | Projektvorgabe 45–90 min; Machbarkeit und Treue zum Plan zählen am meisten [Q1] | mittel | Geschätzte Dauer in der Kopfzeile, automatische Kürzung (Favoriten, Schwerpunkt, Tabata) auf ≤ 90 min → V3 |
 | Cool-down | 5 min statisch, passend zur Einheit (Z. 543–554) | Cool-down senkt Muskelkater und Verletzungen kaum, Dehnen verbessert die Beweglichkeit [Q32][Q33] | keine | Beibehalten (Projektvorgabe) |
 | Morgenroutine | RAMP, keine belastete Beugung früh, CARs, Bedarfsmodul (Z. 498–536) | Bandscheiben sind morgens prall gefüllt und stärker belastet [Q34]. Zur CAR-Methode gibt es kaum Studien, sie ist aber unbedenklich | keine | — |
@@ -240,7 +240,7 @@ Weitere Befunde:
 | I-10 Verpasste Einheiten | **verwerfen** | Ist durch die Rotation nach „am längsten her“ und den Zyklus nach Trainingswochen schon gelöst. Rest in V2 (Pausenschwelle) und I-06 (Comeback-Hinweis) |
 | I-11 Laufplan | **ändern** | Statt starrer 10 %-Regel: Wochen-km, Warnung bei sprunghafter Steigerung, 80/20-Verteilung, echter Long Run für Fokus `run` (V6) |
 | I-12 Gesamtbelastung | **bestätigen** | sRPE × Dauer inkl. Kickboxen, Deload-Vorschlag bei hoher Last, Ruhetag (V5). Keine harten ACWR-Grenzen |
-| I-13 Aufwärmsätze | **bestätigen, Prio hoch** | Zusammen mit Bein-Warm-up. Betrifft vor allem die Partnerin (Hip Thrust, RDL, Kniebeuge) (V4) |
+| I-13 Aufwärmsätze | **bestätigen, Prio hoch** | Zusammen mit Bein-Warm-up. Betrifft vor allem das Partner-Profil (Hip Thrust, RDL, Kniebeuge) (V4) |
 
 ---
 
@@ -250,13 +250,13 @@ Weitere Befunde:
    - Kompakter Beinblock (LEGMINI) in KA oder KB, sobald KC länger als 7 Tage her ist (nicht erst bei `lowFreq`).
    - Bei Schwerpunkt `lower`/`glutes` ersetzt CH das KC nicht mehr.
    - Nutzen Captain: Beinkraft für Kicks und Laufen, aus 0–5 werden ≥ 10 Sätze pro Woche.
-   - Nutzen Partnerin: Der Beintag kommt tatsächlich öfter, wie im Onboarding versprochen.
+   - Nutzen Partner-Profil: Der Beintag kommt tatsächlich öfter, wie im Onboarding versprochen.
    - Test: Simulation mit ≥ 2 Beinkontakten pro Woche und ≥ 10 Unterkörper-Sätzen.
 2. **V2 – Glute-Anker statt Voll-Rotation** (`EMB`, `target`)
    - Pro Einheit eine feste Anker-Übung, abwechselnd Hip Thrust und RDL/Split Squat, dazu 1 rotierende Übung.
    - Rückschritt nach Pause erst ab 14 statt 10 Tagen.
    - `LOWB()` entfernen.
-   - Nutzen Partnerin: Die Schlüsselübungen wachsen stetig, statt alle 2 Wochen zurückgesetzt zu werden.
+   - Nutzen Partner-Profil: Die Schlüsselübungen wachsen stetig, statt alle 2 Wochen zurückgesetzt zu werden.
 3. **V3 – Dauerschätzung und 90-Minuten-Deckel** (`S`, `vTrain`)
    - Geschätzte Minuten in der Kopfzeile.
    - Über 90 min werden der Reihe nach gekürzt: Favoriten auf 2, Schwerpunkt auf 2 Runden, Tabata auf die Mini-Fassung.
@@ -264,7 +264,7 @@ Weitere Befunde:
 4. **V4 – Bein-Warm-up und Ramp-up-Sätze** (I-13; `WARM`, `itemHTML`)
    - Warm-up-Variante für Hüfte/Knie/Sprunggelenk an KC und bei Unterkörper-Schwerpunkt.
    - Bei `w`-Übungen ab 20 kg Zielgewicht eine Zeile „Warm-up sets: 50 % × 8 · 70 % × 4 · 85 % × 2“. Nur Anzeige, keine Pflichtfelder.
-   - Nutzen: Beide, vor allem die Partnerin bei Hip Thrust, RDL und Kniebeuge.
+   - Nutzen: Beide, vor allem das Partner-Profil bei Hip Thrust, RDL und Kniebeuge.
 5. **V5 – Gesamtbelastung sRPE** (I-12; `savekick`, `saveTrain`, `saveRun`, `statsHTML`, `recAll`)
    - Dauerfeld mit Vorgaben: KI 90, Kraft aus V3, Lauf aus min.
    - Wochenlast = RPE × min in der Statistik.

@@ -15,7 +15,7 @@ fs.writeFileSync(R+'/.build/t15n.html',built.replace(/var LOVEENC=(null|\{[^;]*\
 const U=n=>'file://'+R+'/.build/'+n;
 const base={v:3,start:"2026-10-01",onb:true,seenFocus:true,seenFav:true,loc:"g",profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},
   logs:[{d:"2026-11-03",id:"KA",rpe:7},{d:"2026-11-05",id:"MO"},{d:"2026-11-08",id:"KB",rpe:8}]};
-(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});p.on('pageerror',e=>errs.push(e.message));
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});p.on('pageerror',e=>errs.push(e.message));await require('./netguard')(p,errs);
 const theme=()=>p.evaluate(()=>document.body.getAttribute('data-theme'));
 const set=async(url,st,key)=>{await p.goto(url);await p.evaluate(([x,k])=>{localStorage.clear();if(x)localStorage.setItem('kz_app_v3',x);if(k)localStorage.setItem('kz_love_k',k);},[st?JSON.stringify(st):null,key||null]);await p.reload();await p.waitForTimeout(150);};
 // 1) build without love.enc.json: locked, clear hint in the code field

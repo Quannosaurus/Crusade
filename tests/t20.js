@@ -19,7 +19,7 @@ if(cp.execSync('git ls-files',{cwd:R}).toString().split('\n').some(x=>/love\.txt
 const html=built.replace(/var LOVEENC=(null|\{[^;]*\});/,'var LOVEENC='+enc+';');fs.writeFileSync(R+'/.build/t20.html',html);
 const url='file://'+R+'/.build/t20.html';
 (async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});p.on('pageerror',e=>errs.push(e.message));
-await p.route(/fonts\.g/,r=>r.abort());await p.goto(url);
+await require('./netguard')(p,errs);await p.goto(url);
 const base={onb:true,seenFocus:true,seenFav:true,loc:"g",profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},logs:[{d:"2026-11-10",id:"KA",rpe:7}]};
 const set=async st=>{await p.evaluate(x=>{localStorage.clear();localStorage.setItem('kz_app_v3',x);},JSON.stringify(st));await p.reload();};
 // crypto round trip in app logic

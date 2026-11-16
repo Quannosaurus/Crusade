@@ -1,6 +1,6 @@
 // @name emphasis-matrix
 const {chromium}=require('playwright');(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:390,height:844}});const errs=[];p.on('pageerror',e=>errs.push(e.message));
-await p.route(/fonts\.g/,r=>r.abort());
+await require('./netguard')(p,errs);
 await p.goto('file://'+require('path').resolve(__dirname,'../.build/index.html'));const iss=[];
 const base={profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0}};
 for(const em of ["bal","lower","glutes","upper","core"]) for(const loc of ["g","h"]){

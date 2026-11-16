@@ -12,8 +12,8 @@ function est(k,D,s,loc){let tot=0;s.blocks.forEach(b=>{if(D.short&&b.p>1)return;
   const n=R||parseInt(it.sets||1)||1,g=k.target(it,k.curVar(it,loc)),reps=parseInt(g.r)||it.lo;t+=n*(/^s/.test(it.unit)?reps:reps*3)+(b.rounds?0:(n-1)*(b.rest||60))+20;});
  if(R)t+=R*(b.rest||90);tot+=t;});return Math.round(tot/60)+4;}
 const P=[
- {n:'1 Nils (intermediate, kick Tu/Fr)',prof:{pull:10,dips:15,push:25,expl:5,mu:0,hsw:30,hsf:0,tuck:30,lsit:10,hang:45},focus:'bal',skills:{hs:1,mu:1,ls:1},kick:[2,5],loc:'g',freq:0.85},
- {n:'2 Partner (beginner, home, no skills)',prof:{pull:0,dips:0,push:5,expl:0,mu:0,hsw:0,hsf:0,tuck:5,lsit:0,hang:15,pike:0},focus:'bal',skills:{},kick:[],loc:'h',home:{b:true},freq:0.45},
+ {n:'1 Captain (intermediate, kick Tu/Fr)',prof:{pull:10,dips:15,push:25,expl:5,mu:0,hsw:30,hsf:0,tuck:30,lsit:10,hang:45},focus:'bal',skills:{hs:1,mu:1,ls:1},kick:[2,5],loc:'g',freq:0.85},
+ {n:'2 Partner profile (beginner, home, no skills)',prof:{pull:0,dips:0,push:5,expl:0,mu:0,hsw:0,hsf:0,tuck:5,lsit:0,hang:15,pike:0},focus:'bal',skills:{},kick:[],loc:'h',home:{b:true},freq:0.45},
  {n:'3 Runner (run focus, no skills)',prof:{pull:3,dips:5,push:15,hang:30,tuck:10},focus:'run',skills:{},kick:[],loc:'g',freq:0.8},
  {n:'4 Strength advanced (MU, FL, PL)',prof:{pull:18,dips:25,push:40,expl:10,mu:5,hsw:60,hsf:15,tuck:40,lsit:20,hang:90,flSt:2,plSt:1},focus:'str',skills:{hs:1,mu:1,fl:1,pl:1},kick:[],loc:'g',freq:0.8},
  {n:'5 Returner with wrist+shoulder pain, 5-week pause',prof:{pull:6,dips:8,push:15,hang:30,tuck:10,hsw:20},focus:'bal',skills:{hs:1},kick:[],loc:'g',freq:0.6,pain:{w:true,s:true},pause:[14,49]},

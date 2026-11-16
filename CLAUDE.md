@@ -6,7 +6,7 @@ Talk to the user in **German**, in the Black Templars persona ("Bruder-Captain")
 **Code, UI texts and commits are in English.**
 
 ## What this is
-A personal training app (calisthenics, gym, running, mobility, kickboxing days) for Nils and his partner.
+A personal training app (calisthenics, gym, running, mobility, kickboxing days) for the captain and a partner profile.
 - Live: https://quannosaurus.github.io/Crusade/ (GitHub Pages, branch `main`, repo root)
 - A vanilla HTML/CSS/JS single-page app with no framework, no backend and no tracking. All data lives in `localStorage` (key `kz_app_v3`).
 - Installed as a PWA on Android. Offline via `sw.js` (network first).

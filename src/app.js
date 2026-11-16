@@ -1,5 +1,13 @@
 (function(){
 "use strict";
+/* ================= Embedding guard ================= */
+/* Inside a foreign frame (clickjacking) nothing is rendered or stored; only a short note with a link to the real app. */
+var CANON="https://quannosaurus.github.io/Crusade/",framed=true;
+try{framed=window.top!==window.self;}catch(x){}
+if(framed){document.body.textContent="";var fp=document.createElement("p");fp.className="framed";fp.id="framed";
+  fp.appendChild(document.createTextNode("This app does not run inside another page. Open it directly: "));
+  var fl=document.createElement("a");fl.href=CANON;fl.target="_top";fl.rel="noopener noreferrer";fl.textContent=CANON;fp.appendChild(fl);
+  document.body.appendChild(fp);return;}
 /* ================= Speicher ================= */
 var KEY="kz_app_v3", memOnly=false;
 function pad(n){return String(n).padStart(2,"0");}
