@@ -276,6 +276,7 @@ Historie (D.logs:      │   6. Steigerung   target(): Double Progression, relat
   - Beispiel Captain: Oberkörper bisher 12–28 Sätze → Deckel bei ~20.
 - **Individuelles Nachsteuern:** Steht das Ziel-Muster beim Plateau (5.2, Punkt 6) still und ist die Last normal, steigt sein Band für 3 Wochen um +2 Sätze. Danach gilt der alte Wert, außer der Fortschritt kam zurück.
 - Der 60–90-min-Rahmen (A-013) bleibt die harte Grenze. Das Band verschiebt nur Runden innerhalb dieses Rahmens.
+- **Umsetzung A-025:** Das Band wirkt auch über die Satzzahl je Übung (Schwerpunktblock, feste Satzzahlen; Untergrenze 2 Sätze, Anker zuletzt). Bei Level 0 senkt es nur. Der 60-min-Boden hat Vorrang: Reicht der Inhalt ohne Überschuss nicht für 60 min, darf das Band dort überschritten werden.
 
 ### 5.4 Neu-Einstufung aus Tests und Logs
 

@@ -3,7 +3,7 @@
 const addD=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
 function doTrain(k,id){const D=k.D(),dy=k.day();dy.pick=id;dy.fin={rpe:6};const c=k.ctx(k.today()),s=k.S(id,c);
   s.blocks.forEach((b,bi)=>{if(D.short&&b.p>1)return;const bix=b.bi!=null?b.bi:bi;b.items.forEach((it,ii)=>{const v=k.curVar(it,k.LOC());if(v<0)return;const key=id+'-'+bix+'-'+ii;dy.done[key]=true;
-    if(it.f||it.iso)return;const n=b.rounds?k.rounds(b,c,id):(parseInt(it.sets,10)||1);
+    if(it.f||it.iso)return;const n=k.setsOf(it,b,c,id);
     if(it.test){const t=it.test,cur=D.profile[t]||0;dy.inp[key]={s:[String(cur+1)]};return;}
     const g=k.target(it,v);dy.inp[key]={s:Array(n).fill(String(g.r)),w:it.opts[v].w?String(g.w||20):''};});});
   k.saveTrain();return s;}
