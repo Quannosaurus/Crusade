@@ -50,7 +50,7 @@ P.forEach(p=>{const {w,k,d,errs}=boot();const D=k.D();const flags=[];
  });
  // render all screens
  ['start','train','run','kick','morgen','verlauf','stand','mehr'].forEach(t=>{D.tab=t;try{k.render();}catch(e){flags.push('Render error on '+t+': '+e.message);}});
- D.tab='verlauf';k.render();const ins=[...d.querySelectorAll('.ins')].map(x=>x.textContent);
+ D.tab='stand';k.render();const ins=[...d.querySelectorAll('.ins')].map(x=>x.textContent);
  if(!ins.length)flags.push('No focus advice');
  if(p.rpe===10&&!ins.some(x=>/at the limit/.test(x)))flags.push('Overreaching not flagged in stats');
  if(p.pain){D.tab='train';k.render();const txt=d.getElementById('app').textContent;if(!/rehab/i.test(txt))flags.push('No rehab block with pain');}

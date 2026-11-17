@@ -1,7 +1,7 @@
 // @name daily-form
 // P-8: daily readiness tip, off by default. Off (and on without a tap): plans identical to the plan without P-8 for 4
 // profiles × Strength A/B/C and over a 6-week simulation, no bar on the training page. Tired: low round count, fewer sets,
-// no extra favourites/emphasis exercises, the hint "no reps to failure today", never under the floors (A-035: 45 min, as Tired is an explicit user wish; 2 working
+// (A-029: about ⅔ of the working sets per exercise, ≥ 2, circuits one round less, same loads, no tests, "Easy week now" hint after 3 tired days in 7) the hint "3–4 reps before failure", never under the floors (A-035: 45 min, as Tired is an explicit user wish; 2 working
 // sets, legs + hinge ≥ 10, a leg session keeps 6 leg sets). Good: high round count only where the week has room, level 0
 // never raised, 12 weeks of "good" every day keep the band tolerance (peak ≤ upper + 2 / + 4, average ≤ upper limit).
 // Log rd, passive stats line, backup fields, junk refused; Extras switch and bar in the UI, Plain wording; Playwright
@@ -35,18 +35,37 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
 {const a=boot(),b=boot();setup(a.k,prof('Partner glutes'));setup(b.k,prof('Partner glutes'));b.k.D().opt.ready=true;
  const ra=sim(a.k,42,START).map(r=>r.id+(r.sig||'')),rb=sim(b.k,42,START).map(r=>r.id+(r.sig||''));let d=0;ra.forEach((x,i)=>{if(x!==rb[i])d++;});if(d)issue('6-week simulation with the switch on and no tap: '+d+' days differ');}
 
-// 2 tired vs normal for every profile × A/B/C: fewer sets, low rounds, floors, hint
+// 2 tired vs normal for every profile × A/B/C (A-029 Tired doctrine: volume deload for one day): every exercise about ⅔ of its
+//   working sets (rounded up, at least 2), circuits at most one round less, load and variation unchanged, warm-up and
+//   cool-down complete, floors (45 min, leg session 6 leg sets), hint "3–4 reps before failure"
 PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);k.today(td);D.opt.ready=true;const c=k.ctx(td);
   ['KA','KB','KC'].forEach(id=>{k.day().ready=2;const sn=k.S(id,c),nn=tot(k,sn,c,id);k.day().ready=3;const st=k.S(id,c),nt=tot(k,st,c,id);
     if(nt>nn)issue(p.n+' '+id+': tired '+nt+' sets > normal '+nn);
-    if(st.min<45&&sn.min>=45)issue(p.n+' '+id+': tired '+st.min+' min, under the 45 min floor (A-035: Tired as an explicit user wish)');
-    st.blocks.forEach(b=>{if(b.rounds&&!b.lowb&&b.tr==null&&k.rounds(b,c,id)!==b.rounds[0])issue(p.n+' '+id+' '+b.name+': tired without the low round count');
-      b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,'g')<0)return;if(k.setsOf(it,b,c,id)<2)issue(p.n+' '+id+' '+it.k+': under 2 sets when tired');});});
+    if(st.min<45&&sn.min>=45)issue(p.n+' '+id+': tired '+st.min+' min, under the 45 min floor');
+    const per=(s,f)=>{const m={};s.blocks.forEach(b=>{b.items.forEach(it=>{const v=k.curVar(it,'g');if(v<0||!it.k)return;m[(b.warm?'W':b.cool?'C':'')+it.k]=f(it,b,v);});});return m;};
+    const setsN=per(sn,(it,b)=>it.f||it.iso||it.test?null:k.setsOf(it,b,c,id)),setsT=per(st,(it,b)=>it.f||it.iso||it.test?null:k.setsOf(it,b,c,id));
+    k.day().ready=2;const wN=per(sn,(it,b,v)=>it.opts[v].n+'|'+(it.opts[v].w?k.target(it,v).w:''));k.day().ready=3;const wT=per(st,(it,b,v)=>it.opts[v].n+'|'+(it.opts[v].w?k.target(it,v).w:''));
+    Object.keys(setsT).forEach(q=>{const a=setsN[q],t=setsT[q];if(a==null||t==null)return;
+      if(t>a)issue(p.n+' '+id+' '+q+': tired '+t+' sets > normal '+a);
+      if(t<Math.min(a,Math.max(2,Math.ceil(a*2/3)))&&t<a-1)issue(p.n+' '+id+' '+q+': tired '+t+' of '+a+' sets, deeper than ⅔');
+      if(t<2&&a>=2)issue(p.n+' '+id+' '+q+': under 2 sets when tired');});
+    Object.keys(wT).forEach(q=>{if(wN[q]!=null&&wN[q]!==wT[q])issue(p.n+' '+id+' '+q+': load or variation changed when tired '+wN[q]+' → '+wT[q]);});
+    const wc=s=>s.blocks.filter(b=>b.warm||b.cool).map(b=>b.name+':'+b.items.length).join();if(wc(sn)!==wc(st))issue(p.n+' '+id+': warm-up/cool-down shortened when tired');
     if(k.legSets(sn,c,id)>=6&&k.legSets(st,c,id)<6)issue(p.n+' '+id+': tired leg session lost its leg sets');
-    const fb=st.blocks.find(b=>b.fav);if(fb&&fb.items.length>2&&st.min>45)issue(p.n+' '+id+': tired with '+fb.items.length+' favourites');
     rep.push(p.n+' '+id+': normal '+nn+' sets / '+sn.min+' min · tired '+nt+' sets / '+st.min+' min');});
-  D.tab='train';k.day().pick='KC';k.day().ready=3;k.render();if(!/no reps to failure today/.test(z.txt()))issue(p.n+': no "no reps to failure today" hint');
+  D.tab='train';k.day().pick='KC';k.day().ready=3;k.render();if(!/3–4 reps before failure/.test(z.txt()))issue(p.n+': no "3–4 reps before failure" hint');
   if(z.errs.length)issue(p.n+' JS errors '+z.errs.join('; '));});
+// no tests on a tired day: a due Skill Trial waits; "Easy week now" suggested after 3 tired days in 7
+{const z=boot(),k=z.k,D=setup(k,prof('Partner glutes'));let td=null;let s=START;
+ for(let i=0;i<70&&!td;i++){k.today(s);const r=k.recAll(s,false);if(r.id==='CH'&&r.btn==='train'){td=s;break;}
+   if(r.btn==='kick')D.logs.push({d:s,id:'KI',t:'KI',rpe:6});else if(r.btn==='run')D.logs.push({d:s,id:r.id,t:r.id,rpe:6,km:5,min:30});else if(r.id==='RS')D.logs.push({d:s,id:'RS',t:'RS',rpe:4});else doTrain(k,r.id);s=addD(s,1);}
+ if(!td)issue('no Skill Trial day found for the tired check');else{D.opt.ready=true;k.day().ready=3;const t=k.recTrain(td,'g',false);if(t.id==='CH'||!/Skill Trial waits/.test(t.why))issue('tired day still plans the Skill Trial: '+JSON.stringify(t));
+   delete k.day().ready;if(k.recTrain(td,'g',false).id!=='CH')issue('Skill Trial gone without the tired tap');}
+ D.opt.ready=true;const t0=k.today();D.logs.push({d:addD(t0,-6),id:'KA',t:'KA',rpe:6,rd:3},{d:addD(t0,-3),id:'KB',t:'KB',rpe:6,rd:3});D.easy='';D.tab='start';k.render();
+ if(z.$('.tired3'))issue('easy-week hint after 2 tired days');D.logs.push({d:addD(t0,-1),id:'KC',t:'KC',rpe:6,rd:3});D.logs.sort((a,b)=>a.d<b.d?-1:1);k.render();
+ const h=z.$('.tired3');if(k.ctx(t0).cyc!==6&&(!h||!h.querySelector('[data-a=easy]')))issue('no easy-week hint after 3 tired days in 7');
+ D.opt.ready=false;k.render();if(z.$('.tired3'))issue('easy-week hint with readiness off');
+ if(z.errs.length)issue('JS errors '+z.errs.join('; '));}
 {let vis=0;PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);k.today(td);D.opt.ready=true;const c=k.ctx(td);['KA','KB','KC'].forEach(id=>{k.day().ready=2;const a=tot(k,k.S(id,c),c,id);k.day().ready=3;if(tot(k,k.S(id,c),c,id)<a)vis++;});});
  if(vis<6)issue('tired shortens only '+vis+' of 12 sessions visibly');}
 
@@ -69,7 +88,7 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
 
 // 4 stats line, backup fields, junk
 {const {k,errs,txt}=boot(),D=setup(k,prof('Captain'),'2026-10-01');k.today('2026-11-16');D.opt.ready=true;
- [[1,1],[3,3],[5,3],[8,3],[10,2]].forEach(([n,r])=>D.logs.push({d:addD('2026-11-16',-n),id:'KA',t:'x',rpe:6,rd:r}));D.tab='verlauf';k.render();
+ [[1,1],[3,3],[5,3],[8,3],[10,2]].forEach(([n,r])=>D.logs.push({d:addD('2026-11-16',-n),id:'KA',t:'x',rpe:6,rd:r}));D.tab='stand';k.render();
  if(!/Readiness over 4 weeks: good 1 · normal 1 · tired 3/.test(txt()))issue('no passive readiness line in the stats');
  const ci=k.cleanImport({v:3,opt:{ready:true},logs:[{d:'2026-11-10',id:'KA',t:'x',rd:3},{d:'2026-11-11',id:'KA',t:'x',rd:7},{d:'2026-11-12',id:'KA',t:'x',rd:'<b>'}],days:{'2026-11-16':{ready:3},'2026-11-15':{ready:9}}});
  if(!ci||!ci.opt.ready||ci.logs[0].rd!==3||ci.logs[1].rd!=null||ci.logs[2].rd!=null||!ci.days['2026-11-16']||ci.days['2026-11-16'].ready!==3||(ci.days['2026-11-15']&&ci.days['2026-11-15'].ready!=null))issue('backup readiness fields wrong '+JSON.stringify(ci&&[ci.opt,ci.logs.map(l=>l.rd),ci.days]));
@@ -80,7 +99,7 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
 {const {k,errs,click,txt,$}=boot(),D=setup(k,prof('Captain'),'2026-10-01');k.today('2026-11-16');D.tab='mehr';k.render();
  if(!/Daily readiness check/.test(txt()))issue('Extras: no readiness switch');click('[data-a=opt][data-k=ready]');if(!D.opt.ready)issue('switch did not turn on');
  D.tab='train';k.day().pick='KB';k.render();if(!$('.rdbar'))issue('no readiness bar');click('[data-a=ready][data-v="3"]');if(k.day().ready!==3)issue('tap tired not stored');
- if(!/no reps to failure today/.test(txt()))issue('tired hint missing in the UI');click('[data-a=ready][data-v="3"]');if(k.day().ready)issue('second tap did not clear');
+ if(!/3–4 reps before failure/.test(txt()))issue('tired hint missing in the UI');click('[data-a=ready][data-v="3"]');if(k.day().ready)issue('second tap did not clear');
  k.day().pick='RS';k.render();if($('.rdbar'))issue('bar on a recovery session');
  D.theme='plain';k.day().pick='KA';k.render();if(/warrior/i.test(txt()))issue('Plain theme with Warhammer wording');D.theme='templar';k.render();if(!/warrior/.test(txt()))issue('templar question missing');
  if(errs.length)issue('UI JS errors '+errs.join('; '));}

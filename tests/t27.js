@@ -90,7 +90,7 @@ console.log('forecast for tomorrow came true: '+hits+'/'+tot);
   const n=await p.locator('.wkd').count();if(n!==7)issue('preview strip shows '+n+' days');
   const today=await p.evaluate(()=>{const k=window.__kz,r=k.recAll(k.today(),false);return k.NAMES[r.btn==='train'?k.recTrain(k.today(),'g',false).id:r.id];});
   const lab0=await p.locator('.wkd').first().getAttribute('aria-label');if(lab0.indexOf(today)<0)issue('today cell "'+lab0+'" ≠ recommendation '+today);
-  const rn=await p.locator('.big.rec .rn').first().textContent().catch(()=>'');if(rn&&rn!==today)issue('recommended card '+rn+' ≠ '+today);
+  const rn=await p.locator('.big.rec .rn').first().textContent().catch(()=>'');if(rn&&today.split(':')[0]!==rn)issue('recommended card '+rn+' ≠ '+today);/* A-029 U2: the card names the session short (before the colon) plus its length */
   if(!(await p.locator('.wkf').textContent()).includes('Adapts to what you actually train'))issue('adapt hint missing');
   await p.locator('.wkd').nth(1).click();await p.waitForTimeout(80);
   const x=await p.locator('.wkx').textContent().catch(()=>'');if(!x)issue('tap on a day shows no detail');

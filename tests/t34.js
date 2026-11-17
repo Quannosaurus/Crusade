@@ -59,7 +59,7 @@ function weeks(k,out){const W=[];out.forEach(r=>{const w=wkOf(r.d),x=W[w]||(W[w]
  D.logs.push({d:ws,id:'RE',t:'Easy run',rpe:4,km:5,min:31},{d:addD(ws,1),id:'RE',t:'Easy run',rpe:4,km:4,min:26,bl:1});D.logs.sort((a,b)=>a.d<b.d?-1:1);k.day('2026-11-16').xr=true;
  const st=k.kmStat();if(st.cur!==9||st.avg!==10)issue('km stat with extra/past runs '+JSON.stringify(st));
  const pl=k.runPlan('RE');if(pl.km>4||pl.why!=='cap')issue('km cap: plan '+JSON.stringify(pl)+' (room 13 − 9 = 4)');
- D.tab='verlauf';k.render();let t=z.txt();if(!/easy share/.test(t))issue('no easy share in the stats');if(!z.$('svg[aria-label="Kilometres per week, last 12 weeks"] .rf'))issue('no average line in the km chart');
+ D.tab='stand';k.render();let t=z.txt();if(!/easy share/.test(t))issue('no easy share in the stats');if(!z.$('svg[aria-label="Kilometres per week, last 12 weeks"] .rf'))issue('no average line in the km chart');
  const m=t.match(/easy share (\d+) % of (\d+) runs/);if(!m||m[2]!=='9'||m[1]!=='56')issue('easy share '+(m&&m[0]));
  D.logs.push({d:'2026-11-18',id:'RE',t:'Easy run',rpe:4,km:5,min:32});k.render();t=z.txt();if(!/more than 30 % above/.test(t))issue('no km insight at 14 km vs 10');
  k.WK.key='';const wp=k.weekPlan(),rr=wp.find(e=>e.run);rep.push('preview: '+wp.map(e=>e.id).join(' '));

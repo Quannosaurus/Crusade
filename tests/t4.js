@@ -86,7 +86,7 @@ A.click('[data-tab=train]');A.click('[data-a=loc][data-v=h]');console.log('Zuhau
 // 7 short mode
 A.click('[data-a=loc][data-v=g]');A.set('#pick','KA');const nb=A.$$('details.blk').length,mb=+((A.$('.dur')||{}).textContent||'').replace(/^\D*(\d+).*$/,'$1');A.click('[data-a=short]');const ns=A.$$('details.blk').length,ms=+((A.$('.dur')||{}).textContent||'').replace(/^\D*(\d+).*$/,'$1');console.log('Blöcke normal/kurz:',nb,ns,'min',mb,ms);if(ns>=nb&&!(ms<mb))issue('Begrenzte Zeit kürzt nicht');
 // 8 run + kick + morning saves
-A.click('.nav [data-tab=start]');A.click('[data-tab=run]');A.set('#f_km','5');A.set('#f_min','32');if(!/Pace 6:24/.test(A.txt()))issue('Tempo falsch: '+(A.$('.tg')||{}).textContent);
+A.click('.nav [data-tab=start]');A.click('[data-tab=run],[data-a=xrun]');/* A-029 U3: on a strength day the run card is "Also possible" (data-a=xrun) */A.set('#f_km','5');A.set('#f_min','32');if(!/Pace 6:24/.test(A.txt()))issue('Tempo falsch: '+(A.$('.tg')||{}).textContent);
 A.click('[data-a=rpe][data-v="6"]');A.click('[data-a=saverun]');
 A.click('[data-tab=morgen]');A.click('[data-a=savemo]');
 console.log('Startseite erledigt:',A.$$('.big .tag.ok').length);

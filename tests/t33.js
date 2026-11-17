@@ -43,7 +43,7 @@ function setup(k,p,start,td){const D=k.D();Object.assign(D.profile,p.prof);D.foc
  // this week: extra easy run (xr) and a logged past day count
  D.logs.push({d:ws,id:'RE',t:'Easy run',rpe:4,km:5,min:30});D.logs.push({d:addD(ws,1),id:'KC',t:'Strength C',rpe:8,bl:1});
  st=k.loadStat();if(st.cur!==4*30+8*75)issue('this week load with xr + backlog: '+st.cur);
- D.tab='verlauf';k.render();if(!/Weekly load/.test(z.txt())||!z.w.document.querySelector('svg[aria-label="Weekly load, last 12 weeks"]'))issue('weekly load chart missing');
+ D.tab='stand';k.render();if(!/Weekly load/.test(z.txt())||!z.w.document.querySelector('svg[aria-label="Weekly load, last 12 weeks"]'))issue('weekly load chart missing');
  const ins=()=>[...z.w.document.querySelectorAll('.ins')].map(x=>x.className+' '+x.textContent).filter(x=>/Load this week/.test(x));
  if(ins().length)issue('load insight without reason: '+ins());
  D.logs.push({d:addD(ws,2),id:'KB',t:'Strength B',rpe:8,min:150});k.render();let i1=ins();if(i1.length!==1||!/info/.test(i1[0]))issue('load insight (> 1.5×, info) '+i1+' cur '+k.loadStat().cur);
@@ -132,7 +132,7 @@ function setup(k,p,start,td){const D=k.D();Object.assign(D.profile,p.prof);D.foc
  await p.reload();await p.waitForTimeout(150);const ex=p.locator('text=Extras');if(!await ex.count())issue('playwright: no Extras');else{await ex.first().scrollIntoViewIfNeeded();await p.screenshot({path:R+'/.build/t33-extras.png'});}
  await p.click('[data-a=opt][data-k=oa]');await p.waitForTimeout(80);await p.click('nav [data-tab=start], #nav [data-tab=start]');await p.waitForTimeout(80);
  if(!await p.$('[data-tab=other]'))issue('playwright: no other activity link');else{await p.click('[data-tab=other]');await p.waitForTimeout(80);await p.click('[data-a=oaname][data-v=Hiking]');await p.waitForTimeout(60);await p.screenshot({path:R+'/.build/t33-other.png'});}
- await p.click('#nav [data-tab=verlauf]');await p.waitForTimeout(100);const ch=p.locator('svg[aria-label="Weekly load, last 12 weeks"]');if(!await ch.count())issue('playwright: no load chart');else{await ch.scrollIntoViewIfNeeded();await p.screenshot({path:R+'/.build/t33-load.png'});}
+ await p.click('#nav [data-tab=stand]');await p.waitForTimeout(100);const ch=p.locator('svg[aria-label="Weekly load, last 12 weeks"]');if(!await ch.count())issue('playwright: no load chart');else{await ch.scrollIntoViewIfNeeded();await p.screenshot({path:R+'/.build/t33-load.png'});}
  const ow=await p.evaluate(()=>document.documentElement.scrollWidth);if(ow>390)issue('playwright overflow '+ow);
  await p.click('#nav [data-tab=start]');await p.waitForTimeout(60);await p.click('#nav [data-tab=start]');
  if(errs.length)issue('playwright errors: '+errs.join('; '));await b.close();done();})().catch(e=>{issue('crash: '+e.stack);done();});

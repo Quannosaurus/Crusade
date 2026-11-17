@@ -165,8 +165,11 @@ h2:focus,h2:focus-visible{outline:none}
 .sum{display:flex;flex-direction:column;gap:2px;border:1px solid var(--line);border-radius:9px;padding:10px 12px;background:var(--panel2)}
 .sum span{color:var(--muted);font-size:.9rem}
 .toast{border:1px solid var(--ok);background:#0f1a12;color:#cfe8d4;border-radius:8px;padding:10px 12px;font-size:.92rem}
+.toast{max-height:240px;overflow:hidden;animation:toastout .6s ease 5s forwards}@keyframes toastout{to{opacity:0;max-height:0;padding-top:0;padding-bottom:0;margin:0;border-width:0}}
+.quote{margin:2px 2px 0;font-size:.9rem;font-style:italic;color:var(--muted)}.quote span{color:var(--acc-l);font-style:normal;margin-right:4px}
+.big.also{padding:12px 16px;border-style:dashed;background:transparent}.big.also b{font-size:1.05rem}.tag.dim{background:none;border:1px solid var(--edge);color:var(--muted)}
 h2.q{font-size:1.15rem}
-body.train .timer{display:block}
+body.tmr .timer{display:block}
 @media (prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}}
 .ex>input[type=checkbox],.chk input{outline-offset:2px}
 .ex.pose{grid-template-columns:28px 84px 1fr}
@@ -304,3 +307,12 @@ body[data-theme=love] .big.rec{border-color:var(--acc-l)}body[data-theme=love] .
 .favask p{margin:0}
 .xrun{margin-top:-4px}
 .nxn{font-style:italic}
+.trow{margin:8px 0 4px}.trow .chip{min-height:44px}
+.lnk.bk{min-height:44px;min-width:44px;display:inline-flex;align-items:center;padding:8px 12px 8px 0}.acts{align-items:center}
+.bx{display:block;grid-column:1/-1;font-size:.78rem;color:var(--muted);margin-top:2px;overflow-wrap:anywhere}details[open]>summary .bx{display:none}
+.mnu{display:inline-block;position:relative}.mnu>summary{list-style:none;cursor:pointer;min-width:44px;min-height:36px;display:inline-flex;align-items:center;justify-content:center;color:var(--muted);font-size:1.2rem;border-radius:8px}.mnu>summary::-webkit-details-marker{display:none}
+.mnu[open]>summary{color:var(--bone);background:var(--panel2)}.mnub{display:flex;flex-wrap:wrap;gap:12px;padding:8px 2px 2px;justify-content:flex-end}
+.fincard{display:flex;flex-direction:column;gap:3px;border:1px solid var(--ok);border-radius:12px;padding:12px 14px;background:var(--panel)}.fincard b{font-size:1.05rem}.fincard .gold{color:var(--gold-t)}
+body[data-theme=love] .fincard{border-color:var(--acc-l)}
+.optrow{display:flex;flex-wrap:wrap;gap:8px}.optrow>details{flex:1 1 40%;margin:0}.optrow>details[open]{flex-basis:100%}.opt.pain>summary{font-weight:600}.tvh{display:flex;justify-content:space-between;align-items:center;gap:8px}.tvh h3{margin:0}.tvl{margin-top:6px}.empty{margin:4px 0}body[data-theme=plain]{--display:"Source Sans 3","Segoe UI",Roboto,Arial,sans-serif}body[data-theme=plain] .fs legend,body[data-theme=plain] .eyebrow{letter-spacing:.06em}
+.grp{margin:0;padding:14px 16px 2px;font-size:1.15rem}.mgrp .grp:not(:first-child){border-top:2px solid var(--line);margin-top:6px}
