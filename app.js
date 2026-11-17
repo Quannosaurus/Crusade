@@ -95,8 +95,11 @@ var KEY="kz_app_v3", PREVK="kz_app_v3_prev", memOnly=false;
 function pad(n){return String(n).padStart(2,"0");}
 function ds(d){return d.getFullYear()+"-"+pad(d.getMonth()+1)+"-"+pad(d.getDate());}
 function pd(s){var p=s.split("-");return new Date(+p[0],+p[1]-1,+p[2],12);}
-function addD(s,n){var d=pd(s);d.setDate(d.getDate()+n);return ds(d);}
-function diff(a,b){return Math.round((pd(b)-pd(a))/864e5);}
+/* A-038: results kept per date and offset (ADC, emptied at 20,000 entries). */
+var ADC={},ADN=0;function addD(s,n){var k=s+"|"+n,v=ADC[k];if(v!==undefined)return v;var d=pd(s);d.setDate(d.getDate()+n);v=ds(d);if(++ADN>20000){ADC={};ADN=0;}ADC[k]=v;return v;}
+/* A-038: day numbers are kept per date string (DNC), so long histories do not parse the same dates again and again. */
+var DNC={};function dnum(s){var v=DNC[s];if(v===undefined){v=pd(s).getTime();if(typeof s==="string"&&s.length===10)DNC[s]=v;}return v;}
+function diff(a,b){return Math.round((dnum(b)-dnum(a))/864e5);}
 /* A-031: lookups only by own keys (a prototype name such as "constructor" or "__proto__" is never a table entry),
    real calendar dates, and sane limits for distance and minutes. */
 function own(o,k){return o!=null&&typeof k==="string"&&Object.prototype.hasOwnProperty.call(o,k);}
@@ -124,6 +127,8 @@ function day(s){s=s||TODAY;if(!D.days[s])D.days[s]={done:{},inp:{},skip:{},pick:
 function esc(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c];});}
 function num(v){var x=parseFloat(String(v==null?"":v).replace(",","."));return isNaN(x)?null:x;}
 /* Backup import: keep only known fields with the expected types, so a foreign backup cannot inject markup or odd values. */
+/* A-038: up to LOGMAX entries are kept (was 2000); cleanImport.cut tells how many the last import would leave out. */
+var LOGMAX=20000;
 function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v==="string"?v.slice(0,m||300):"";},numv=function(v){v=+v;return isFinite(v)?v:0;};
   if(typeof n.start==="string"&&DS.test(n.start))b.start=n.start;
   Object.keys(b.profile).forEach(function(k){if(n.profile&&n.profile[k]!=null)b.profile[k]=Math.max(0,Math.min(999,numv(n.profile[k])));});
@@ -148,7 +153,8 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   if(own(STARTP,n.startP))b.startP=n.startP;
   b.days=cleanDays(n.days);
   if(n.loc==="h"||n.loc==="g")b.loc=n.loc; if(n.mlen==="k"||n.mlen==="n")b.mlen=n.mlen;
-  b.logs=(Array.isArray(n.logs)?n.logs:[]).filter(function(l){return l&&typeof l==="object"&&DS.test(l.d)&&typeof l.id==="string"&&/^[A-Z]{2}$/.test(l.id);}).slice(-2000).map(function(l){
+  var lv=(Array.isArray(n.logs)?n.logs:[]).filter(function(l){return l&&typeof l==="object"&&DS.test(l.d)&&typeof l.id==="string"&&/^[A-Z]{2}$/.test(l.id);});cleanImport.cut=Math.max(0,lv.length-LOGMAX);
+  b.logs=lv.slice(-LOGMAX).map(function(l){
     var o={d:l.d,id:l.id,t:str(l.t,60)};if(l.rpe!=null)o.rpe=Math.max(0,Math.min(10,numv(l.rpe)));if(l.note!=null)o.note=str(l.note);if(l.sum!=null)o.sum=str(l.sum);if(l.abs!=null)o.abs=l.abs?1:0;
     if(l.km!=null)o.km=lim(numv(l.km),KMMAX)||0;if(l.cb!=null)o.cb=l.cb?1:0;if(l.rd===1||l.rd===2||l.rd===3)o.rd=l.rd;if(l.min!=null)o.min=lim(numv(l.min),MINMAX)||0;if(l.lg!=null)o.lg=l.lg?1:0;if(l.bl!=null)o.bl=l.bl?1:0;
     if(l.vs&&typeof l.vs==="object"&&!o.bl){o.vs=vsZero();VPAT.forEach(function(p){o.vs[p]=Math.max(0,Math.min(60,Math.floor(numv(l.vs[p]))));});}if(o.vs&&l.vm!=null)o.vm=Math.max(0,Math.min(VMAP,Math.floor(numv(l.vm))));
@@ -212,14 +218,15 @@ function saveBackupFile(){var txt=bkJSON(),f=null;try{f=new File([txt],bkName(),
 /* A-031: a restore is checked and rendered in memory first; only when that works is it saved. The replaced state is kept
    one generation under PREVK ("Undo restore" for 1 day). Replacing a state that holds entries asks first with a preview line. */
 var RSP=null;
-function parseBk(txt){if(typeof txt!=="string"||txt.length>MAXBK)return null;try{var n=JSON.parse(txt);if(!n||typeof n!=="object"||!n.profile||!n.logs)return null;var b=cleanImport(n);b.onb=true;if(b.bkTs){b.bkAt=b.logs.length;b.bkDate=ds(new Date(b.bkTs));}return b;}catch(x){return null;}}
-function restoreText(txt,where){var b=parseBk(txt);if(!b)return false;
-  if(D.logs&&D.logs.length){RSP={b:b,where:where||"start"};D._msg="";render();window.scrollTo(0,0);var rq=document.getElementById("rsqt");if(rq){rq.tabIndex=-1;rq.focus({preventScroll:true});}return true;}
+function parseBk(txt){if(typeof txt!=="string"||txt.length>MAXBK)return null;try{var n=JSON.parse(txt);if(!n||typeof n!=="object"||!n.profile||!n.logs)return null;var b=cleanImport(n);parseBk.cut=cleanImport.cut||0;b.onb=true;if(b.bkTs){b.bkAt=b.logs.length;b.bkDate=ds(new Date(b.bkTs));}return b;}catch(x){return null;}}
+function restoreText(txt,where){var b=parseBk(txt);if(!b)return false;var cut=parseBk.cut||0;
+  /* A-038: a backup that would be cut always goes through the preview card with a hint, never silently. */
+  if((D.logs&&D.logs.length)||cut){RSP={b:b,where:where||"start",cut:cut};D._msg="";render();window.scrollTo(0,0);var rq=document.getElementById("rsqt");if(rq){rq.tabIndex=-1;rq.focus({preventScroll:true});}return true;}
   return applyState(b,where,rsToast(b),true);}
 function rsToast(b){return "Restored: "+b.logs.length+" entries. Welcome back.";}
 function bkLine(b){var n=b.logs.length,l=n?b.logs.reduce(function(m,x){return x.d>m?x.d:m;},""):"";return n+(n===1?" entry":" entries")+(l?", last "+dLab(l):"");}
 function rsHTML(){if(!RSP)return "";var cur=(D.logs||[]).length;
-  return '<div class="card rsq" role="alertdialog" aria-labelledby="rsqt"><div class="sec"><h2 id="rsqt">Restore this backup?</h2><p class="q">Backup: '+esc(bkLine(RSP.b))+'</p><p class="muted">It replaces your current data ('+cur+(cur===1?' entry':' entries')+'). You can undo this for one day.</p><div class="row"><button type="button" class="b red" data-a="rsok">Replace with backup</button><button type="button" class="b" data-a="rsno">Cancel</button></div></div></div>';}
+  return '<div class="card rsq" role="alertdialog" aria-labelledby="rsqt"><div class="sec"><h2 id="rsqt">Restore this backup?</h2><p class="q">Backup: '+esc(bkLine(RSP.b))+'</p>'+(RSP.cut?'<p class="warn rscut">This backup holds '+(RSP.b.logs.length+RSP.cut)+' entries. The app keeps the newest '+LOGMAX.toLocaleString("en")+', so the oldest '+RSP.cut+(RSP.cut===1?' entry':' entries')+' would be left out. Keep the file: nothing is deleted from it.</p>':'')+'<p class="muted">It replaces your current data ('+cur+(cur===1?' entry':' entries')+'). You can undo this for one day.</p><div class="row"><button type="button" class="b red" data-a="rsok">Replace with backup</button><button type="button" class="b" data-a="rsno">Cancel</button></div></div></div>';}
 function keepPrev(o){try{var c={};Object.keys(o).forEach(function(k){if(k.charAt(0)!=="_")c[k]=o[k];});localStorage.setItem(PREVK,JSON.stringify({at:Date.now(),s:c}));}catch(x){}}
 function prevSt(){try{var p=JSON.parse(localStorage.getItem(PREVK));if(p&&typeof p.at==="number"&&p.s&&typeof p.s==="object"&&p.s.profile&&Array.isArray(p.s.logs)&&Date.now()-p.at<864e5&&Date.now()>=p.at)return p;}catch(x){}return null;}
 function applyState(b,where,toast,prev){var old=D;RSP=null;holdSave=true;D=b;D.tab=where||"start";D._toast=toast;
@@ -287,11 +294,11 @@ function kitApply(s){var used={};
     if(it.c&&!n.f)n.c="";return n;});});}
 /* Pause rule per movement pattern on kit days: a kit session of the pattern (any variant, also a same-group replacement
    "mx_"+key) counts as training for the gym variant, so two weeks with only kit days do not step it back. */
-function patKey(k){return String(k||"").replace(/^(mx_|fav_)+/,"");}
+var PKC={};function patKey(k){var v=PKC[k];if(v===undefined){v=String(k||"").replace(/^(mx_|fav_)+/,"");if(typeof k==="string")PKC[k]=v;}return v;}
 /* P-5: one pause rule for every exercise, by movement pattern (patKey), never by name: the last session of the pattern is
    the newest of every variant of it (gym, home, Field kit "mx_"+key, favourite copies) and of kitD (kit days, logged past days). */
 function patLast(k,d){var p=patKey(k),x=(D.kitD||{})[p];if(x&&x>d)d=x;
-  Object.keys(D.ex).forEach(function(q){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&e.d>d&&i>0&&patKey(q.slice(0,i))===p)d=e.d;});return d;}
+  for(var q in D.ex){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&e.d>d&&i>0&&patKey(q.slice(0,i))===p)d=e.d;}return d;}
 function kitLabel(){var k=D.kit||[];return k.length?KITS.filter(function(x){return k.indexOf(x[0])>=0;}).map(function(x){return x[1];}).join(", "):"Nothing";}
 function isKick(s){return D.kickDays.indexOf(pd(s).getDay())>=0;}
 function O(s){var p=s.split("|");return {n:p[0],req:p[1]||"",w:p[2]==="w"};}
@@ -929,22 +936,23 @@ function nextVar(it,v,loc){if(it.kx||it.fx||it.test||it.iso||it.f)return -1;
    Paused days (P-7) count for no gap. Dates per pattern come from the logs (l.ex keys), the kit days (kitD) and D.ex;
    computed once per day and number of entries (RHC). No new data fields. */
 var RHC={k:"",L:null,m:null};
-function patDates(p){var L=D.logs,ln=L.length,ky=TODAY+"|"+ln+"|"+(ln?L[ln-1].d:"")+"|"+(D.pause?D.pause.from+D.pause.to:"")+"|"+(D.pauseH||[]).length+"|"+Object.keys(D.kitD||{}).length;
-  if(RHC.k!==ky||RHC.L!==L||RHC.D!==D){var m={};
-    L.forEach(function(l){if(!l.ex)return;Object.keys(l.ex).forEach(function(q){var i=q.indexOf("#");if(i>0){var pk=patKey(q.slice(0,i));(m[pk]=m[pk]||{})[l.d]=1;}});});
-    Object.keys(D.kitD||{}).forEach(function(pk){var d=D.kitD[pk];if(typeof d==="string")(m[pk]=m[pk]||{})[d]=1;});
-    Object.keys(D.ex).forEach(function(q){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&i>0){var pk=patKey(q.slice(0,i));(m[pk]=m[pk]||{})[e.d]=1;}});
-    Object.keys(m).forEach(function(pk){m[pk]=Object.keys(m[pk]).sort();});RHC={k:ky,L:L,D:D,m:m};}
-  return RHC.m[p]||[];}
+function patDates(p){var L=D.logs,ln=L.length,ky=ln+"|"+(ln?L[ln-1].d:"")+"|"+(D.pause?D.pause.from+D.pause.to:"")+"|"+(D.pauseH||[]).length+"|"+Object.keys(D.kitD||{}).length;
+  if(RHC.k!==ky||RHC.L!==L||RHC.D!==D||RHC.last!==L[ln-1]){var lm,i0=0,dp=0;if(grown(RHC,L)&&RHC.dp<8){lm=Object.create(RHC.lm);dp=RHC.dp+1;i0=RHC.n;}else lm={};
+    for(var j=i0;j<ln;j++){var l=L[j],ex=l.ex;if(ex)for(var q in ex){var i=q.indexOf("#");if(i>0){var pk=patKey(q.slice(0,i));if(i0){var o2=Object.create(lm[pk]||null);o2[l.d]=1;lm[pk]=o2;}else (lm[pk]||(lm[pk]={}))[l.d]=1;}}}
+    RHC={k:ky,L:L,D:D,lm:lm,n:ln,last:L[ln-1],m:{},dp:dp};}
+  /* Per pattern: dates of the logs (lm, kept incrementally) plus kitD and D.ex, sorted once per state. */
+  var r=RHC.m[p];if(r)return r;var m={},a=RHC.lm[p];if(a)for(var d in a)m[d]=1;var kd=(D.kitD||{})[p];if(typeof kd==="string")m[kd]=1;
+  for(var q in D.ex){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&i>0&&patKey(q.slice(0,i))===p)m[e.d]=1;}
+  return RHC.m[p]=Object.keys(m).sort();}
 function gapDays(a,z){return Math.max(0,diff(a,z)-pausedIn(a,z));}
 /* Usual rhythm of a pattern up to date d (median of the last 4 gaps up to d), null with fewer than 2 gaps. */
-function rhythm(p,d){var a=patDates(p).filter(function(x){return x<=d;}),g=[];for(var i=a.length-1;i>0&&g.length<4;i--)g.push(gapDays(a[i-1],a[i]));
+function rhythm(p,d){var a=patDates(p),g=[],e=lbIdx(a,d);if(e<a.length&&a[e]===d)e++;for(var i=e-1;i>0&&g.length<4;i--)g.push(gapDays(a[i-1],a[i]));
   if(g.length<2)return null;g.sort(function(x,y){return x-y;});var n=g.length;return n%2?g[(n-1)/2]:(g[n/2-1]+g[n/2])/2;}
 function backSteps(gap,rh){if(rh==null)return gap>=14?(gap>28?2:1):0;return gap>28&&gap>=2*rh?2:(gap>=14&&gap>=1.5*rh?1:0);}
 /* Was the last session of this variant itself a step back whose target was not reached? Then no second step back. */
 function backTwice(it,v,step){var K=it.k+"#"+v,p=patKey(it.k),h=[];D.logs.forEach(function(l){if(l.ex&&l.ex[K]&&l.d<TODAY)h.push([l.d,l.ex[K]]);});
-  if(!h.length)return false;var last=h[h.length-1],dl=last[0],a=patDates(p).filter(function(x){return x<dl;});if(!a.length)return false;
-  var pg=a[a.length-1],bl=backSteps(gapDays(pg,dl),rhythm(p,pg));if(!bl)return false;var prev=h.length>1?h[h.length-2][1]:null;if(!prev)return false;
+  if(!h.length)return false;var last=h[h.length-1],dl=last[0],a=patDates(p),ai=lbIdx(a,dl);if(!ai)return false;
+  var pg=a[ai-1],bl=backSteps(gapDays(pg,dl),rhythm(p,pg));if(!bl)return false;var prev=h.length>1?h[h.length-2][1]:null;if(!prev)return false;
   var rT=Math.max(Math.min(it.lo,prev[0]),Math.min(it.hi,prev[0])-bl*step),wT=prev[1]?kgRnd(prev[1]-bl*kgStep(prev[1]),prev[1]):0;
   return !(last[1][0]>=rT&&(last[1][1]||0)>=wT);}
 function target(it,v){
@@ -970,15 +978,29 @@ function target(it,v){
 function setsOf(it,b,c,id){ if(b&&b.rounds){var r=rounds(b,c,id);return b.lowb&&it.ts!=null?Math.min(it.ts,r):r;} var n=parseInt(String(it.sets),10); if(it.ts!=null) return it.ts; return isNaN(n)?1:n; }
 
 /* ================= Empfehlung ================= */
-function onDay(s){return D.logs.filter(function(l){return l.d===s;});}
-function since(id,s){var m=Infinity;D.logs.forEach(function(l){if(l.id===id&&l.d<s){var x=diff(l.d,s);if(x<m)m=x;}});return m;}
+/* A-038: entries per date, indexed once per state and number of entries (ODC). */
+var ODC={k:"",D:null,L:null,m:null};
+/* Shared rule for the history caches: when the same list only got new entries at its end (the week preview and a new log
+   append the newest entry), only those are added; anything else rebuilds. */
+function grown(C,L){return C.L===L&&C.D===D&&C.n>0&&L.length>C.n&&L[C.n-1]===C.last;}
+function onDay(s){var L=D.logs,ln=L.length,ky=ln+"|"+(ln?L[ln-1].d+L[ln-1].id:"");
+  if(ODC.k!==ky||ODC.D!==D||ODC.L!==L||ODC.last!==L[ln-1]){var m,i0=0;var dp=0;if(grown(ODC,L)&&ODC.dp<8){m=Object.create(ODC.m);dp=ODC.dp+1;i0=ODC.n;}else m={};
+    for(var i=i0;i<ln;i++){var l=L[i];if(i0)m[l.d]=(m[l.d]||[]).concat([l]);else (m[l.d]=m[l.d]||[]).push(l);}ODC={k:ky,D:D,L:L,m:m,n:ln,last:L[ln-1],dp:dp};}
+  var a=ODC.m[s];return a?a.slice():[];}
+function since(id,s){var b="";D.logs.forEach(function(l){if(l.id===id&&l.d<s&&l.d>b)b=l.d;});return b?diff(b,s):Infinity;}
 function isTrain(l){return l.id!=="MO"&&l.id!=="OA";}
 /* Training weeks from D.start (weeks without training do not count). "Easy week now" (P-4, D.easy = start of that week)
    shifts the count so that week becomes the deload week (part 6); later cycles follow from there. */
-function cycWk(s){var n=Math.floor(Math.max(0,diff(D.start,s))/7),wk=0,sh=0,e=D.easy&&D.easy>=D.start?Math.floor(diff(D.start,D.easy)/7):-1;
-  for(var w=0;w<=n;w++){var a=addD(D.start,7*w),z=addD(a,6);
-    if(w===n||D.logs.some(function(l){return isTrain(l)&&l.d>=a&&l.d<=z;}))wk++;if(w===e)sh=(6-wk%6)%6;}
-  return {wk:wk,ef:Math.max(1,wk+sh)};}
+/* A-038: the weeks with training are collected once per state, day and number of entries (CWC, like cbInfo), and every
+   result is kept per date; before, every call went through all weeks × all entries. */
+var CWC={k:"",D:null,L:null,tw:null,r:null};
+function cycWk(s){var L=D.logs,ln=L.length,ky=D.start+"|"+(D.easy||"")+"|"+ln+"|"+(ln?L[ln-1].d+L[ln-1].id:"");
+  if(CWC.k!==ky||CWC.D!==D||CWC.L!==L||CWC.last!==L[ln-1]){var tw,i0=0;var dp=0;if(grown(CWC,L)&&CWC.st===D.start&&CWC.dp<8){tw=Object.create(CWC.tw);dp=CWC.dp+1;i0=CWC.n;}else tw={};
+    for(var i=i0;i<ln;i++){var l=L[i];if(isTrain(l)&&l.d>=D.start)tw[Math.floor(diff(D.start,l.d)/7)]=1;}CWC={k:ky,D:D,L:L,tw:tw,r:{},n:ln,last:L[ln-1],st:D.start,dp:dp};}
+  var hit=CWC.r[s];if(hit)return {wk:hit.wk,ef:hit.ef};
+  var n=Math.floor(Math.max(0,diff(D.start,s))/7),wk=0,sh=0,e=D.easy&&D.easy>=D.start?Math.floor(diff(D.start,D.easy)/7):-1;
+  for(var w=0;w<=n;w++){if(w===n||CWC.tw[w])wk++;if(w===e)sh=(6-wk%6)%6;}
+  var r={wk:wk,ef:Math.max(1,wk+sh)};CWC.r[s]=r;return {wk:r.wk,ef:r.ef};}
 function ctx(s){
   var cw=cycWk(s),wk=cw.wk,we=cw.ef;
   var h=hist(s);
@@ -998,7 +1020,7 @@ function rdDay(){if(!D.opt||!D.opt.ready||WK.sim)return 0;var d=D.days&&D.days[T
    Skill Trial gap, and paused weeks stay out of the load average. The cycle only counts weeks with training anyway. */
 function pauseOn(s){var p=D.pause;return !!(p&&p.from&&s>=p.from&&(!p.to||s<=p.to));}
 function pausedDay(d){return pauseOn(d)||(D.pauseH||[]).some(function(x){return d>=x.f&&d<=x.t;});}
-function pausedIn(a,z){var n=0;for(var d=a;d<z&&n<400;d=addD(d,1))if(pausedDay(d))n++;return n;}
+function pausedIn(a,z){if(!D.pause&&!(D.pauseH&&D.pauseH.length))return 0;var n=0;for(var d=a;d<z&&n<400;d=addD(d,1))if(pausedDay(d))n++;return n;}
 function pauseEnd(day){var p=D.pause;if(!p)return;var t=addD(day,-1);if(p.to&&p.to<t)t=p.to;if(t>=p.from){(D.pauseH=D.pauseH||[]).push({f:p.from,t:t});if(D.pauseH.length>30)D.pauseH.splice(0,D.pauseH.length-30);}D.pause=null;WK.key="";}
 function pauseTick(){var p=D.pause;if(p&&p.to&&p.to<TODAY&&!WK.sim)pauseEnd(addD(p.to,1));}
 function pauseStart(){if(D.pause)return;D.pause={from:TODAY,to:"",why:"pause"};WK.key="";}
@@ -1006,39 +1028,69 @@ function pauseStart(){if(D.pause)return;D.pause={from:TODAY,to:"",why:"pause"};W
    extras and no target steps up (targets of exercises not done for 14+ days step back as always); no tests (Skill Trial,
    test day) in the first 7 days and no hard runs in the first 3. These sessions never count towards a stall or the plateau. */
 var CBC={};
-function cbInfo(s){var k=s+"|"+D.logs.length+"|"+(D.logs.length?D.logs[D.logs.length-1].d:"");if(CBC.L===D.logs&&CBC.k===k)return CBC.v;
-  var ds=[],R="",gap=0;D.logs.forEach(function(l){if(isTrain(l)&&l.d<s&&ds[ds.length-1]!==l.d)ds.push(l.d);});
+/* Index of the first element ≥ s in a sorted list (= number of elements < s). */
+function lbIdx(a,s){var lo=0,hi=a.length;while(lo<hi){var md=(lo+hi)>>1;if(a[md]<s)lo=md+1;else hi=md;}return lo;}
+/* Training days (sorted, distinct), rh[i] = ≥ 3 training days in the 28 days up to ds[i], q = days that end a break of
+   ≥ 10 days after a rhythm (cbInfo). */
+var TDI={k:"",D:null,L:null};
+function trDays(){var L=D.logs,ln=L.length,ky=ln+"|"+(ln?L[ln-1].d+L[ln-1].id:"");
+  if(TDI.k===ky&&TDI.D===D&&TDI.L===L&&TDI.last===L[ln-1])return TDI;
+  var ds=[],rh=[],q=[],i0=0;if(grown(TDI,L)){var ok=true;for(var j=TDI.n;j<ln;j++)if(isTrain(L[j])&&TDI.ds.length&&L[j].d<TDI.ds[TDI.ds.length-1])ok=false;if(ok){ds=TDI.ds.slice();rh=TDI.rh.slice();q=TDI.q.slice();i0=TDI.n;}}
+  if(!i0){var st={};L.forEach(function(l){if(isTrain(l))st[l.d]=1;});ds=Object.keys(st).sort();rh=[];q=[];var from=0;}
+  else{var from=ds.length;for(var j2=i0;j2<ln;j2++){var l=L[j2];if(isTrain(l)&&ds[ds.length-1]!==l.d)ds.push(l.d);}}
+  for(var i=from;i<ds.length;i++){var n=0;for(var x=i;x>=0&&diff(ds[x],ds[i])<28;x--)n++;rh[i]=n>=3;if(i>0&&diff(ds[i-1],ds[i])>=10&&rh[i-1])q.push(ds[i]);}
+  TDI={k:ky,D:D,L:L,ds:ds,rh:rh,q:q,n:ln,last:L[ln-1]};return TDI;}
+function cbInfo(s){var lk=D.logs.length+"|"+(D.logs.length?D.logs[D.logs.length-1].d:"")+"|"+(D.pause?1:0)+(D.pauseH||[]).length,k=s+"|"+lk;
+  /* A-038: kept per date for the same entries (the week preview asks for several dates in turn). */
+  if(CBC.L!==D.logs||CBC.lk!==lk||CBC.last!==D.logs[D.logs.length-1])CBC={L:D.logs,lk:lk,m:{},last:D.logs[D.logs.length-1]};if(CBC.m[s])return CBC.m[s];
+  /* A-038: the training days and their qualifying breaks come from a list kept per state (TDI, appended entries are added),
+     so a date only needs a binary search; same rules as before. */
+  var T=trDays(),ds=T.ds,n=lbIdx(ds,s),R="",gap=0;
   /* A comeback needs a rhythm to come back to: ≥ 3 training days in the 4 weeks before the break. */
-  function rh(j){var n=0;for(var q=j;q>=0&&diff(ds[q],ds[j])<28;q--)n++;return n>=3;}
-  for(var i=1;i<ds.length;i++){var g=diff(ds[i-1],ds[i]);if(g>=10&&rh(i-1)){R=ds[i];gap=g;}}
-  if(ds.length&&diff(ds[ds.length-1],s)>=10&&rh(ds.length-1)){R=s;gap=diff(ds[ds.length-1],s);}
+  if(n&&diff(ds[n-1],s)>=10&&T.rh[n-1]){R=s;gap=diff(ds[n-1],s);}
+  else{var qi=lbIdx(T.q,ds[n-1]||"");/* last qualifying break that ends on or before the last training day < s */
+    var qn=qi<T.q.length&&T.q[qi]===ds[n-1]?qi+1:qi;if(qn>0){var e=T.q[qn-1],j=lbIdx(ds,e);R=e;gap=diff(ds[j-1],e);}}
   var v={on:false,low:false,noHard:false,noTest:false,R:R,gap:gap};
-  if(R){var dd=diff(R,s),str=D.logs.filter(function(l){return STR[l.id]&&!l.bl&&l.d>=R&&l.d<s;}).length;v.on=dd<7;v.low=dd<14&&str<2;v.noHard=dd<3;v.noTest=v.on;v.n=str;}
-  CBC={L:D.logs,k:k,v:v};return v;}
+  if(R){var dd=diff(R,s),str=0;if(dd<14){for(var q=0;q<dd;q++)onDay(addD(R,q)).forEach(function(l){if(STR[l.id]&&!l.bl)str++;});}
+    else str=D.logs.filter(function(l){return STR[l.id]&&!l.bl&&l.d>=R&&l.d<s;}).length;v.on=dd<7;v.low=dd<14&&str<2;v.noHard=dd<3;v.noTest=v.on;v.n=str;}
+  CBC.m[s]=v;return v;}
 /* A-035 (T2): "Just starting" runs easy only in the first 4 training weeks, at most 2 runs per training week; hard runs and
    intervals come after that. */
 function begRun(s){return D.startP==="s0"&&cycWk(s).wk<=4;}
 function begRuns(s){var w0=blkStart(s);return D.logs.filter(function(l){return isRun(l)&&l.d>=w0&&l.d<s;}).length;}
-function hist(s){
-  var h={},y=onDay(addD(s,-1));
-  ["KA","KB","KC","CH","RE","RH","RI","DL","TE","HO","SK","KI","RS"].forEach(function(k){h[k]=since(k,s);});
+/* A-038: hist(s) scans the whole history many times per page and per simulated day; it is kept per date, state and
+   number of entries (HSC) and handed out as a copy. */
+var HSC={k:"",D:null,L:null,r:null};
+function hist(s){var L=D.logs,ln=L.length,g=D.goal,ky=TODAY+"|"+ln+"|"+(ln?L[ln-1].d+L[ln-1].id+(L[ln-1].rpe||0):"")+"|"+JSON.stringify([D.skills,g?[g.k,g.v,g.d]:0,D.pain,D.pause,(D.pauseH||[]).length,D.focus,D.emph,D.startP,D.start,D.easy,D.kickDays]);
+  if(HSC.k!==ky||HSC.D!==D||HSC.L!==L||HSC.last!==L[ln-1])HSC={k:ky,D:D,L:L,r:{},last:L[ln-1]};var c=HSC.r[s];if(!c)c=HSC.r[s]=hist0(s);var h={};for(var q in c)h[q]=c[q];return h;}
+/* A-038: per session id the sorted dates of its entries and the first training date, kept like the day index (IDI). */
+var IDI={k:"",D:null,L:null};
+function idIdx(){var L=D.logs,ln=L.length,ky=ln+"|"+(ln?L[ln-1].d+L[ln-1].id:"");
+  if(IDI.k!==ky||IDI.D!==D||IDI.L!==L||IDI.last!==L[ln-1]){var m,f,i0=0,srt=false;var dp=0;if(grown(IDI,L)&&IDI.dp<8){m=Object.create(IDI.m);dp=IDI.dp+1;f=IDI.first;i0=IDI.n;}else{m={};f=null;srt=true;}
+    for(var i=i0;i<ln;i++){var l=L[i],a=m[l.id]||[];if(!srt&&a.length&&a[a.length-1]>l.d)srt=true;if(i0)m[l.id]=a.concat([l.d]);else{a.push(l.d);m[l.id]=a;}if(isTrain(l)&&(!f||l.d<f))f=l.d;}
+    if(srt)Object.keys(m).forEach(function(q){m[q].sort();});IDI={k:ky,D:D,L:L,m:m,first:f,n:ln,last:L[ln-1],dp:dp};}
+  return IDI;}
+function lastBefore(a,s){var lo=0,hi=a?a.length:0;while(lo<hi){var md=(lo+hi)>>1;if(a[md]<s)lo=md+1;else hi=md;}return lo>0?a[lo-1]:"";}
+function hist0(s){
+  var h={},y=onDay(addD(s,-1)),IDS=["KA","KB","KC","CH","RE","RH","RI","DL","TE","HO","SK","KI","RS"],X=idIdx();
+  var w0=addD(D.start,7*Math.floor(Math.max(0,diff(D.start,s))/7)),days={};
+  h.hsN=0;h.runs7=0;h.str7=0;h.lim7=0;h.skN=0;h.legW=0;
+  /* A-038: the windows (≤ 14 days) are read through the day index instead of scanning the whole history; same rules. */
+  for(var q=14;q>=0;q--){var d=addD(s,-q);onDay(d).forEach(function(l){
+    if(q<=6){if(HASHS[l.id])h.hsN++;if(l.sk?l.sk.length>0:!!HASHS[l.id])h.skN++;}
+    if(q>=1&&q<=7){if(isRun(l))h.runs7++;if((l.rpe||0)>=10&&HARD[l.id])h.lim7++;}
+    /* A-035 (N-5): the light deload session does not use up one of the run focus' two strength slots. */
+    if(q>=1&&q<=6&&STR[l.id]&&l.id!=="DL")h.str7++;
+    if(q>=1&&isTrain(l))days[d]=1;if(q>=1&&d>=w0&&legLog(l))h.legW++;});}
+  IDS.forEach(function(k){var b=lastBefore(X.m[k],s);h[k]=b?diff(b,s):Infinity;});
   h.C=Math.min(h.KC,h.CH);
   h.strY=y.some(function(l){return STR[l.id];}); h.kcY=y.some(function(l){return l.id==="KC";});
   h.rhY=y.some(function(l){return l.id==="RH"||l.id==="RI";}); h.limitY=y.some(function(l){return (HARD[l.id]||l.id==="OA")&&(l.rpe||0)>=10;});h.oaY=y.some(oaHard);
   h.hardRun=0; for(var i=1;i<=4;i++){if(onDay(addD(s,-i)).some(function(l){return HARD[l.id]&&(l.rpe||6)>=6;}))h.hardRun++;else break;}
-  h.hsN=D.logs.filter(function(l){var x=diff(l.d,s);return x>=0&&x<=6&&HASHS[l.id];}).length;
-  h.runs7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&isRun(l);}).length;
-  /* A-035 (N-5): the light deload session does not use up one of the run focus' two strength slots. */
-  h.str7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=6&&STR[l.id]&&l.id!=="DL";}).length;
-  h.lim7=D.logs.filter(function(l){var x=diff(l.d,s);return x>=1&&x<=7&&(l.rpe||0)>=10&&HARD[l.id];}).length;
-  h.skN=D.logs.filter(function(l){var x=diff(l.d,s);return x>=0&&x<=6&&(l.sk?l.sk.length>0:!!HASHS[l.id]);}).length;
   h.skT=selSk().length?(gSkill()?5:4):0; h.hardR=Math.min(h.RH,h.RI);
   h.run=Math.min(h.RE,h.RH,h.RI);h.beg=begRun(s);h.kmOK=kmRoom(s)>=2&&!painRun()&&!(h.beg&&begRuns(s)>=2);
   var td=onDay(s); h.ranToday=td.some(isRun); h.strToday=td.some(function(l){return STR[l.id];});
-  var first=D.logs.filter(isTrain)[0], days={};
-  D.logs.forEach(function(l){var x=diff(l.d,s);if(isTrain(l)&&x>=1&&x<=14)days[l.d]=1;});
-  h.lowFreq=!!first&&diff(first.d,s)>=14&&Object.keys(days).length<=7;
-  var w0=addD(D.start,7*Math.floor(Math.max(0,diff(D.start,s))/7));h.legW=D.logs.filter(function(l){return l.d>=w0&&l.d<s&&legLog(l);}).length;
+  h.lowFreq=!!X.first&&diff(X.first,s)>=14&&Object.keys(days).length<=7;
   return h;
 }
 /* Leg sessions (V1, A-009): legs at least twice per training week (weeks count from D.start, like ctx()). Strength A/B (and the
@@ -1584,9 +1636,11 @@ function absHTML(ab,dy,loc,first){
      (run?'<button type="button" class="b wide" data-a="tbstop">Cancel</button>':'<button type="button" class="b red wide" data-a="tbgo" data-r="'+ab.rounds+'" data-i="'+ab.i+'">'+(on?"Start again":"Start Blitz")+'</button>'+(on?'':'<button type="button" class="lnk" data-a="tbdone">Mark as done without the timer</button>'))+'</div>';
   return h+'</details>';
 }
+/* A-038: last entry of a session id, scanned from the end (rounds() runs for every item). */
+function lastOf(id){for(var i=D.logs.length-1;i>=0;i--)if(D.logs[i].id===id)return D.logs[i];return undefined;}
 function rounds(b,c,id){
   if(!b.rounds) return 0;
-  var last=D.logs.filter(function(l){return l.id===id;}).slice(-1)[0];
+  var last=lastOf(id);
   if(b.tr!=null) return b.tr;
   /* Limited time and a session at the limit last time stay hard limits; level and cycle week give way to the band (P-5). */
   var rd=rdDay(),lim=D.short||(last&&(last.rpe||0)>=10)||cbInfo(TODAY).low,base=(c.cyc<=2||lim||lvl()===0)?b.rounds[0]:b.rounds[1];
@@ -1766,7 +1820,7 @@ function gpSave(){var gp=D._gp;if(!gp||!gp.k||!GOALS[gp.k])return;var G=GOALS[gp
   var d=de?de.value:"";if(/^\d{4}-\d{2}-\d{2}$/.test(d)&&dOK(d)&&d>TODAY)g.d=d;
   g.st=goalPos(g).done;g.s0=g.st;D._gp=null;D._gadj=false;}
 function goalArch(){var a=D.goalsDone||[];if(!a.length)return "";
-  return '<ul class="garch">'+a.slice().reverse().slice(0,8).map(function(x){return '<li><b>'+esc(x.r==="f"?W("gdone"):"Ended")+'</b> · '+esc(goalName(x))+' · '+dLab(x.d)+'</li>';}).join("")+'</ul>';}
+  return '<ul class="garch">'+a.slice().reverse().slice(0,8).map(function(x){return '<li><b>'+esc(x.r==="f"?W("gdone"):"Ended")+'</b> · '+esc(goalName(x))+' · '+dLabY(x.d)+'</li>';}).join("")+'</ul>';}
 /* ===== Goals II (P-2): the active goal steers selection, content and the date. Everything is gated on D.goal, so
    without a goal the plan is exactly the same as before. ===== */
 function gKey(t){var g=D.goal;return g&&GOALS[g.k]&&(!t||t.indexOf(GOALS[g.k].g)>=0)?g.k:"";}
@@ -1859,8 +1913,8 @@ function vStart(){
   function was(f){return td.some(f);}
   var dn={morgen:was(function(l){return l.id==="MO";}),train:was(function(l){return GYM.indexOf(l.id)>=0||HOME.indexOf(l.id)>=0;}),run:was(isRun),kick:was(function(l){return l.id==="KI";})};
   goalTick();pauseTick();
-  if(D.pause){var pz=D.pause;h+=pauseOn(TODAY)?'<div class="pausecard" role="group" aria-label="'+esc(W("paused"))+'"><p><b>'+esc(W("paused"))+'</b> <span class="muted">since '+WDN[pd(pz.from).getDay()]+' '+dLab(pz.from)+(pz.to?' · until '+WDN[pd(pz.to).getDay()]+' '+dLab(pz.to):'')+(pz.why==="ill"?' · ill':'')+'</span></p><p class="muted">No plan and no lost streak while it lasts; the cycle waits. Your next logged session ends it too.</p><button type="button" class="b red" data-a="resume">'+esc(W("resume"))+'</button></div>'
-    :'<p class="note">'+esc(W("paused"))+' from '+WDN[pd(pz.from).getDay()]+' '+dLab(pz.from)+'. <button type="button" class="lnk" data-a="resume">Cancel</button></p>';}
+  if(D.pause){var pz=D.pause;h+=pauseOn(TODAY)?'<div class="pausecard" role="group" aria-label="'+esc(W("paused"))+'"><p><b>'+esc(W("paused"))+'</b> <span class="muted">since '+WDN[pd(pz.from).getDay()]+' '+dLabY(pz.from)+(pz.to?' · until '+WDN[pd(pz.to).getDay()]+' '+dLabY(pz.to):'')+(pz.why==="ill"?' · ill':'')+'</span></p><p class="muted">No plan and no lost streak while it lasts; the cycle waits. Your next logged session ends it too.</p><button type="button" class="b red" data-a="resume">'+esc(W("resume"))+'</button></div>'
+    :'<p class="note">'+esc(W("paused"))+' from '+WDN[pd(pz.from).getDay()]+' '+dLabY(pz.from)+'. <button type="button" class="lnk" data-a="resume">Cancel</button></p>';}
   if(D._fin){var fz=D._fin;h+='<div class="fincard" role="status"><span class="eyebrow">Logged</span><b>'+esc(fz.n)+'</b><span>'+(fz.min?'≈ '+fz.min+' min · ':'')+fz.sets+' set'+(fz.sets===1?'':'s')+'</span>'+(fz.pr&&fz.pr.length&&String(D._toast||"").indexOf(W("newrec"))<0?'<span class="gold">'+esc(W("newrec")+fz.pr.join(" · "))+'</span>':'')+'</div>';D._fin=null;}
   if(D._toast){h+='<div class="toast" role="status">'+esc(D._toast)+'</div>';D._toast="";}
   h+=goalFocusHTML();
@@ -1914,7 +1968,15 @@ function wkLog(id,s,c){var o={d:TODAY,id:id,t:NAMES[id],rpe:id==="RS"?4:6,sim:1}
   return o;}
 function weekPlan(){var k=wkKey();if(WK.plan&&WK.key===k)return WK.plan;
   var D0=D,T0=TODAY,out=[];
-  WK.sim=true;try{D=JSON.parse(JSON.stringify(D0));
+  onDay(T0);cycWk(T0);patDates("");idIdx();trDays();/* A-038: the real state's history caches are current before they serve the copy */
+  WK.sim=true;try{/* A-038: the entries are shared read-only (the simulation only adds its own), the rest is a deep copy. */
+    var lg0=D0.logs,SH={ex:D0.ex,pr:D0.pr,days:D0.days},rd={},d14=addD(T0,-14);Object.keys(D0.days||{}).forEach(function(q){if(q>=d14)rd[q]=D0.days[q];});
+    D0.logs=[];D0.ex={};D0.pr={};D0.days=rd;try{D=JSON.parse(JSON.stringify(D0));}finally{D0.logs=lg0;D0.ex=SH.ex;D0.pr=SH.pr;D0.days=SH.days;}D.logs=lg0.slice();D.ex=SH.ex;D.pr=SH.pr;
+    /* progress (ex) and records (pr) are only read by the simulation and shared like the entries, day progress is
+       copied for the last 14 days only;
+       the history caches of the real state serve the copy (they only extend without changing the originals) */
+    var SV=[ODC,CWC,RHC,IDI,TDI],fk=function(C){return C&&C.L===lg0&&C.D===D0&&C.n===lg0.length&&C.last===lg0[lg0.length-1]?Object.assign({},C,{L:D.logs,D:D}):C;};
+    ODC=fk(ODC);CWC=fk(CWC);RHC=fk(RHC);IDI=fk(IDI);TDI=fk(TDI);if(CWC!==SV[1])CWC.r={};if(RHC!==SV[2])RHC.m={};
     for(var i=0;i<7;i++){var s=addD(T0,i);TODAY=s;updNames();var dy=day(s),c=ctx(s),td=onDay(s).filter(isTrain),e;
       if(i===0&&td.length){var l=td[td.length-1];e={id:l.id,done:1,leg:legLog(l)};}
       else if(pauseOn(s)){e={id:"RS",pause:1,why:"Training paused."};}
@@ -1924,7 +1986,7 @@ function weekPlan(){var k=wkKey();if(WK.plan&&WK.key===k)return WK.plan;
         var lg=wkLog(id,s,c);addLog(lg);
         e={id:id,why:r.why,leg:legLog(lg),min:lg._min,goal:lg._goal};delete lg._min;delete lg._goal;}
       e.d=s;e.name=e.pause?W("paused"):NAMES[e.id];e.kick=isKick(s);e.dl=dlWk(s,c);e.run=e.id==="RE"||e.id==="RH"||e.id==="RI";e.rest=e.id==="RS";out.push(e);}
-  }finally{D=D0;TODAY=T0;WK.sim=false;updNames();}
+  }finally{D=D0;TODAY=T0;WK.sim=false;if(typeof SV!=="undefined"&&SV){ODC=SV[0];CWC=SV[1];RHC=SV[2];IDI=SV[3];TDI=SV[4];}updNames();}
   WK.key=k;WK.plan=out;return out;}
 function wkInfo(e){if(e.run){var ri=runInfo(e.id);return {goal:ri.p.split(". ")[0]+".",dur:ri.h};}
   if(e.id==="KI")return {goal:"Your class, with mobility before and after.",dur:"class + ≈ 13 min mobility"};
@@ -2009,10 +2071,11 @@ var RUNT={RE:"Easy",RI:"Intervals",RH:"Hard"};
    stay ≤ 130 % of the 4-week average (weeks with runs only). Extra easy runs and logged past runs count via their km. */
 function longMode(){return D.focus==="run"||!!gRun();}
 function hardRunL(l){return l.id==="RI"||(l.id==="RH"&&!longMode());}
-function hard3OK(s){var r=D.logs.filter(function(l){return isRun(l)&&l.d<=s;}).slice(-2);return !r.some(hardRunL);}
-function weekKm(ws){var z=addD(ws,7);return D.logs.reduce(function(a,l){return l.d>=ws&&l.d<z?a+(l.km||0):a;},0);}
+function hard3OK(s){var r=[];for(var i=D.logs.length-1;i>=0&&r.length<2;i--){var l=D.logs[i];if(isRun(l)&&l.d<=s)r.unshift(l);}return !r.some(hardRunL);}
+/* A-038: summed from the entries per date (onDay index) instead of a scan of the whole history. */
+function weekKm(ws){var a=0;for(var i=0;i<7;i++)onDay(addD(ws,i)).forEach(function(l){a+=l.km||0;});return a;}
 function kmStat(s){s=s||TODAY;var ws=weekKey(s),cur=weekKm(ws),prev=[];
-  for(var i=1;i<=12&&prev.length<4;i++){var w=addD(ws,-7*i),z=addD(w,7);if(D.logs.some(function(l){return l.d>=w&&l.d<z&&isRun(l);}))prev.push(weekKm(w));}
+  for(var i=1;i<=12&&prev.length<4;i++){var w=addD(ws,-7*i),ran=false;for(var q=0;q<7&&!ran;q++)ran=onDay(addD(w,q)).some(isRun);if(ran)prev.push(weekKm(w));}
   return {cur:Math.round(cur*10)/10,avg:prev.length?Math.round(prev.reduce(function(a,x){return a+x;},0)/prev.length*10)/10:0,n:prev.length};}
 function runBase(id){var R=D.focus==="run";if(id==="RH")return D.runKm;if(id==="RI")return Math.round((4+D.runI*0.8)*2)/2;return R?6:(D.runKm<6?4:5);}
 function kmRoom(s){var st=kmStat(s);return st.n>=2&&st.avg>0&&!(gRun()&&D.goal.d===s)?Math.floor((1.3*st.avg-st.cur)*2)/2:Infinity;}
@@ -2281,6 +2344,8 @@ function insights(){
 /* ---- small SVG charts (no libraries) ---- */
 var MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 function dLab(s){var d=pd(s);return d.getDate()+" "+MON[d.getMonth()];}
+/* A-038: date with the year once it is not in the current year (Chronicle, records, goal archive, pause dates). */
+function dLabY(s){var d=pd(s);return dLab(s)+(d.getFullYear()!==pd(TODAY).getFullYear()?" "+d.getFullYear():"");}
 function heatmap(){
   var start=addD(weekKey(TODAY),-11*7),cells="",cnt={};
   D.logs.forEach(function(l){cnt[l.d]=cnt[l.d]||{n:0,mo:0,hard:0};if(l.id==="MO")cnt[l.d].mo=1;else{cnt[l.d].n++;if((l.rpe||0)>=8)cnt[l.d].hard=1;}});
@@ -2336,7 +2401,7 @@ function statsHTML(){var h='';
     h+='<label class="lab" for="statex">Exercise</label><select id="statex" data-a="statex">'+keys.map(function(k){return '<option value="'+esc(k)+'"'+(k===sel?" selected":"")+'>'+esc(exName(k))+'</option>';}).join("")+'</select>';
     var pts=ser.map(function(p){return {y:useW?p.w:p.r,l:dLab(p.d),t:dLab(p.d)+": "+p.r+(p.w?" × "+fmtKg(p.w)+" kg":"")};});
     var first=pts[0].y,last=pts[pts.length-1].y,dv=Math.round((last-first)*10)/10;
-    h+='<p class="muted">'+(useW?"Weight in kg":"Best set")+' · '+(dv>0?'+'+dv+' since '+pts[0].l:(dv<0?dv+' since '+pts[0].l:'level since '+pts[0].l))+'</p>'+lineChart(pts,"",exName(sel)+" progress")+tableView(["Date","Best set"],ser.map(function(p){return [dLab(p.d),p.r+(p.w?" × "+fmtKg(p.w)+" kg":"")];}));}
+    h+='<p class="muted">'+(useW?"Weight in kg":"Best set")+' · '+(dv>0?'+'+dv+' since '+pts[0].l:(dv<0?dv+' since '+pts[0].l:'level since '+pts[0].l))+'</p>'+lineChart(pts,"",exName(sel)+" progress")+tableView(["Date","Best set"],ser.map(function(p){return [dLabY(p.d),p.r+(p.w?" × "+fmtKg(p.w)+" kg":"")];}));}
   h+='</div>';
   if(D.focus!=="str"||D.logs.some(function(l){return l.km;})){
     var runs=D.logs.filter(function(l){return l.km>0&&l.min>0;}).slice(-15);
@@ -2347,7 +2412,7 @@ function statsHTML(){var h='';
   var H=honours();
   h+='<div class="sec"><h3>'+W("honours")+' · '+H.filter(function(x){return x.got;}).length+' of '+H.length+'</h3><div class="hon">'+H.map(function(x){return '<div class="hn'+(x.got?" got":"")+'"><span class="hi" aria-hidden="true">'+(x.got?"✠":"○")+'</span><b>'+esc(x.n)+'</b><span>'+esc(x.d)+(x.got?"":(x.prog?" · "+x.prog:""))+'</span><span class="vh">'+(x.got?"earned":"not yet")+'</span></div>';}).join("")+'</div></div>';
   var prl=Object.keys(D.pr).filter(function(k){return D.pr[k].n;}).map(function(k){return D.pr[k];}).sort(function(a,b){return a.d<b.d?1:-1;}).slice(0,8);
-  if(prl.length)h+='<div class="sec"><h3>'+W("records")+'</h3>'+prl.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?" × "+fmtKg(e.w)+" kg":"")+'</b><span class="muted">'+dLab(e.d)+'</span></div>';}).join("")+'</div>';
+  if(prl.length)h+='<div class="sec"><h3>'+W("records")+'</h3>'+prl.map(function(e){return '<div class="log"><span>'+esc(e.n)+'</span><b>'+e.r+(e.w?" × "+fmtKg(e.w)+" kg":"")+'</b><span class="muted">'+dLabY(e.d)+'</span></div>';}).join("")+'</div>';
   return h;
 }
 function weekTally(){
@@ -2364,8 +2429,8 @@ function latestHTML(){var h='';
   return h;}
 function vVerlauf(){var h='<div class="card"><div class="sec"><h2>'+esc(W("chron"))+'</h2>'+(D.logs.length?'<h3>Training calendar · 12 weeks</h3>'+heatmap():'<p class="muted empty">Nothing logged yet. Every session, run and class you log appears here, with a calendar of your training days.</p>')+'</div>';
   h+='<div class="sec"><h3>All entries</h3>'+blHTML();
-  var rev=D.logs.slice().reverse();rev.forEach(function(l,ri){if(ri===20)h+='<details class="tv"><summary>Show all '+rev.length+' entries</summary>';var i=D.logs.indexOf(l),d=pd(l.d);
-    h+='<div class="log"><b>'+esc(l.t)+'</b><span class="muted">'+d.getDate()+' '+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
+  var rev=D.logs.slice().reverse(),nl=D.logs.length;rev.forEach(function(l,ri){if(ri===20)h+='<details class="tv"><summary>Show all '+rev.length+' entries</summary>';var i=nl-1-ri;
+    h+='<div class="log"><b>'+esc(l.t)+'</b><span class="muted">'+dLabY(l.d)+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
   if(rev.length>20)h+='</details>';
   return h+'</div></div>';
 }
@@ -2426,7 +2491,7 @@ function readyHTML(id){if(!D.opt||!D.opt.ready||!BANDIDS[id])return "";var r=rdD
 /* P-7: one tap pauses from today; end date and reason are optional (folded). */
 function pauseHTML(){var p=D.pause;
   if(!p)return '<div class="sec"><h3>'+esc(W("pause"))+'</h3><p class="muted">Holiday, illness or a busy stretch: no plan meanwhile, no lost streak, the cycle waits. After 10 days or more the first sessions come back lighter.</p><button type="button" class="b" data-a="pause">'+esc(W("pause"))+'</button></div>';
-  return '<div class="sec"><h3>'+esc(W("paused"))+'</h3><p class="muted">Since '+WDN[pd(p.from).getDay()]+' '+dLab(p.from)+'. Ends with your next logged session'+(p.to?' or after '+dLab(p.to):'')+'.</p>'+
+  return '<div class="sec"><h3>'+esc(W("paused"))+'</h3><p class="muted">Since '+WDN[pd(p.from).getDay()]+' '+dLabY(p.from)+'. Ends with your next logged session'+(p.to?' or after '+dLabY(p.to):'')+'.</p>'+
     '<details class="tv"><summary>End date and reason</summary><div class="grid2"><label for="pz_to">Until (optional)</label><input type="date" id="pz_to" data-a="pauseto" min="'+p.from+'" value="'+esc(p.to||"")+'"></div>'+
     '<div class="chips">'+[["pause","Break"],["ill","Ill"]].map(function(x){var on=p.why===x[0];return '<button type="button" class="chip'+(on?" on":"")+'" data-a="pausewhy" data-k="'+x[0]+'" aria-pressed="'+on+'">'+x[1]+'</button>';}).join("")+'</div></details>'+
     '<button type="button" class="b red" data-a="resume">'+esc(W("resume"))+'</button></div>';}
@@ -2482,7 +2547,9 @@ function findItem(id){
   if(bi>=90){var ks=Object.keys(REHAB);return REHAB[ks[bi-90]].items[+p[2]];}
   return S(p[0],c).blocks[bi].items[+p[2]];
 }
-function addLog(o){if(D.pause&&!WK.sim&&!o.sim&&!o.bl&&isTrain(o))pauseEnd(o.d>TODAY?o.d:TODAY);D.logs.push(o);D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});}
+function addLog(o){if(D.pause&&!WK.sim&&!o.sim&&!o.bl&&isTrain(o))pauseEnd(o.d>TODAY?o.d:TODAY);var L=D.logs,z=L.length?L[L.length-1].d:"";L.push(o);
+  /* A-038: an entry at or after the newest one keeps the list sorted (same order as the stable sort), only others sort. */
+  if(o.d<z)L.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});}
 /* keep (A-021): logging a run or kickboxing keeps today's training progress and additions, so both can be done on one day. */
 function finish(dy,keep){LV.fin=thKey()==="love"?TODAY:"";var tl=TH().toast;D._toast=D._toastX||tl[D.logs.length%tl.length];D._toastX="";dy.fin={};dy.run=null;delete dy.xr;
   if(keep){var rx=/^(rc|KI)-/;Object.keys(dy.done).forEach(function(k){if(rx.test(k))delete dy.done[k];});["inp","skip"].forEach(function(f){Object.keys(dy[f]).forEach(function(k){if(rx.test(k))delete dy[f][k];});});}
@@ -2674,8 +2741,8 @@ document.addEventListener("click",function(e){
       var rp=+g("e_rpe");if([0,4,6,8,10].indexOf(rp)>=0){if(rp)L.rpe=rp;else delete L.rpe;}
       if(isRun(L)){var km=lim(g("e_km"),KMMAX),mn=lim(g("e_min"),MINMAX);L.km=km?Math.round(km*100)/100:0;L.min=mn?Math.round(mn*10)/10:0;}
       L.note=(g("e_note")||"").slice(0,300);
-      D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});D._edit=null;D._toast="Entry updated.";}}
-  else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);D._del=null;} else D._del=i;}
+      D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});CWC.k=RHC.k=HSC.k=ODC.k=IDI.k=TDI.k="";D._edit=null;D._toast="Entry updated.";}}
+  else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);CWC.k=RHC.k=HSC.k=ODC.k=IDI.k=TDI.k="";D._del=null;} else D._del=i;}
   else if(a==="exp"){D._bk=bkJSON();D._msg="Backup created. Copy it now and store it, e.g. in a note.";}
   else if(a==="copy"){var tx=document.getElementById("bk").value;try{navigator.clipboard.writeText(tx).then(function(){if(D._bk&&tx===D._bk)markBk();D._msg="Copied.";render();},function(){D._msg="Copying is not allowed. Please select the text by hand.";render();});}catch(x){D._msg="Copying is not allowed. Please select the text by hand.";}}
   else if((a==="imp"||a==="obimp")&&((document.getElementById(a==="imp"?"bk":"obbk")||{}).value||"").length>MAXBK){D._msg="This backup is too large (over 10 MB). Nothing was changed.";}
@@ -2780,7 +2847,7 @@ function startHold(sec,sides){document.body.classList.add("tmr");audio();stop();
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
