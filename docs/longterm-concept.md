@@ -229,6 +229,15 @@ Erhaltung:
 Daten: `D.hold` = `{str,run,sk}` (Booleans, Standard alle aus), `D.goalNext` (Liste von Schlüsseln, flüchtig).
 `cleanImport` erweitert. Migration: Standardwerte, kein Bruch. Aufwand: Folgeziel klein (**A-040**), Erhaltung mittel (**A-045**).
 
+Umsetzung Erhaltung (A-045): Unter More → Extras eine Zeile „Hold“ (Templar „Hold the line“) mit drei Schaltern Kraft, Lauf,
+Skills; `D.hold = {str,run,sk}`, Standard alle aus, `cleanImport` nimmt nur `true` an. Kraft: jede Krafteinheit bekommt den
+Schnitt der Tired-Doktrin (etwa ⅔ der Arbeitssätze, Anker und Zielanker bleiben, Warm-up und Cool-down vollständig, Boden 45 min),
+Last und Variante bleiben; kein Stillstands-Rückschritt (`stall` wird nicht gezählt und nicht zurückgesetzt), keine Sprossen-
+Angebote, keine Plateau-Zeile (mit und ohne Ziel), kein Level-Aufstieg-Toast. Lauf: jede geplante Strecke etwa −⅓, gleiche
+Intensität; langer Lauf und Intervallzahl wachsen nicht. Skills: Skill-Blöcke in der Standardform mit etwa ⅓ weniger Runden bzw.
+Sätzen. Quellen [Q56][Q57]: ein Drittel bis ein Neuntel des Aufbau-Umfangs hielt Kraft und Masse; Umfang darf sinken, wenn die
+Intensität bleibt. Plateau-Meldungen eines Ziels ruhen, solange sein Bereich hält.
+
 ## L8 – Langzeit-Ansichten und passive Gamification (mittel)
 
 Ansichten:

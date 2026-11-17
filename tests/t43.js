@@ -200,5 +200,8 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
 // A-040: prototype names as next-goal keys are refused without pollution
 {const z=boot();const c=z.k.cleanImport(JSON.parse('{"v":3,"goalNext":[{"k":"__proto__","v":1},{"k":"constructor","v":2},{"k":"toString","v":3},{"k":"pull","v":12}]}'));
  if(JSON.stringify(c.goalNext)!=='[{"k":"pull","v":12}]'||({}).v!==undefined)issue('A-040: prototype keys in goalNext: '+JSON.stringify(c.goalNext));}
+// A-045: hold with prototype keys
+{const z=boot();const c=z.k.cleanImport(JSON.parse('{"v":3,"hold":{"__proto__":{"polluted":1},"constructor":true,"str":true}}'));
+ if(JSON.stringify(c.hold)!=='{"str":true,"run":false,"sk":false}'||({}).polluted!==undefined)issue('A-045: prototype keys in hold: '+JSON.stringify(c.hold));}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);
 })();

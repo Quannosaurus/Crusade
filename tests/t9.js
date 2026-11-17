@@ -26,4 +26,7 @@ if(!/&lt;img/.test(d.getElementById('app').innerHTML))issue('Text nicht maskiert
 // A-040: next-goal suggestions – unknown keys, markup and junk values refused, at most 2
 {const c=k.cleanImport({v:3,goalNext:[{k:'<img>',v:1},{k:'pull',v:'1e9'},'x',null,{k:'d42',v:42},{k:'mu',v:3},{k:'fl',v:2}]});
  if(JSON.stringify(c.goalNext)!=='[{"k":"d42","v":42},{"k":"mu","v":3}]')issue('A-040 goalNext not cleaned: '+JSON.stringify(c.goalNext));}
+// A-045: hold takes only true booleans of its three keys
+{const c=k.cleanImport({v:3,hold:{str:'yes',run:true,sk:1,x:true}});if(JSON.stringify(c.hold)!=='{"str":false,"run":true,"sk":false}')issue('A-045 hold not cleaned: '+JSON.stringify(c.hold));
+ const c2=k.cleanImport({v:3,hold:[true,true]});if(JSON.stringify(c2.hold)!=='{"str":false,"run":false,"sk":false}')issue('A-045 hold array accepted');}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

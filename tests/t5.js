@@ -32,6 +32,9 @@ if(th&&(th.id==='KC'||th.id==='RH'))issue('Vor Kick-Tag Beine/starker Lauf');
  const D6=w6.__kz.D();if(D6.ex['p_pull#0'].lad!==2||D6.ex['p_dip#0'].lad!=null)issue('A-039: ladder rung not kept or added on load');}
 {const w7=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{},vr:{},pain:{},home:{b:true}});if(JSON.stringify(w7.__kz.D().goalNext)!=='[]')issue('A-040: old state without goalNext not defaulted');
  const w8=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{},vr:{},pain:{},home:{b:true},goalNext:[{k:'pull',v:13}]});if(JSON.stringify(w8.__kz.D().goalNext)!=='[{"k":"pull","v":13}]')issue('A-040: goalNext lost on load');}
+// A-045: hold mode defaults off for an old state and keeps a stored choice
+{const w9=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{},vr:{},pain:{},home:{b:true}});if(JSON.stringify(w9.__kz.D().hold)!=='{"str":false,"run":false,"sk":false}')issue('A-045: old state without hold not defaulted: '+JSON.stringify(w9.__kz.D().hold));
+ const w10=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{},vr:{},pain:{},home:{b:true},hold:{str:false,run:true,sk:false}});if(!w10.__kz.hold('run')||w10.__kz.hold('str'))issue('A-045: stored hold lost on load');}
 console.log('\n=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));
 // focus UI + migration hint
 P.length=0;
