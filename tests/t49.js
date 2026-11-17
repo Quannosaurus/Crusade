@@ -10,12 +10,15 @@
 // (A-044) · wk = week preview after 2 years ≤ 2 × the time with 12 weeks (A-038; the final state with its whole history
 // against the same state with only its last 12 weeks, so the plan of the day is the same; weeks 12–15 vs the last 4 weeks
 // are printed as information) · lvl = in the progress course the beginner and the partner profiles rise in the lower stand
-// (A-041; upper and lower stand at the start and the end, and the week of the first rise, are printed for every profile).
+// (A-041; upper and lower stand at the start and the end, and the week of the first rise, are printed for every profile)
+// · blk = volume and ranges differ between the accent blocks: the planned volume per strength session (sets × range middle)
+// differs by ≥ 5 % between the accents and weighted exercises sit lower in their range in the strength block than in the
+// volume block (A-042).
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {longSim,addD}=require('./fixtures/longsim.js');const PROF=require('./fixtures/profiles.json');
-const ACTIVE=['A-030b','A-037','A-038','A-039','A-041'];
-const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',names:'A-043',run:'A-044'};
+const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042'];
+const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',blk:'A-042',names:'A-043',run:'A-044'};
 const sharp=x=>ACTIVE.includes(STONE[x]);
 const ONLY=process.argv.slice(2).filter(a=>!a.startsWith('-'));const WEEKS=+(process.argv.find(a=>/^--weeks=/.test(a))||'--weeks=104').split('=')[1];
 const DAYS=WEEKS*7,START='2026-11-16',STR=['KA','KB','KC','CH','HO'];
@@ -30,14 +33,16 @@ function wkTime(k){const t=[];for(let j=0;j<15;j++){k.WK.plan=null;k.WK.key='';c
   return t.sort((a,b)=>a-b)[7];}
 function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math.floor(i/91);
   const m={under:0,underEx:'',dur:0,durEx:'',top:{},topMax:0,topEx:'',names:[],km:[],long:[],sets:[],wk12:0,wkEnd:0,wkA:[],wkB:[],rankWk:null};
-  const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
+  m.acc={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
   longSim(k,DAYS,START,course,7+p.n.length,ev=>{const Q=q(ev.i);
     if(ev.type==='target'){const {it,g,st,v}=ev;
       if(st&&st.r>=it.lo&&g.r<it.lo){m.under++;if(!m.underEx)m.underEx=ev.d+' '+ev.name+' '+g.r+' < '+it.lo;}
       const kk=it.k+'#'+v;if(!it.opts[v].w&&!g.wl&&g.top&&ev.nv<0&&!g.lad){const t=m.top[kk]||(m.top[kk]={from:ev.d});const wks=(Date.parse(ev.d)-Date.parse(t.from))/864e5/7;if(wks>m.topMax){m.topMax=wks;m.topEx=ev.name;}}
       else delete m.top[kk];}
     if(ev.type==='session'){const S=ev.s,bl=S.blocks;
-      if(STR.includes(ev.id)){const wi=bl.findIndex(b=>b.warm),ci=bl.findIndex(b=>b.cool);
+      if(STR.includes(ev.id)){const ac=k.accNow(),c=k.ctx(ev.d),A=m.acc[ac]||(m.acc[ac]={n:0,sets:0,reps:0,mid:0,mn:0});A.n++;
+        bl.forEach(b=>{if(b.warm||b.cool)return;b.items.forEach(it=>{if(it.gone||it.f||it.iso||it.test)return;const ns=k.setsOf(it,b,c,ev.id);A.sets+=ns;if(it.lo&&it.hi)A.reps+=ns*(it.lo+it.hi)/2;const v=k.curVar(it,k.LOC());if(v>=0&&it.k&&k.wOn(it,v)&&it.hi>it.lo){A.mid+=(it.lo+it.hi)/2;A.mn++;}});});
+        const wi=bl.findIndex(b=>b.warm),ci=bl.findIndex(b=>b.cool);
         if(S.min<60||S.min>90||wi!==0||ci!==bl.length-1){m.dur++;if(!m.durEx)m.durEx=ev.d+' '+ev.id+' '+S.min+' min'+(wi!==0?' no warm-up first':'')+(ci!==bl.length-1?' no cool-down last':'');}}
       const ns=m.names[Q]||(m.names[Q]={all:new Set(),neu:0});bl.forEach(b=>b.items.forEach(it=>{if(it.gone)return;const v=k.curVar(it,k.LOC());if(v<0)return;const n=it.opts[v].n;ns.all.add(n);if(!seen.has(n)){seen.add(n);ns.neu++;}}));}
     if(ev.type==='run'){m.km[Q]=(m.km[Q]||0)+ev.km;if(ev.id==='RH')m.long[Q]=Math.max(m.long[Q]||0,ev.km);}
@@ -62,10 +67,13 @@ PROF.concat([BEG]).filter(p=>!ONLY.length||ONLY.some(o=>p.n.toLowerCase().includ
     const rat=m.wk12?m.wkEnd/m.wk12:0,wkOk=rat<=2;
     const lvNeed=course==='prog'&&(p.n==='Beginner'||/^Partner/.test(p.n)),lvOk=m.lv1[1]>m.lv0[1];
     const lvTxt='upper '+m.lv0[0]+' → '+m.lv1[0]+(m.lvW[0]?' (week '+m.lvW[0]+')':'')+' · lower '+m.lv0[1]+' → '+m.lv1[1]+(m.lvW[1]?' (week '+m.lvW[1]+')':'');
+    const AC=['base','str','vol','skill'].filter(a=>m.acc[a]&&m.acc[a].n>=3),ms=a=>m.acc[a].sets/m.acc[a].n,mr=a=>m.acc[a].reps/m.acc[a].n,mm=a=>m.acc[a].mn?m.acc[a].mid/m.acc[a].mn:0;
+    const rv=AC.map(mr),blkOk=AC.length>=3&&(Math.max(...rv)-Math.min(...rv))/(Math.min(...rv)||1)>=0.05&&(!m.acc.str||!m.acc.vol||!m.acc.str.mn||!m.acc.vol.mn||mm('str')<mm('vol'));
+    const blkTxt=AC.map(a=>a+' '+m.acc[a].n+'× '+ms(a).toFixed(1)+' sets '+Math.round(mr(a))+' reps'+(m.acc[a].mn?' mid '+mm(a).toFixed(1):'')).join(' · ');
     const res=[stone('under',m.under===0,m.under+(m.underEx?', e.g. '+m.underEx:'')),stone('dur',m.dur===0,m.dur+(m.durEx?', e.g. '+m.durEx:'')),
       stone('top',m.topMax<=12,'max '+m.topMax.toFixed(1)+' weeks'+(m.topEx?' '+m.topEx:'')),stone('names',namesOk,'new per quarter after Q1: '+nq.join(' ')),
       runner?stone('run',runOk,'km/week per quarter '+fmtQ(kmw,x=>x.toFixed(1))+' · long run '+fmtQ(m.long,x=>x)):'run n/a (no runs)',
-      lvNeed?stone('lvl',lvOk,lvTxt):'lvl info ('+lvTxt+')',
+      lvNeed?stone('lvl',lvOk,lvTxt):'lvl info ('+lvTxt+')',stone('blk',blkOk,blkTxt),
       stone('wk',wkOk,'week preview of the final day '+m.wk12.toFixed(1)+' ms with the last 12 weeks → '+m.wkEnd.toFixed(1)+' ms with '+WEEKS+' weeks of history, × '+rat.toFixed(2)+' · info: weeks 12–15 '+m.wkW12.toFixed(1)+' ms, weeks '+(WEEKS-3)+'–'+WEEKS+' '+m.wkW104.toFixed(1)+' ms')];
     res.forEach(r=>{if(/ FAIL /.test(r))issue(tag+': '+r);});
     out.push('### '+tag+' ('+((Date.now()-a)/1000).toFixed(0)+' s, '+m.logs+' entries)');res.forEach(r=>out.push('  '+r));

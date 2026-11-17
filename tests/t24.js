@@ -35,7 +35,7 @@ if(!/Core Blitz/.test(t))issue('stats: Core Blitz row missing');if(!/Strength C 
 if(!/Zealot of the Blitz/.test(t))issue('honours: themed name not shown');
 D.tab='start';b.k.render();t=b.d.getElementById('app').textContent;if(/Venus|Tabata/i.test(t))issue('start page: old term');
 if(b.k.NAMES.CH!=='Skill Trial')issue('NAMES.CH: '+b.k.NAMES.CH);
-D.tab='mehr';b.k.render();t=b.d.getElementById('app').textContent;D.tab='stand';b.k.render();t+=b.d.getElementById('app').textContent;if(!/phase 1, 6 weeks phase 2/.test(t))issue('settings: cycle text');if(!/Watch import/.test(t))issue('settings: watch import section');
+D.tab='mehr';b.k.render();t=b.d.getElementById('app').textContent;D.tab='stand';b.k.render();t+=b.d.getElementById('app').textContent;if(!/Blocks of 6 training weeks/.test(t))issue("settings: cycle text (A-042: blocks with four accents)");if(!/Watch import/.test(t))issue('settings: watch import section');
 // Plain theme: no Warhammer word in the honour name
 D.theme='plain';z=b.k.honours().find(h=>h.k==='zealot');if(!z||/zealot/i.test(z.n))issue('plain zealot name: '+(z&&z.n));
 // Training: the ab block shows the own name and explains the rhythm

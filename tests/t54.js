@@ -4,7 +4,7 @@
 // without a muscle-up: +25 %/12 weeks, +50 %/26 weeks, +75 %/104 weeks [Q3][Q58] (A-049: the fourth stage needs 104 weeks since the first value). Upper stage 1 as before (5 pull-ups,
 // 8 dips); past Basic upper or an "Experienced" start makes the lower stand ≥ 1. Rounds follow the stand of the block's own
 // axis, the band of a pattern +2 at the fourth stand of its axis. Status shows the two tiles (A-049: not the header line nor the
-// onboarding summary, the header shows date and week only), a rise is
+// onboarding summary, the header shows date and week only, since A-042 plus the block accent), a rise is
 // only reported in the toast. No new field: an old backup loads unchanged.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
@@ -53,7 +53,7 @@ const anc=(D,wks,w0,w1,key)=>{key=key||'g_ht#0';D.logs.push({d:addD(T0,-Math.rou
   if(p1!==p0)issue('pull band moved with the lower stand: '+p0+' → '+p1);rep.push('band legs '+b0+' → '+b1.join('–')+', pull '+p0+' unchanged');}
 // 5 header, Status, onboarding note
 {const {k,d}=boot();const D=setup(k,{pull:6,dips:10});anc(D,30,40,62);
-  D.tab='train';k.render();const ey=(d.getElementById('subline')||{}).textContent||'';if(!/ · Week \d+$/.test(ey.trim())||/Upper|Lower|Basic|Intermediate|Advanced|Veteran/.test(ey))issue('header line shows the level (A-049): '+ey);
+  D.tab='train';k.render();const ey=(d.getElementById('subline')||{}).textContent||'';if(!/ · Week \d+( · [A-Z][a-z]+)?$/.test(ey.trim())||/Upper|Lower|Basic|Intermediate|Advanced|Veteran/.test(ey))issue('header line shows the level (A-049): '+ey);
   D.tab='stand';k.render();const t=[...d.querySelectorAll('.tally .t')].map(x=>x.textContent);
   if(!t.some(x=>/Intermediate\s*Upper body/.test(x))||!t.some(x=>/Advanced\s*Lower body/.test(x)))issue('Status tiles: '+t.slice(0,3).join(' | '));
   const nx=(d.querySelector('.lvnx')||{}).textContent||'';if(!/Lower: next stage at \+75 %/.test(nx)||!/104 weeks/.test(nx))issue('next-stage hint: '+nx);

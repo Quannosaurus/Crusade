@@ -131,6 +131,25 @@ Folge neu, aber mit den Nebenübungen des nächsten Rotationssatzes (L5). Die Ko
 Daten: Der Block ergibt sich aus der Trainingswoche (`cycWk`), kein neues Feld. `c.phase` bleibt als interner Schlüssel.
 Migration: nein. Aufwand: groß (S0, `rounds`, `vBand`, `design`, Tests t22–t42 prüfen). Entscheidung: vier Akzente (Captain). Auftrag: **A-042**.
 
+Umsetzung (A-042): Block = `floor((cycWk().ef − 1) / 6)`, Akzent = Block modulo 4; der laufende Zyklus läuft ohne Bruch weiter
+(Wochen 1–6 = Block 1, Grundlage), „Easy week now“ verschiebt den Block mit. In der Deload-Woche und im Ziel-Taper wirkt kein Akzent.
+Ein kg- oder Wiederholungsziel macht aus dem Fertigkeits-Block einen Kraft-Block, ein Skill-Ziel aus dem Umfangs-Block einen
+Fertigkeits-Block; Laufziele ändern nichts (Lauf-Saisons folgen mit A-044). Wirkung, angewendet vor `design()`, sodass 60–90 min,
+Satzband und Böden weiter gelten:
+- Kraft: gewichtete Anker- und Hauptübungen in der unteren Hälfte ihrer Spanne, Hauptblöcke +1 Runde bzw. Satz, +30 s Pause,
+  Anker 3 min Pause; Nebenblöcke −1 Runde bzw. Satz (Boden 2). Blöcke mit Bein- oder Hüftarbeit behalten ihre Sätze (der Boden
+  Beine + Hüfte ≥ 10 steht über dem Akzent), „Limited time“ nur die Spanne. Die Extra-Runde weicht in `design()` als Letztes,
+  bevor 90 min überschritten würden. Pausen nach ACSM 2009 [Q3]: 2–3 min für schwere Mehrgelenksätze im Krafttraining.
+- Umfang: gewichtete Übungen in der oberen Hälfte ihrer Spanne, Pausen −15 s (mindestens 45 s), Anker 90 s Pause
+  (ACSM 2009 [Q3]: 1–2 min für Hypertrophie-Arbeit), Band +2 an der Obergrenze nur für das Schwerpunkt-/Zielmuster.
+- Fertigkeit und Tempo: Skill-Blöcke in der langen Form, Hauptblöcke mit dem Hinweis „schnell heben, kontrolliert senken“
+  (die Optionslisten behalten ihre Reihenfolge, deshalb Tempo statt neuer Varianten), Rundenzahl niedrig, Band-Obergrenze −2
+  (mindestens untere Grenze + 4).
+- Körpergewichtsübungen behalten ihre Spanne; ihre Last steuern Variante und Steigerungsleiter (L2).
+Die Kopfzeile nennt den Akzent in einem Wort je Theme (Templar Foundation/Wrath/Endurance/Precision, Plain Base/Strength/
+Volume/Skill), Trainingskopf und Status „Block n · Akzent“. Kraft und Fertigkeit fallen auf Phase 2, Grundlage und Umfang auf
+Phase 1 (`c.phase` bleibt interner Schlüssel). t31 bleibt unverändert: die ersten 6 Trainingswochen sind Block 1 ohne Akzent.
+
 ## L5 – Planmäßige Übungsrotation (mittel)
 
 Problem: Nach dem ersten Quartal kommt kein neuer Inhalt (M1).
