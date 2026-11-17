@@ -66,6 +66,9 @@ TBL.ROWS.forEach(r=>{const leg=TBL.ROWS.some(x=>x[0]===r[0]&&(x[1]==='*'||x===TB
  // a log written today carries vm 3 (A-035: b2_tr counts as push, vm 2 logs get its sets on push)
  D.logs=[];const dy=k.day();dy.pick='KC';dy.fin={rpe:6};const c=k.ctx(TD),s=k.S('KC',c);s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(k.curVar(it,'g')>=0)dy.done['KC-'+bi+'-'+ii]=true;}));dy.done['abs-T']=!!s.ab;k.saveTrain();
  const l=D.logs[D.logs.length-1];if(!l||l.vm!==3)issue('new log without vm 3');else{const pv=k.volSets(s,c,'KC');if(s.ab&&l.vs.core<Math.round(s.ab.rounds/2))issue('logged Core Blitz not in l.vs.core');}}
+// A-043: every exercise of the rotation sets is in the catalogue, has a doctrine row and was checked above (pattern and group)
+{const keys=Object.keys(k.ROT).flatMap(f=>k.ROT[f].map(x=>x[0]));keys.forEach(q=>{if(!Object.values(items).some(it=>it.k===q))issue('rotation exercise '+q+' not checked (not in the catalogue)');if(!TBL.ROWS.some(r=>r[0]===q))issue('rotation exercise '+q+' without a doctrine row');});
+  console.log('rotation exercises checked: '+keys.filter(q=>Object.values(items).some(it=>it.k===q)).length+' of '+keys.length);}
 console.log('variants checked: '+nChecked+', items '+Object.keys(items).length);
 if(errs.length)issue('JS errors: '+errs.join('; '));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

@@ -16,6 +16,12 @@ const ROWS=[
   ['h_ham','Single-leg glute bridge','hinge','hip'],['h_ham','Romanian deadlift','hinge','hip'],['h_ham','Nordic curls, feet under the sofa','legs','hip'],
   ['b_jump','Kettlebell Swings','hinge','hip'],['b_jump','Box Jumps','legs','hip'],['b_jump','Jumping Squats','legs','hip'],
   ['x_be','Back extension bench','hinge','hip'],['x_be','Superman holds','core','hip'],['x_be','Bird dog','core','hip'],
+  // A-043 rotation sets: legs, hinge, pull, core, pattern-free calf and abduction work
+  ...'r_lu1 r_lu2 r_bs1 r_bs2 r_su1 r_su2'.split(' ').map(k=>[k,'*','legs','knee']),
+  ...'r_rd1 r_rd2 r_kb1 r_kb2 r_fp1 r_fp2 r_45a r_45b'.split(' ').map(k=>[k,'*','hinge','hip']),
+  ...'r_ur1 r_ur2'.split(' ').map(k=>[k,'*','pull','pull']),
+  ...'r_db1 r_db2 r_pa1 r_pa2 r_sp1 r_sp2 r_lr1 r_lr2 r_aw1 r_aw2'.split(' ').map(k=>[k,'*','core','core']),
+  ['r_ca1','*','','calf'],['r_ca2','*','','calf'],['r_gm1','*','','hipab'],['r_gm2','*','','hipab'],
   // core
   ...'x_aw x_db x_lr x_pal x_sp kp_pal kp_rot'.split(' ').map(k=>[k,'*','core','core']),
   // variant-dependent arms: only chin-up negatives pull

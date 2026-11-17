@@ -163,6 +163,19 @@ Problem: Nach dem ersten Quartal kommt kein neuer Inhalt (M1).
 
 Daten: keine neuen Felder (Satz = Blocknummer modulo 3). Migration: nein. Aufwand: mittel, dazu Inhaltsarbeit. Auftrag: **A-043**.
 
+Umsetzung (A-043): 15 rotierende Nebenübungen (`ROT`) mit je zwei neuen Sätzen B und C, zusammen **30 neue Übungen**
+(28 für Unterkörper und Rumpf: Ausfallschritte, Split Squats, Step-ups, Hüftstreckung, Brücken, Waden, Abduktion, Rumpf;
+dazu 2 Ruderformen). Satz A ist die Übung selbst; B und C haben eigene Schlüssel (`r_…`), sodass der Fortschritt je Variante
+bleibt. Der Satz folgt dem Block (`blkNo % 3`), gewechselt wird also je Block, nicht je Einheit [Q54][Q55]. `rotApply()` läuft
+in `S()` direkt nach `postBlocks()`; Anker, Zielanker, Favoriten, Warm-up/Cool-down, Skill-, Trial- und Zusatzblöcke bleiben
+unberührt, ein ausgeschlossener Satz („Never suggest“) lässt Satz A stehen, Field kit, Never und der Schmerzfilter wirken danach.
+Kehrt ein Satz nach seiner Pause zurück, greift die Pausenregel nach Rhythmus, aber höchstens mit **einem** Schritt zurück
+(L5 oben; ohne diese Grenze wären es nach 12 Wochen zwei). Deload und Test haben je 3 Fassungen im Wechsel (Deload: andere
+leichte Übungen; Test: dieselben Testwerte in anderer Reihenfolge, Fassung 2 und 3 mit lockerem Ausklang). Jede neue Übung
+steht in `PATK`, in der Mustertabelle `tests/fixtures/pattern-table.js` und in `ORD`. Prüfstein „neue Übungsnamen je
+Quartal“ (t49) zählt Namen, die nie zuvor oder mindestens 12 Wochen nicht gezeigt wurden – nach drei Blöcken kehren die Sätze
+planmäßig zurück, ganz neue Namen kann es auf Dauer nicht geben. t31 bleibt unverändert (Block 1 = Satz A).
+
 ## L6 – Lauf über Saisons (mittel)
 
 Problem: Deckel bei 10 und 16 km, 8 × 3 min, feste lockere Läufe, kein Tempo (S5).

@@ -6,7 +6,7 @@
 // done yet reports "open" instead of failing (ACTIVE lists the done orders). Own run: sh tests/longterm.sh.
 // Stones: under = no target under the range of its exercise (A-037) · dur = every strength session 60–90 min with
 // warm-up first and cool-down last (now) · top = no bodyweight exercise > 12 weeks at the top without an offered step
-// (A-039) · names = new exercise names in every quarter (A-043) · run = weekly km and long run change between the phases
+// (A-039) · names = new exercise names in every quarter: names never shown before or absent for at least 12 weeks (A-043) · run = weekly km and long run change between the phases
 // (A-044) · wk = week preview after 2 years ≤ 2 × the time with 12 weeks (A-038; the final state with its whole history
 // against the same state with only its last 12 weeks, so the plan of the day is the same; weeks 12–15 vs the last 4 weeks
 // are printed as information) · lvl = in the progress course the beginner and the partner profiles rise in the lower stand
@@ -17,7 +17,7 @@
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {longSim,addD}=require('./fixtures/longsim.js');const PROF=require('./fixtures/profiles.json');
-const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042'];
+const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042','A-043'];
 const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',blk:'A-042',names:'A-043',run:'A-044'};
 const sharp=x=>ACTIVE.includes(STONE[x]);
 const ONLY=process.argv.slice(2).filter(a=>!a.startsWith('-'));const WEEKS=+(process.argv.find(a=>/^--weeks=/.test(a))||'--weeks=104').split('=')[1];
@@ -33,7 +33,7 @@ function wkTime(k){const t=[];for(let j=0;j<15;j++){k.WK.plan=null;k.WK.key='';c
   return t.sort((a,b)=>a-b)[7];}
 function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math.floor(i/91);
   const m={under:0,underEx:'',dur:0,durEx:'',top:{},topMax:0,topEx:'',names:[],km:[],long:[],sets:[],wk12:0,wkEnd:0,wkA:[],wkB:[],rankWk:null};
-  m.acc={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
+  m.acc={};m.lastUse={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
   longSim(k,DAYS,START,course,7+p.n.length,ev=>{const Q=q(ev.i);
     if(ev.type==='target'){const {it,g,st,v}=ev;
       if(st&&st.r>=it.lo&&g.r<it.lo){m.under++;if(!m.underEx)m.underEx=ev.d+' '+ev.name+' '+g.r+' < '+it.lo;}
@@ -44,7 +44,9 @@ function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math
         bl.forEach(b=>{if(b.warm||b.cool)return;b.items.forEach(it=>{if(it.gone||it.f||it.iso||it.test)return;const ns=k.setsOf(it,b,c,ev.id);A.sets+=ns;if(it.lo&&it.hi)A.reps+=ns*(it.lo+it.hi)/2;const v=k.curVar(it,k.LOC());if(v>=0&&it.k&&k.wOn(it,v)&&it.hi>it.lo){A.mid+=(it.lo+it.hi)/2;A.mn++;}});});
         const wi=bl.findIndex(b=>b.warm),ci=bl.findIndex(b=>b.cool);
         if(S.min<60||S.min>90||wi!==0||ci!==bl.length-1){m.dur++;if(!m.durEx)m.durEx=ev.d+' '+ev.id+' '+S.min+' min'+(wi!==0?' no warm-up first':'')+(ci!==bl.length-1?' no cool-down last':'');}}
-      const ns=m.names[Q]||(m.names[Q]={all:new Set(),neu:0});bl.forEach(b=>b.items.forEach(it=>{if(it.gone)return;const v=k.curVar(it,k.LOC());if(v<0)return;const n=it.opts[v].n;ns.all.add(n);if(!seen.has(n)){seen.add(n);ns.neu++;}}));}
+      const ns=m.names[Q]||(m.names[Q]={all:new Set(),neu:0,fr:new Set()});bl.forEach(b=>b.items.forEach(it=>{if(it.gone)return;const v=k.curVar(it,k.LOC());if(v<0)return;const n=it.opts[v].n;ns.all.add(n);
+        /* new = never shown before or absent for at least 12 weeks (A-043: a rotation set returns after two blocks) */
+        const lu=m.lastUse[n];if((lu==null||ev.i-lu>=84)&&!ns.fr.has(n)){ns.fr.add(n);ns.neu++;}m.lastUse[n]=ev.i;if(!seen.has(n))seen.add(n);}));}
     if(ev.type==='run'){m.km[Q]=(m.km[Q]||0)+ev.km;if(ev.id==='RH')m.long[Q]=Math.max(m.long[Q]||0,ev.km);}
     /* week preview: mean of weeks 12–15 against the mean of the last 4 weeks (both a mix of normal and deload weeks) */
     if(ev.type==='day'){if([83,90,97,104].includes(ev.i))m.wkA.push(wkTime(k));if([DAYS-29,DAYS-22,DAYS-15,DAYS-8].includes(ev.i))m.wkB.push(wkTime(k));if(m.rankWk==null&&k.xpTotal()>=16000)m.rankWk=Math.floor(ev.i/7)+1;
