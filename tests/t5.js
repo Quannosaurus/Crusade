@@ -25,6 +25,9 @@ if(JSON.parse(w.localStorage.getItem('kz_app_v3')).kickDays.sort().join()!=='2,5
 D.logs=[];['2026-11-16','KA','2026-11-17','KI','2026-11-18','KB'].forEach((x,i,a)=>{if(i%2===0)D.logs.push({d:x,id:a[i+1],rpe:6});});
 const th=w.__kz.recAll?w.__kz.recAll('2026-11-19'):null;console.log('Donnerstag:',th&&th.id,th&&th.why);
 if(th&&(th.id==='KC'||th.id==='RH'))issue('Vor Kick-Tag Beine/starker Lauf');
+// Session 14 additive fields: old states load unchanged, new fields keep their values
+{const w5=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[{d:'2026-11-10',id:'KA',t:'Strength A',rpe:6,ex:{'p_pull#0':[8,0]}},{d:'2026-11-11',id:'KA',t:'Strength A',rpe:6,ex:{'p_pull#0':[8,0]},exs:{'p_pull#0':[8,8,7]}}],days:{},ex:{'p_pull#0':{r:7,w:0,d:'2026-11-11',n:'Pull-ups',s:[8,8,7]},'p_dip#0':{r:8,w:0,d:'2026-11-10',n:'Dips'}},vr:{},pain:{},home:{b:true}});
+ const D5=w5.__kz.D();if(D5.logs[0].exs||D5.ex['p_dip#0'].s)issue('I-43: old entry got per-set values');if(JSON.stringify(D5.logs[1].exs)!=='{"p_pull#0":[8,8,7]}'||JSON.stringify(D5.ex['p_pull#0'].s)!=='[8,8,7]')issue('I-43: per-set values lost on load');}
 console.log('\n=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));
 // focus UI + migration hint
 P.length=0;

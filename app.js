@@ -162,9 +162,10 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
     if(Array.isArray(l.m))o.m=l.m.filter(function(x){return own(MMOD,x);});
     if(l.pr!=null)o.pr=Math.max(0,Math.min(20,Math.floor(numv(l.pr))));
     if(l.ex&&typeof l.ex==="object"){o.ex={};Object.keys(l.ex).slice(0,60).forEach(function(k){var v=l.ex[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&Array.isArray(v))o.ex[k]=[numv(v[0]),numv(v[1])];});}
+    if(l.exs&&typeof l.exs==="object"&&!Array.isArray(l.exs)){var xs={};Object.keys(l.exs).slice(0,60).forEach(function(k){var v=l.exs[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&Array.isArray(v)){var a=setsArr(v);if(a.length)xs[k]=a;}});if(Object.keys(xs).length)o.exs=xs;}
     if(l.tv&&typeof l.tv==="object"){o.tv={};Object.keys(l.tv).forEach(function(k){if(/^[a-z]+$/.test(k)&&okKey(k))o.tv[k]=numv(l.tv[k]);});}
     return o;});
-  if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);}});
+  if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);if(Array.isArray(e.s)){var sa=setsArr(e.s);if(sa.length)x.s=sa;}}});
   if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80)};if(e.p!=null)x.p=numv(e.p);if(e.km!=null)x.km=lim(numv(e.km),KMMAX)||0;if(e.min!=null)x.min=lim(numv(e.min),MINMAX)||0;}});
   if(typeof n.emph==="string"&&EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(typeof n.favP==="boolean")b.favP=n.favP; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90&&okKey(x);}).slice(0,20); if(own(THEMES,n.theme))b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string"&&x.length<40&&okKey(x);}).slice(0,50);
   if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&okKey(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
@@ -1630,7 +1631,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   var wu=wuSets(it,v); if(wu&&typeof wu[0][0]==="string"&&wu[0][0]) h+='<div class="c gold kgfirst">Pick a weight you could lift about 12 times. Warm up with 2 lighter sets first.</div>';
   else if(wu) h+='<div class="wus"><span class="wub">'+esc(W("wsets"))+'</span> '+esc(wuText(wu))+' <span class="muted">· not counted</span></div>';
   else if(o.w&&g&&!g.w&&!it.f&&!it.iso&&!it.test) h+='<div class="c gold kgfirst">Pick a weight you could lift about 12 times.</div>';
-  var lx=!it.f&&!it.iso&&!it.test&&D.ex[it.k+"#"+v];if(lx&&lx.r) h+='<div class="c muted lastv">last: '+esc(lx.r+" "+it.unit+(lx.w?" × "+fmtKg(lx.w)+" kg":""))+'</div>';
+  var lx=!it.f&&!it.iso&&!it.test&&D.ex[it.k+"#"+v],lt=lastTxt(it,v,lx);if(lt) h+='<div class="c muted lastv">last: '+esc(lt)+'</div>';
   if(it.anc) h+='<div class="anc"><span class="ancb">⚓ '+esc(W("anchor"))+'</span> Same every week, so it keeps growing.</div>';
   if(it.c) h+='<div class="c">'+esc(it.c)+'</div>';
   var tn=termNote(o.n+" "+tg+" "+(it.c||"")),hw=((pc?"":howto(o.n))+(tn?" "+tn:"")).trim(); if(hw) h+='<details class="how"><summary>How?</summary><p>'+esc(hw)+'</p></details>';
@@ -2590,18 +2591,26 @@ function finish(dy,keep){LV.fin=thKey()==="love"?TODAY:"";var tl=TH().toast;D._t
   D.tab="start";save();render();window.scrollTo(0,0);}
 function needRpe(dy){if(!dy.fin.rpe){dy.fin.err="Please choose how hard it was.";save();render();return true;}dy.fin.err="";return false;}
 var PATP={"Clean pull-ups":"pull","Pull-ups":"pull","Parallel bar dips":"dips","Dips":"dips","Push-ups":"push","Explosive chest-to-bar pull-ups":"expl","Clean muscle-ups":"mu"};
+/* I-43: per-set values (reps or seconds), at most 12 sets, 0–999, one decimal. */
+function setsArr(a){return Array.isArray(a)?a.slice(0,12).map(function(x){return typeof x==="number"||(typeof x==="string"&&x.trim()!=="")?+x:NaN;}).filter(function(x){return isFinite(x)&&x>=0&&x<=999;}).map(function(x){return Math.round(x*10)/10;}):[];}
+/* "last: 6 · 6 · 5 reps × 20 kg" when the sets are known, else the weakest set as before ("6 reps × 20 kg").
+   Holds read their seconds from the newest log that carries them. */
+function lastTxt(it,v,lx){var kg=function(w){return w?" × "+fmtKg(w)+" kg":"";};
+  if(it.iso&&!it.test){for(var i=D.logs.length-1,i0=Math.max(0,i-200);i>=i0;i--){var e=D.logs[i].exs;if(e&&own(e,"iso:"+it.iso)&&e["iso:"+it.iso].length)return e["iso:"+it.iso].join(" · ")+" s";}return "";}
+  if(!lx||!lx.r)return "";
+  return (lx.s&&lx.s.length>1?lx.s.join(" · "):lx.r)+" "+it.unit+kg(lx.w);}
 function saveTrain(){
   var dy=day(); if(needRpe(dy)) return; var L0=lvl();
   var loc=LOC(),kit=loc==="m",cbk=cbInfo(TODAY).low,c=ctx(TODAY),id=trainId(dy).id,s=S(id,c),f=dy.fin,wts=[],hold=f.rpe>=10,isoDone={},exl={},tv={},prs=[];
   function rec(key,r,w,nm){exl[key]=[r,w||0];var sc=(w||0)*1000+r,b=D.pr[key];if(b&&sc>b.sc)prs.push(nm+": "+r+(w?" × "+fmtKg(w)+" kg":""));if(!b||sc>b.sc)D.pr[key]={sc:sc,r:r,w:w||0,d:TODAY,n:nm};}
-  var addN=[],vsA=vsZero(),nSets=0;
+  var addN=[],vsA=vsZero(),nSets=0,exs={};
   s.blocks.forEach(function(b,bi0){ if(D.short&&b.p>1) return; var bi=b.bi!=null?b.bi:bi0; b.items.forEach(function(it,ii){
     var iid=id+"-"+bi+"-"+ii, v=curVar(it,loc); if(v<0||dy.skip[iid]||painHit(it.opts[v].n)) return;
     if(it.add&&(dy.done[iid]||((dy.inp[iid]||{}).s||[]).some(function(x){return num(x)!==null;})))addN.push(it.opts[v].n);
     var inp=dy.inp[iid]||{}, sets=(inp.s||[]).map(num).filter(function(x){return x!==null&&x>=0;});
     if(!it.f)nSets+=sets.length||(dy.done[iid]&&!it.iso&&!it.test?setsOf(it,b,c,id):0);
     if(it.iso){ if(isoDone[it.iso]) return; var cur=D.profile[it.iso],q=isoP(cur);
-      if(sets.length){ isoDone[it.iso]=1; var mn=Math.min.apply(null,sets),mx=Math.max.apply(null,sets);
+      if(sets.length){ isoDone[it.iso]=1; exs["iso:"+it.iso]=setsArr(sets); var mn=Math.min.apply(null,sets),mx=Math.max.apply(null,sets);
         if(sets.length>=q.n&&mn>=q.h) D.profile[it.iso]=Math.min(120,Math.max(cur,mx)+2);
         else if(mn<q.h*0.75) D.profile[it.iso]=Math.max(Math.round(mx),Math.max(3,cur-2));
         if(mx>D.profile[it.iso]) D.profile[it.iso]=mx; rec("iso:"+it.iso,mx,0,it.opts[v].n+" (s)"); }
@@ -2620,8 +2629,10 @@ function saveTrain(){
     var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(sets.length||setsOf(it,b,c,id)));
     if(kit){D.kitD=D.kitD||{};D.kitD[patKey(it.k)]=TODAY;}
     /* Field kit days never downgrade a shared variant and never count towards a stall (A-019 addendum). */
-    if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};
-    else D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:kit||cbk?(pv&&pv.stall||0):stall};
+    if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) {D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};if(pv.s)D.ex[it.k+"#"+v].s=pv.s;}
+    else {D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:kit||cbk?(pv&&pv.stall||0):stall};if(sets.length)D.ex[it.k+"#"+v].s=setsArr(sets);}
+    /* I-43: every set's reps/seconds go into the log additively (l.exs[key]); progression and stall still use the weakest set. */
+    if(sets.length)exs[it.k+"#"+v]=setsArr(sets);
     if((it.k==="fl_h"||it.k==="pl_h")&&v<=4&&r>=it.lo){var pk=it.k==="fl_h"?"flSt":"plSt";if(v>D.profile[pk])D.profile[pk]=v;}
     /* Re-rating from logs (P-3): a clean set of a pattern variant above the status raises it, never lowers it. */
     var pk=PATP[it.opts[v].n];if(pk&&!(w>0)&&sets.length){var mxs=Math.max.apply(null,sets);if(mxs>(D.profile[pk]||0))D.profile[pk]=mxs;}
@@ -2631,7 +2642,7 @@ function saveTrain(){
   var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
   var rk0=rankOf(xpTotal());
-  var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,vm:VMAP,lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};if(cbk)lgo.cb=1;var rd0=rdDay();if(rd0)lgo.rd=rd0;addLog(lgo);
+  var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,vm:VMAP,lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};if(Object.keys(exs).length)lgo.exs=exs;if(cbk)lgo.cb=1;var rd0=rdDay();if(rd0)lgo.rd=rd0;addLog(lgo);
   /* Keep as favourite? Asked once per added exercise, on the Today page after logging. */
   var fa=D.favAsk||[];addN.forEach(function(n){if((D.fav||[]).indexOf(n)<0&&fa.indexOf(n)<0){fa.push(n);(D.favQ=D.favQ||[]).push(n);}});if(addN.length)D.favAsk=fa.slice(-200);
   D._fin={n:NAMES[id],min:s.min||0,sets:nSets,pr:prs.slice(0,2)};

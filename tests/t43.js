@@ -190,5 +190,9 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
  const Z=z.k.D();if(Z.logs.length!==4||Z.kickDays.join()!=='2,5'||!Z.goal||Z.goal.v!==12)issue('file round trip: '+JSON.stringify({n:Z.logs.length,k:Z.kickDays,g:Z.goal}));
  [x,y,z,src].forEach((q,i)=>{if(q.errs.length)issue('JS errors (6.'+i+'): '+q.errs.join('; '));});}
 
+// I-43: prototype names as per-set keys are refused without pollution
+{const z=boot();const c=z.k.cleanImport(JSON.parse('{"v":3,"logs":[{"d":"2026-11-10","id":"KA","t":"A","rpe":6,"exs":{"__proto__":[1,2],"constructor":[3],"toString":[4],"p_pull#0":[8]}}]}'));
+ const e=c.logs[0].exs||{};if(['__proto__','constructor','toString'].some(q=>Object.prototype.hasOwnProperty.call(e,q))||JSON.stringify(e)!=='{"p_pull#0":[8]}')issue('I-43: prototype keys in exs: '+JSON.stringify(Object.getOwnPropertyNames(e)));
+ if(({})[0]!==undefined||[].constructor!==Array)issue('I-43: prototype polluted');}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);
 })();

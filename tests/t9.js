@@ -16,4 +16,8 @@ if(!d.querySelector('[data-a=rsok]'))issue('Keine Vorschau vor dem Ersetzen');el
 if(D.logs.length!==3)issue('Ungültige Logs nicht gefiltert: '+D.logs.length);if(D.focus!=='bal')issue('Fokus nicht geprüft');if(D.profile.pull>999)issue('Profilwert nicht begrenzt');if(D.ex['<x>#0'])issue('ex-Key nicht geprüft');
 D.tab='verlauf';k.render();if(d.querySelector('#app img')||d.querySelector('#app script'))issue('Markup aus Backup gerendert');
 if(!/&lt;img/.test(d.getElementById('app').innerHTML))issue('Text nicht maskiert');
+// I-43: per-set values – markup, strings and junk refused, valid ones kept
+{const c=k.cleanImport({v:3,logs:[{d:'2026-11-10',id:'KA',t:'A',rpe:6,exs:{'p_pull#0':['8','<b>',8,-2],'<x>#0':[1],'p_dip#0':'8,8'}}],ex:{'p_pull#0':{r:8,w:0,d:'2026-11-10',n:'P',s:['<script>',7,{}]}}});
+ const l=c.logs[0];if(!l.exs||JSON.stringify(l.exs['p_pull#0'])!=='[8,8]'||l.exs['<x>#0']||l.exs['p_dip#0'])issue('I-43 exs not cleaned: '+JSON.stringify(l.exs));
+ if(JSON.stringify(c.ex['p_pull#0'].s)!=='[7]')issue('I-43 D.ex s not cleaned: '+JSON.stringify(c.ex['p_pull#0'].s));}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);
