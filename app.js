@@ -667,7 +667,12 @@ function shMini(b){if(b.shm)return false;b.shm=1;b.items=b.items.slice(0,2);b.ro
 /* Limited time keeps a needed leg block (week < 2 leg sessions or Strength C over 7 days ago). One upper-body round goes instead. */
 function shortLegs(s,c){var lb=s.blocks.filter(function(b){return b.legs;})[0];if(!lb||!c.legB)return;lb.p=1;
   s.blocks.some(function(b){if(b.p===1&&b.rounds&&!b.legs&&!b.lowb&&!b.warm&&!b.cool&&b.rounds[0]>2){b.rounds=[b.rounds[0]-1,b.rounds[0]-1];return true;}});}
-function design(s,id,c){s.ab=absFor(id);
+/* A-047: a tired day is designed as the normal session first (same fill, band and rounds, frozen in b.tr), then tiredCut()
+   takes about a third of the session's working sets away. A taper session keeps its taper. */
+function design(s,id,c){if(rdDay()!==3||!BANDIDS[id])return design0(s,id,c);
+  RD2=true;try{s=design0(s,id,c);s.blocks.forEach(function(b){if(b.rounds&&b.tr==null&&!b.warm&&!b.cool)b.tr=rounds(b,c,id);});}finally{RD2=false;}
+  if(!s.taper&&tiredCut(s,c,id,function(){return estMin(s,c,id);}))s.min=estMin(s,c,id);return s;}
+function design0(s,id,c){s.ab=absFor(id);
   function blk(f){return s.blocks.filter(f)[0];}
   function est(){return estMin(s,c,id);}
   function drop(f){for(var j=s.blocks.length-1;j>=0;j--){if(f(s.blocks[j])){s.blocks.splice(j,1);return true;}}return false;}
@@ -712,7 +717,6 @@ function design(s,id,c){s.ab=absFor(id);
     if(legKeep(id,lgb)&&legSets(s,c,id)<6){lbg.items=snap.map(function(x){var it=x[0];if(x[1]==null)delete it.ts;else it.ts=x[1];if(x[2])it.anc=x[2];delete it.gan;delete it.gcut;return it;});lbg.more=more0;}
     s.min=est();}
   var cap=BANDIDS[id]?bandCaps(id):null;if(cap&&bandFit(s,c,id,cap,est))s.min=est();
-  if(rdDay()===3&&BANDIDS[id]&&tiredCut(s,c,id,est))s.min=est();
   /* Taper week before a goal date (P-2): same exercises and loads, about half the working sets (taken evenly, from the end
      of the session first; every exercise keeps at least 1 set). Frequency stays, nothing is filled up. */
   if(gTaper()){var U=[];s.blocks.forEach(function(b){if(b.warm||b.cool)return;var its=b.items.filter(function(it){return it.k&&!it.f&&!it.iso&&!it.test&&curVar(it,LOC())>=0;});if(!its.length)return;
@@ -1012,7 +1016,8 @@ function ctx(s){
    (60 min, 2 working sets, legs + hinge ≥ 10, a leg session keeps 6 leg sets). Good: the high round count where every
    pattern of the block has room in the week (bandFit still holds the caps); level 0 is never raised. Off or no tap:
    nothing changes. The log keeps rd for a passive line in the stats. ===== */
-function rdDay(){if(!D.opt||!D.opt.ready||WK.sim)return 0;var d=D.days&&D.days[TODAY];var r=d&&d.ready;return r===1||r===2||r===3?r:0;}
+var RD2=false;
+function rdDay(){if(!D.opt||!D.opt.ready||WK.sim)return 0;if(RD2)return 2;var d=D.days&&D.days[TODAY];var r=d&&d.ready;return r===1||r===2||r===3?r:0;}
 /* ===== P-7 pause and comeback =====
    D.pause = {from, to ("" = open), why: "pause"|"ill"} while training is paused (More → Pause training, 1 tap; end date and
    reason optional). It ends with "Resume", with the next training log or after its end date; the paused days go to
@@ -1203,20 +1208,40 @@ function bandLoOK(cap,v,p,k){var lo=vBand(p)[0];return cap._u[p]+v[p]-k>=lo||v[p
    follows from that, never under 45 min (DURMIN); warm-up and cool-down stay complete. Each step is undone if it takes the
    session under 45 min, a leg session under 6 leg sets or legs + hinge of the 7 days under 10. */
 function tiredSets(n){return Math.min(n,Math.max(2,Math.ceil(n*2/3)));}
-function tiredCut(s,c,id,est){var ch=false,lg0=legSets(s,c,id),t=vs7(TODAY),u0=bandCaps(id)._u;
-  function ok(){var v=volSets(s,c,id);return (D.short||est()>=DURMIN)&&!(lg0>=6&&legSets(s,c,id)<6)&&!(u0.legs+u0.hinge+v.legs+v.hinge<10&&t.on);}
+/* A-047 Tired doctrine (control station): measured on the whole session. Target about a third fewer working sets of the
+   session (T = ⅔ of the normal count, ± 1). Order: first whole accessory and circuit exercises go (D1 rank from the bottom:
+   pure accessory, shoulder stability, secondary circuits, the emphasis/leg block's companions), then one set less per
+   exercise (floor 2) and circuits one round less (floor 2), the anchor and goal anchor last; they always stay. Load and
+   variation unchanged, 3–4 reps in reserve, no tests, never under 45 min (DURMIN), warm-up and cool-down complete. The weekly
+   floor legs + hinge ≥ 10 holds over the week, not on the tired day: a leg session may go down to its anchor + 1 exercise
+   (≥ 4 leg sets). Sources: Bell et al. 2023; Spiering et al. 2021. */
+function tWork(s,c,id){var n=0;s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items.forEach(function(it){if(!it.k||it.f||it.iso||it.test||curVar(it,LOC())<0)return;n+=setsOf(it,b,c,id);});});return n;}
+function tiredCut(s,c,id,est){var ch=false,lg0=legSets(s,c,id),W=tWork(s,c,id),T=Math.round(W*2/3);
+  function ok(){return (D.short||est()>=DURMIN)&&!(lg0>=4&&legSets(s,c,id)<Math.min(4,lg0));}
   function live(b){return !(b.warm||b.cool||b.add||b.trial||b.rehab||(D.short&&b.p>1));}
+  function anc(it){return !!(it&&(it.anc||it.gx||it.gan));}
+  function work(it){return it.k&&!it.f&&!it.iso&&!it.test&&curVar(it,LOC())>=0;}
+  function core(b){return b.gx||b.skill||b.mu||b.hsb||b.lng||b.jump;}
+  function left(b){return b.items.filter(work).length;}
+  /* 1 whole exercises */
+  function drop(b,keep){for(var i=b.items.length-1;i>=0&&W>T;i--){var it=b.items[i];if(!work(it)||anc(it)||it.add||left(b)<=keep)continue;var n=setsOf(it,b,c,id);if(W-n<T-1)continue;
+      it.gone=1;it.tdrop=1;if(ok()){W=tWork(s,c,id);ch=true;}else{delete it.gone;delete it.tdrop;}}}
+  var bl=s.blocks.filter(live),rv=bl.slice().reverse();
+  rv.forEach(function(b){if(b.acc)drop(b,0);});
+  rv.forEach(function(b){if(b.sh)drop(b,1);});
+  rv.forEach(function(b){if(!b.acc&&!b.sh&&!b.fav&&!core(b)&&!b.lowb&&!b.legs&&b.rounds)drop(b,1);});
+  rv.forEach(function(b){if((b.lowb||b.legs)&&!core(b))drop(b,b.items.some(anc)?2:1);});
+  /* 2 one set / one round less (floor 2): accessory, circuits, single exercises, then anchor and goal anchor */
+  function cutR(b){if(W<=T)return;var r=rounds(b,c,id),k=b.items.filter(work).length;if(r<=2||!k||W-k<T-1)return;var o=b.tr;b.tr=r-1;if(ok()){b.rdc=1;W=tWork(s,c,id);ch=true;}else b.tr=o;}
+  function cutI(b,it){if(W<=T||!work(it))return;var n=setsOf(it,b,c,id);if(n<=2)return;var o=it.ts;it.ts=n-1;if(ok()){it.rdc=1;W=tWork(s,c,id);ch=true;}else if(o==null)delete it.ts;else it.ts=o;}
   function circ(b){return b.rounds&&!b.lowb;}
-  function cutR(b){var r=rounds(b,c,id),o=b.tr;if(r<=2)return;b.tr=r-1;if(ok()){b.rdc=1;ch=true;}else if(o==null)delete b.tr;else b.tr=o;}
-  function cutI(b,it){if(it.f||it.iso||it.test||!it.k||curVar(it,LOC())<0)return;var n=setsOf(it,b,c,id),m=tiredSets(n);if(m>=n)return;var o=it.ts;it.ts=m;if(ok()){it.rdc=1;ch=true;}else if(o==null)delete it.ts;else it.ts=o;}
-  function cut(b,f){if(circ(b)){if(f(null))cutR(b);}else b.items.forEach(function(it){if(f(it))cutI(b,it);});}
-  var core=function(b){return b.gx||b.skill||b.mu||b.hsb||b.lng;},anc=function(it){return it&&(it.anc||it.gx||it.gan);};
-  /* 1 accessory, 2 circuits, 3 single exercises, 4 anchor and goal anchor, 5 a long skill block to its standard form */
-  s.blocks.forEach(function(b){if(live(b)&&b.acc)cut(b,function(){return true;});});
-  s.blocks.forEach(function(b){if(live(b)&&!b.acc&&!core(b)&&circ(b))cutR(b);});
-  s.blocks.forEach(function(b){if(live(b)&&!b.acc&&!core(b)&&!circ(b))cut(b,function(it){return !anc(it);});});
-  s.blocks.forEach(function(b){if(live(b)&&!b.acc&&!circ(b))cut(b,function(it){return anc(it);});});
-  s.blocks.forEach(function(b,x){if(!b.lng||!live(b))return;var nb=SKB(b.lng[0],false,b.lng[1]);if(b.gx)nb.gx=1;if(FAVIDS[id])favDef(nb);s.blocks[x]=nb;painFix(s);if(ok())ch=true;else s.blocks[x]=b;});
+  bl.forEach(function(b){if(b.acc){if(circ(b))cutR(b);else b.items.forEach(function(it){cutI(b,it);});}});
+  bl.forEach(function(b){if(!b.acc&&!core(b)&&circ(b))cutR(b);});
+  bl.forEach(function(b){if(!b.acc&&!circ(b))b.items.forEach(function(it){if(!anc(it))cutI(b,it);});});
+  bl.forEach(function(b){if(core(b)&&circ(b))cutR(b);});
+  bl.forEach(function(b){if(!circ(b))b.items.forEach(function(it){if(anc(it))cutI(b,it);});});
+  /* 3 a long skill block to its standard form */
+  s.blocks.forEach(function(b,x){if(W<=T||!b.lng||!live(b))return;var nb=SKB(b.lng[0],false,b.lng[1]);if(b.gx)nb.gx=1;if(FAVIDS[id])favDef(nb);s.blocks[x]=nb;painFix(s);if(ok()){W=tWork(s,c,id);ch=true;}else s.blocks[x]=b;});
   return ch;}
 /* A-029: three tired days within 7 days → a passive hint toward the existing easy week (the user decides). */
 function tired3(){if(!D.opt||!D.opt.ready||easyOpen()||ctx(TODAY).cyc===6)return false;var n=D.logs.filter(function(l){var x=diff(l.d,TODAY);return l.rd===3&&x>=0&&x<7;}).length;
@@ -1364,7 +1389,12 @@ function easyOpen(){return !!D.easy&&D.easy>=blkStart(TODAY)&&!D.logs.some(funct
 function actLog(l){return l.id!=="MO"&&l.id!=="RS";}
 function restDue(s){function act(k){var d=addD(s,-k);return D.logs.some(function(l){return l.d===d&&actLog(l);});}
   var n=isKick(addD(s,1))?5:6;for(var k=1;k<=n;k++)if(!act(k))return false;return true;}
-function recAll(s,noKick,noPause){
+/* A-047: with "Tired" chosen for today, Today follows the training page: a due Skill Trial waits for a fresher day
+   (a Skill Trial picked by hand stays allowed). */
+function recAll(s,noKick,noPause){var r=recAll0(s,noKick,noPause);
+  if(r&&r.btn==="train"&&r.id==="CH"&&s===TODAY&&D.loc==="g"&&rdDay()===3){var h=hist(s),ab2=cap(h.KA)>=cap(h.KB)?"KA":"KB";return {btn:"train",id:ab2,why:"Tired today: the Skill Trial waits for a fresher day. "+NAMES[ab2]+" "+ago(h[ab2])+".",tired:1};}
+  return r;}
+function recAll0(s,noKick,noPause){
   if(!noPause&&pauseOn(s))return {btn:"pause",id:"RS",pause:1,why:D.pause.why==="ill"?"Training paused: get well first. No plan until you resume or log a session.":"Training paused. No plan until you resume or log a session."};
   var h=hist(s),c=ctx(s),td=onDay(s),F=D.focus,kickT=isKick(addD(s,1)),cb=cbInfo(s);
   var gd=goalDay(s,td);if(gd)return gd;
@@ -1939,11 +1969,14 @@ function vStart(){
   if(rro) h+='<button type="button" class="big also" data-a="xrun"><span class="bt"><b>Running</b><i class="tag dim">Also possible</i></span><span>Easy run, optional · '+(dn.train?'after your training':'strength day')+'</span></button>';
   else h+=big("run","Running",D.focus==="str"?"Not in the plan · log it anyway":"Easy, intervals or hard "+fmtKg(D.runKm)+" km");
   if(!rro&&!dn.run&&!(r.btn==="run"&&r.id==="RE")) h+='<button type="button" class="lnk ctr xrun" data-a="xrun">'+esc(W("xrun"))+' <span class="muted">· extra and relaxed, '+(dn.train?'after your training':'also on a training day')+'</span></button>';
-  if(D.kickDays.length||dn.kick) h+=big("kick","Kickboxing","Log it, with mobility before and after");
-  else h+='<p class="ctr"><button type="button" class="lnk" data-tab="kick">Did a kickboxing or other class? Log it →</button></p>';
+  /* A-047: the class link speaks of kickboxing only with kickboxing days (then the kickboxing card stands here); without them
+     it asks for another class or activity and needs "Other activity" switched on (it replaces the "+ Other activity" link). */
+  var oaL=D.opt&&D.opt.oa,kdy=D.kickDays.length||dn.kick;
+  if(kdy) h+=big("kick","Kickboxing","Log it, with mobility before and after");
+  else if(oaL) h+='<p class="ctr"><button type="button" class="lnk oalnk" data-tab="other">Did another class or activity? Log it →</button></p>';
   if(r.btn==="kick"&&!dn.kick){var alt=recAll(TODAY,true);h+='<button type="button" class="'+(r.pain?'b wide':'lnk ctr')+'" data-a="nokick">'+(r.pain?'Skip kickboxing today. Instead: ':'No kickboxing today? Then: ')+esc(NAMES[alt.id])+'</button>';}
   if(dy.noKick&&isKick(TODAY)&&!dn.kick) h+='<button type="button" class="lnk ctr" data-a="nokick">Kickboxing after all</button>';
-  if(D.opt&&D.opt.oa) h+='<p class="ctr"><button type="button" class="lnk oalnk" data-tab="other">+ '+esc(W("oa"))+' <span class="muted">· hiking, dancing, cycling …</span></button></p>';
+  if(oaL&&kdy) h+='<p class="ctr"><button type="button" class="lnk oalnk" data-tab="other">+ '+esc(W("oa"))+' <span class="muted">· hiking, dancing, cycling …</span></button></p>';
   if(D.logs.length) h+='<p class="ctr"><button type="button" class="lnk" data-a="blopen">Missed logging a day? '+esc(W("backlog"))+' →</button></p>';
   h+=weekHTML();
   return h;
@@ -2181,22 +2214,22 @@ var THX={
   morns:["Morning indulgence","Wake to sensation","A perfect morning awaits","Stretch, and savour it","Rise, devotee"],
   notes:["Perfection is not a goal. It is a habit.","Savour the burn.","Moderation is for those who fear greatness.","Treat your stretches like a luxury.","Excess in effort, moderation in nothing but rest.","The mirror is your judge. Impress it.","Every sensation is information.","Beauty demands discipline.","A perfect rep is better than ten sloppy ones.","Rest is an indulgence. Enjoy it fully.","Crave progress, not approval.","Your body is your masterpiece.","Pleasure in effort is the secret of champions.","Try the harder variation. You know you want to.","Elegance is strength made visible.","Never enough. Always more."],
   hon:{first:"First Taste",dawn:"Morning Indulgence",week:"Seven Days of Excess",unbroken:"Insatiable",pilgrim:"Marathon of Sensation",march:"Hundred Kilometres of Bliss",zealot:"Core of Desire",trial:"Trial of Perfection",records:"Perfectionist",centurion:"Hundred Indulgences",ascend:"Ascension",inverted:"Delightfully Upside Down",lever:"Exquisite Lever"},
-  ui:{gset:"Name your desire",bkrem:"Treasure every moment",orders:"Today's indulgence",wsets:"Teaser sets",anchor:"Signature lift",battle:"How intense was it?",oath:"Pact of perfection",begin:"Begin the pursuit",chron:"Sensations",crusade:"Your pursuit",focus:"Whispers of the Prince",honours:"Indulgences",records:"Perfect records",rank:"Rank",title:"Book of Perfection",sub:"A new devotee",ready:"The pursuit of perfection begins.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"Exquisite new record! ",newhon:"Indulgence earned: "}},
+  ui:{gset:"Name your desire",bkrem:"Treasure every moment",orders:"Today's indulgence",wsets:"Teaser sets",anchor:"Signature lift",battle:"How intense was it?",oath:"Pact of perfection",begin:"Begin the pursuit",chron:"Indulgences",crusade:"Your pursuit",focus:"Whispers of the Prince",honours:"Indulgences",records:"Perfect records",rank:"Rank",title:"Book of Perfection",sub:"A new devotee",ready:"The pursuit of perfection begins.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"Exquisite new record! ",newhon:"Indulgence earned: "}},
  nurgle:{
   toast:["Logged. Grandfather is pleased with your perseverance.","Logged. Endure, and endure again.","Logged. Rot cannot stop the persistent.","Logged. Your resilience grows like a fine mould.","Logged. Sweat is merely a gift shared.","Logged. Slow and steady, like decay.","Logged. Nothing lasts, except your stubbornness.","Logged. Grandfather chuckles warmly.","Logged. The flies buzz in approval.","Logged. Toughness, the true blessing.","Logged. Another day, another layer of resilience.","Logged. Pain fades. Persistence remains.","Logged. You are pleasingly unkillable.","Logged. Share the joy: tell someone about your workout.","Logged. Grandfather's garden blooms with your effort.","Logged. Rest now, my little rotling. Grow strong."],
   ups:["","Rotling. Grandfather notices you.","Plague Acolyte. You endure where others quit.","Plaguebearer. Count your reps like blessings.","Blightbringer. Your resilience spreads.","Rotting Champion. Nothing stops you.","Lord of Decay. Unbreakable, unbothered.","Herald of Grandfather. Jovial and relentless.","Chosen of Grandfather. Eternal endurance."],
   morns:["Good morning, my little rotling","Rise from the compost","Another glorious, damp morning","Stretch those creaking joints","Grandfather wakes you gently"],
   notes:["Endurance is the greatest gift.","Everything decays. Your habits don't have to.","Slow progress is still progress. Ask any mould.","Toughness is built, not born.","Grandfather loves you, especially on hard days.","A cold is no excuse. Well, sometimes it is. Rest.","Persistence beats talent when talent skips leg day.","Share your strength, like a generous cough.","Embrace the burn. It means you're alive.","Rot is patient. Be patient.","Creaky joints? Morning routine. Grandfather insists.","The garden grows one rep at a time.","Resilience is just stubbornness with good manners.","Nothing is permanent except your consistency.","Laugh at fatigue. Grandfather does.","Endure today, flourish tomorrow."],
   hon:{first:"First Spore",dawn:"Damp Dawns",week:"Week of Persistence",unbroken:"Unkillable",pilgrim:"Marathon of Rot",march:"Hundred Kilometres of Endurance",zealot:"Core of Iron Mould",trial:"Trial of Endurance",records:"Blossoming Records",centurion:"Hundred Blessings",ascend:"Rising from the Mire",inverted:"Upside-Down Fly",lever:"Lever of Patience"},
-  ui:{gset:"Make a promise",bkrem:"Preserve the garden",orders:"Today's blessings",wsets:"Easing-in sets",anchor:"Steadfast lift",battle:"How much did you endure?",oath:"Grandfather's welcome",begin:"Begin enduring",chron:"The garden",crusade:"Your endurance",focus:"Grandfather's advice",honours:"Blessings",records:"Blossoming records",rank:"Rank",title:"Book of Endurance",sub:"A new rotling joins the garden",ready:"Welcome to the garden. Grandfather is delighted.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record, blossoming beautifully! ",newhon:"Blessing received: "}},
- love:{ui:{obhi:"Welcome, love.",kday:"Class day, love",rdx:"Daily readiness check",rdq:"How do you feel today, love?",pause:"Take a break, love",resume:"Back to it, love",paused:"On a break",healed:"All better",comeback:"Gentle return",plat:"A quiet stretch, love",goal:"Your dream",gset:"Name your dream",gdone:"Dream come true",gstep:"Closer to your dream",bkrem:"Keep our memories safe",orders:"Your plan for today, love",wsets:"Gentle warm-up sets",anchor:"Your steady lift",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart",title:"Your Training Book ♥",sub:"For the love of my life",ready:"All set. You're going to be amazing, love.",welcome:"Hello, love of my life. I made this for you: a training book that plans each day from what you did before. Everything stays on your phone.",newrec:"New record, my champion! ",newhon:"New badge, love (I'm so proud): "}},
+  ui:{gset:"Make a promise",bkrem:"Preserve the garden",orders:"Today's blessings",wsets:"Easing-in sets",anchor:"Steadfast lift",battle:"How much did you endure?",oath:"Grandfather's welcome",begin:"Begin enduring",chron:"The tally",crusade:"Your endurance",focus:"Grandfather's advice",honours:"Blessings",records:"Blossoming records",rank:"Rank",title:"Book of Endurance",sub:"A new rotling joins the garden",ready:"Welcome to the garden. Grandfather is delighted.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record, blossoming beautifully! ",newhon:"Blessing received: "}},
+ love:{ui:{obhi:"Welcome, love.",kday:"Class day, love",rdx:"Daily readiness check",rdq:"How do you feel today, love?",pause:"Take a break, love",resume:"Back to it, love",paused:"On a break",healed:"All better",comeback:"Gentle return",plat:"A quiet stretch, love",goal:"Your dream",gset:"Name your dream",gdone:"Dream come true",gstep:"Closer to your dream",bkrem:"Keep our memories safe",orders:"Your plan for today, love",wsets:"Gentle warm-up sets",anchor:"Your steady lift",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Memories",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart",title:"Your Training Book ♥",sub:"For the love of my life",ready:"All set. You're going to be amazing, love.",welcome:"Hello, love of my life. I made this for you: a training book that plans each day from what you did before. Everything stays on your phone.",newrec:"New record, my champion! ",newhon:"New badge, love (I'm so proud): "}},
  plain:{
   toast:["Logged. Nice work.","Logged. Consistency wins.","Logged. One more in the bank.","Logged. Keep it up.","Logged. Solid session.","Logged. Progress is progress.","Logged. Future you says thanks.","Logged. Well done.","Logged. That counts.","Logged. Good job showing up.","Logged. Strong work today.","Logged. Another brick in the wall.","Logged. You're building a habit.","Logged. Great effort.","Logged. On track.","Logged. Rest well."],
   ups:["","Regular. You're building a habit.","Committed. Consistency is paying off.","Athlete. You train like one now.","Strong. Visible progress.","Advanced. Few get this far.","Expert. You know what you're doing.","Elite. Top level consistency.","Legend. Seriously impressive."],
   morns:["Good morning","Morning routine","Start the day moving","Wake up and stretch","Good morning, let's move"],
   notes:["Consistency beats intensity.","A short session is better than none.","Sleep is part of training.","Form first, then load.","Small steps add up.","Rest days are training days for recovery.","Drink water.","Progress is rarely linear. Keep going.","Move a little every day.","Your future self will thank you.","Showing up is half the work.","Easy days make hard days possible.","Track it, then improve it.","Don't compare, just improve.","Stretching counts.","Keep it simple."],
   hon:{first:"First entry",dawn:"Morning habit",week:"7-day streak",unbroken:"Four strong weeks",pilgrim:"Marathon distance",march:"100 km",zealot:"Blitz Master",trial:"Skill Trial done",records:"Record breaker",centurion:"100 sessions",ascend:"First muscle-up",inverted:"Freestanding handstand",lever:"Front lever"},
-  ui:{obhi:"Welcome.",kday:"Class day",rdx:"Daily readiness check",rdq:"How do you feel today?",pause:"Pause training",resume:"Resume training",paused:"Training paused",healed:"Healed",comeback:"Comeback",plat:"Plateau",goal:"Goal",gset:"Set a goal",gdone:"Goal reached",gstep:"Goal step",orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan",wsets:"Warm-up sets",anchor:"Anchor",focus:"Where to focus",honours:"Badges",records:"Personal records",rank:"Level",title:"Training Book",sub:"Set up your training",ready:"All set. Your first plan is ready.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Badge earned: "}}
+  ui:{obhi:"Welcome.",kday:"Class day",rdx:"Daily readiness check",rdq:"How do you feel today?",pause:"Pause training",resume:"Resume training",paused:"Training paused",healed:"Healed",comeback:"Comeback",plat:"Plateau",goal:"Goal",gset:"Set a goal",gdone:"Goal reached",gstep:"Goal step",orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Log",crusade:"Your plan",wsets:"Warm-up sets",anchor:"Anchor",focus:"Where to focus",honours:"Badges",records:"Personal records",rank:"Level",title:"Training Book",sub:"Set up your training",ready:"All set. Your first plan is ready.",welcome:"Your personal training book: it plans each day from what you did before. Everything stays on this phone.",newrec:"New record! ",newhon:"Badge earned: "}}
 };
 Object.keys(THX).forEach(function(k){if(own(THEMES,k))Object.keys(THX[k]).forEach(function(f){THEMES[k][f]=THX[k][f];});});
 function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!loveOn())D.wantLove=true;else if(own(THEMES,D.pendingTheme))D.theme=D.pendingTheme;delete D.pendingTheme;}
@@ -2204,8 +2237,8 @@ function TH(){if(D.pendingTheme){if(D.pendingTheme==="love"&&!loveOn())D.wantLov
 // Effective theme: a chosen but locked love theme (e.g. an old device before the new code is entered) stays in D.theme, but renders as templar.
 function thKey(){var k=own(THEMES,D.theme)?D.theme:"templar";return k==="love"&&!loveOn()?"templar":k;}
 var UIW={obhi:"Welcome to the crusade.",kday:"Battle day",rdx:"Daily readiness check",rdq:"How fares the warrior today?",pause:"Stand down",resume:"Return to the crusade",paused:"Standing down",healed:"Wounds closed",comeback:"Return to arms",plat:"The vow stands still",goal:"Your vow",gset:"Swear a vow",gdone:"Vow fulfilled",gstep:"Vow milestone",orders:"Your orders for today",battle:"How hard was the battle?",oath:"Oath of induction",begin:"Begin the crusade",chron:"Chronicle",crusade:"Your crusade"},
-    UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Stats",crusade:"Your plan"},
-    UIL={orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Progress",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart"};
+    UIP={orders:"Today's plan",battle:"How hard was it?",oath:"Setup",begin:"Let's go",chron:"Log",crusade:"Your plan"},
+    UIL={orders:"Your plan for today, love",battle:"How did it feel, love?",oath:"Made with love, just for you",begin:"Let's start, love",chron:"Memories",crusade:"Your journey",focus:"Little tips from me",honours:"Your badges",records:"Your records (I'm so proud)",rank:"Your rank in my heart"};
 var UIX={obhi:"Welcome.",kday:"Class day",rdx:"Daily readiness check",rdq:"How do you feel today?",pause:"Pause training",resume:"Resume training",paused:"Training paused",healed:"Healed",comeback:"Comeback",plat:"Plateau",goal:"Goal",gset:"Set a goal",gdone:"Goal reached",gstep:"Goal step",kit:"Field kit",adds:"Your additions",addex:"+ Add exercise",xrun:"+ Easy run",oa:"Other activity",extras:"Extras",easy:"Easy week now",rest:"Weekly rest day",load:"Weekly load",never:"Never suggested",backlog:"Log a past day",week:"The week ahead",bkrem:"Time for a backup",wsets:"Warm-up sets",anchor:"Anchor",focus:"Where to focus",honours:"Honours",records:"Personal records",rank:"Rank"};
 function W(k){var u=TH().ui||{};return u[k]||UIW[k]||UIX[k]||"";}
 function rankName(i){return TH().ranks[i]||RANKS[i][1];}

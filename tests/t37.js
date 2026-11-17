@@ -1,8 +1,11 @@
 // @name daily-form
 // P-8: daily readiness tip, off by default. Off (and on without a tap): plans identical to the plan without P-8 for 4
 // profiles × Strength A/B/C and over a 6-week simulation, no bar on the training page. Tired: low round count, fewer sets,
-// (A-029: about ⅔ of the working sets per exercise, ≥ 2, circuits one round less, same loads, no tests, "Easy week now" hint after 3 tired days in 7) the hint "3–4 reps before failure", never under the floors (A-035: 45 min, as Tired is an explicit user wish; 2 working
-// sets, legs + hinge ≥ 10, a leg session keeps 6 leg sets). Good: high round count only where the week has room, level 0
+// (A-047: about ⅓ fewer working sets of the whole session ± 1 – whole accessory/circuit exercises first, then one set less
+// per exercise ≥ 2, circuits one round less – in all 4 profiles in week 5 and 10, explicitly Partner Strength B week 10;
+// same loads, no tests, "Easy week now" hint after 3 tired days in 7) the hint "3–4 reps before failure", never under the
+// floors (45 min, 2 working sets, a leg session keeps ≥ 4 leg sets on the tired day; legs + hinge ≥ 10 over the training
+// week, checked with one tired Strength B per week over 10 weeks). Good: high round count only where the week has room, level 0
 // never raised, 12 weeks of "good" every day keep the band tolerance (peak ≤ upper + 2 / + 4, average ≤ upper limit).
 // Log rd, passive stats line, backup fields, junk refused; Extras switch and bar in the UI, Plain wording; Playwright
 // 390×844 screenshots.
@@ -23,7 +26,7 @@ function simR(k,days,rd,cb){const D=k.D();let s=START;for(let i=0;i<days;i++){k.
     if(r.btn==='kick')D.logs.push({d:s,id:'KI',t:'KI',rpe:6});else if(r.btn==='run')D.logs.push({d:s,id:r.id,t:r.id,rpe:6,km:5,min:30});
     else if(r.id==='RS')D.logs.push({d:s,id:'RS',t:'RS',rpe:4});else{const ss=doTrain(k,r.id);if(cb)cb(r.id,ss,s);}s=addD(s,1);}}
 const tot=(k,s,c,id)=>{let n=0;s.blocks.forEach(b=>{if(b.warm||b.cool)return;b.items.forEach(it=>{if(k.curVar(it,k.LOC())<0||!it.k||it.f||it.iso||it.test)return;n+=k.setsOf(it,b,c,id);});});return n;};
-const hist=(k,p)=>{const z=boot(),D=setup(z.k,p,START);simR(z.k,28,0);return z;};
+const hist=(k,p,days)=>{const z=boot(),D=setup(z.k,p,START);simR(z.k,days||28,0);return z;};
 
 // 1 off and on-without-tap: identical plans; the off switch ignores a stored tap
 PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);k.today(td);const c=k.ctx(td);
@@ -35,11 +38,16 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
 {const a=boot(),b=boot();setup(a.k,prof('Partner glutes'));setup(b.k,prof('Partner glutes'));b.k.D().opt.ready=true;
  const ra=sim(a.k,42,START).map(r=>r.id+(r.sig||'')),rb=sim(b.k,42,START).map(r=>r.id+(r.sig||''));let d=0;ra.forEach((x,i)=>{if(x!==rb[i])d++;});if(d)issue('6-week simulation with the switch on and no tap: '+d+' days differ');}
 
-// 2 tired vs normal for every profile × A/B/C (A-029 Tired doctrine: volume deload for one day): every exercise about ⅔ of its
-//   working sets (rounded up, at least 2), circuits at most one round less, load and variation unchanged, warm-up and
-//   cool-down complete, floors (45 min, leg session 6 leg sets), hint "3–4 reps before failure"
-PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);k.today(td);D.opt.ready=true;const c=k.ctx(td);
+// 2 tired vs normal for every profile × A/B/C in week 5 and week 10 (A-047 Tired doctrine, measured on the whole session):
+//   about a third fewer working sets of the session (⅔ of the normal count ± 1), whole accessory/circuit exercises first,
+//   then one set less per exercise (never deeper than ⅔ of an exercise, at least 2), load and variation unchanged, warm-up
+//   and cool-down complete, floors (45 min, a leg session keeps ≥ 4 leg sets), hint "3–4 reps before failure";
+//   explicitly Partner lower and Partner glutes Strength B in week 10
+const TW=[];
+[28,63].forEach(off=>PROF.forEach(p=>{const z=hist(boot().k,p,off),k=z.k,D=k.D();const td=addD(START,off);k.today(td);D.opt.ready=true;const c=k.ctx(td);const wkN=off/7+1;
   ['KA','KB','KC'].forEach(id=>{k.day().ready=2;const sn=k.S(id,c),nn=tot(k,sn,c,id);k.day().ready=3;const st=k.S(id,c),nt=tot(k,st,c,id);
+    const tg=Math.round(nn*2/3);if(Math.abs(nt-tg)>1)issue(p.n+' '+id+' week '+wkN+': tired '+nt+' working sets, target ⅔ of '+nn+' = '+tg+' ± 1');
+    TW.push({p:p.n,id,wk:wkN,nn,nt,mn:sn.min,mt:st.min});
     if(nt>nn)issue(p.n+' '+id+': tired '+nt+' sets > normal '+nn);
     if(st.min<45&&sn.min>=45)issue(p.n+' '+id+': tired '+st.min+' min, under the 45 min floor');
     const per=(s,f)=>{const m={};s.blocks.forEach(b=>{b.items.forEach(it=>{const v=k.curVar(it,'g');if(v<0||!it.k)return;m[(b.warm?'W':b.cool?'C':'')+it.k]=f(it,b,v);});});return m;};
@@ -51,10 +59,20 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
       if(t<2&&a>=2)issue(p.n+' '+id+' '+q+': under 2 sets when tired');});
     Object.keys(wT).forEach(q=>{if(wN[q]!=null&&wN[q]!==wT[q])issue(p.n+' '+id+' '+q+': load or variation changed when tired '+wN[q]+' → '+wT[q]);});
     const wc=s=>s.blocks.filter(b=>b.warm||b.cool).map(b=>b.name+':'+b.items.length).join();if(wc(sn)!==wc(st))issue(p.n+' '+id+': warm-up/cool-down shortened when tired');
-    if(k.legSets(sn,c,id)>=6&&k.legSets(st,c,id)<6)issue(p.n+' '+id+': tired leg session lost its leg sets');
-    rep.push(p.n+' '+id+': normal '+nn+' sets / '+sn.min+' min · tired '+nt+' sets / '+st.min+' min');});
+    if(k.legSets(sn,c,id)>=6&&k.legSets(st,c,id)<4)issue(p.n+' '+id+' week '+wkN+': tired leg session under 4 leg sets ('+k.legSets(st,c,id)+')');
+    rep.push(p.n+' '+id+' week '+wkN+': normal '+nn+' sets / '+sn.min+' min · tired '+nt+' sets / '+st.min+' min');});
   D.tab='train';k.day().pick='KC';k.day().ready=3;k.render();if(!/3–4 reps before failure/.test(z.txt()))issue(p.n+': no "3–4 reps before failure" hint');
-  if(z.errs.length)issue(p.n+' JS errors '+z.errs.join('; '));});
+  if(z.errs.length)issue(p.n+' JS errors '+z.errs.join('; '));}));
+['Partner lower','Partner glutes'].forEach(pn=>{const x=TW.find(t=>t.p===pn&&t.id==='KB'&&t.wk===10);if(!x)issue(pn+' KB week 10 not measured');else{const tg=Math.round(x.nn*2/3);
+  rep.push(pn+' KB week 10 (explicit): normal '+x.nn+' → tired '+x.nt+' working sets (target '+tg+' ± 1), '+x.mn+' → '+x.mt+' min');if(Math.abs(x.nt-tg)>1)issue(pn+' KB week 10: '+x.nt+' instead of '+tg+' ± 1');}});
+// weekly floor over the week: one tired day per training week (Strength B), the rest normal – legs + hinge ≥ 10 per training week
+PROF.forEach(p=>{const {k}=boot(),D=setup(k,p,START);D.opt.ready=true;let s=START;
+  for(let i=0;i<70;i++){k.today(s);const r=k.recAll(s,false);if(['KB'].includes(r.id))k.day().ready=3;
+    if(r.btn==='kick')D.logs.push({d:s,id:'KI',t:'KI',rpe:6});else if(r.btn==='run')D.logs.push({d:s,id:r.id,t:r.id,rpe:6,km:5,min:30});
+    else if(r.id==='RS')D.logs.push({d:s,id:'RS',t:'RS',rpe:4});else{const id=k.recTrain(s,'g',false).id;doTrain(k,id);}s=addD(s,1);}
+  const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5),wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={lh:0,dl:false,t:0});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.rd===3)x.t++;if(l.vs)x.lh+=l.vs.legs+l.vs.hinge;});
+  const tw=Object.keys(wk).filter(w=>!wk[w].dl&&+w<10);let td=0;tw.forEach(w=>{td+=wk[w].t;if(wk[w].lh<10)issue(p.n+' week '+(+w+1)+' with a tired Strength B: legs + hinge '+wk[w].lh+' (< 10)');});
+  rep.push(p.n+': 10 weeks with a tired Strength B, '+td+' tired logs, legs + hinge per training week '+tw.map(w=>wk[w].lh).join(' '));});
 // no tests on a tired day: a due Skill Trial waits; "Easy week now" suggested after 3 tired days in 7
 {const z=boot(),k=z.k,D=setup(k,prof('Partner glutes'));let td=null;let s=START;
  for(let i=0;i<70&&!td;i++){k.today(s);const r=k.recAll(s,false);if(r.id==='CH'&&r.btn==='train'){td=s;break;}

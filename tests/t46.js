@@ -108,11 +108,12 @@ PROF.forEach(p=>{const z=boot(),k=z.k,D=setup(k,p,START);let strDays=0,runDays=0
  const G=D.goal;if(!G)issue('kg goal met by the first log ('+JSON.stringify(D.goalsDone)+')');else{if(G.b!==100)issue('kg goal start value not from the first log: '+G.b);if(!(G.v>100))issue('kg goal target not above the start: '+G.v);if(G.nb)issue('kg goal still waiting for a start value');}
  rep.push('kg goal without history: '+g0+' → '+JSON.stringify(G));}
 
-// 8 Tired may shorten to 45 min; the other floors stay
+// 8 Tired may shorten to 45 min; the other floors stay (A-047: a leg session keeps ≥ 4 leg sets on the tired day, the
+//   weekly legs + hinge floor is checked over the week in t37)
 PROF.forEach(p=>{const z=boot(),k=z.k,D=setup(k,p,START);sim(k,28,START);const td=addD(START,28);k.today(td);D.opt.ready=true;const c=k.ctx(td);let under60=0;
  ['KA','KB','KC'].forEach(id=>{k.day().ready=2;const sn=k.S(id,c);k.day().ready=3;const st=k.S(id,c);if(st.min<45&&sn.min>=45)issue(p.n+' '+id+': tired '+st.min+' min (< 45)');if(st.min<60)under60++;
    st.blocks.forEach(b=>b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,'g')<0)return;if(k.setsOf(it,b,c,id)<2)issue(p.n+' '+id+' '+it.k+': tired under 2 sets');}));
-   if(k.legSets(sn,c,id)>=6&&k.legSets(st,c,id)<6)issue(p.n+' '+id+': tired leg session lost its leg sets');
+   if(k.legSets(sn,c,id)>=6&&k.legSets(st,c,id)<4)issue(p.n+' '+id+': tired leg session under 4 leg sets (A-047)');
    const lb=st.blocks.find(b=>b.lowb);if(sn.blocks.some(b=>b.lowb&&b.items.some(it=>it.anc))&&!(lb&&lb.items.some(it=>it.anc)))issue(p.n+' '+id+': tired lost the anchor');
    rep.push(p.n+' '+id+': normal '+sn.min+' · tired '+st.min+' min');});
  if(z.errs.length)issue(p.n+' tired JS errors '+z.errs.join('; '));});

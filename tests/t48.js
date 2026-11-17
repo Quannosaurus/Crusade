@@ -1,5 +1,5 @@
 // @name ux-polish
-// A-028 / A-029: vow card and 2-step goal choice under More, goal card on Today, numbered step ladder on Status;
+// A-028 / A-029 / A-047: vow card and 2-step goal choice under More, goal card on Today, numbered step ladder on Status;
 // UX polish (see tests/README.md). JSDOM checks plus Playwright 390×844 screenshots in Templar and Plain;
 // runtime errors from click handlers are collected (0 expected).
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
@@ -136,6 +136,29 @@ const PLAINBAD=/crusade|Emperor|\boath\b|\bvow\b|Templar|heretic|battle|Battle d
  ERR.push(...z.errs);}
 // bandDrop note gone; doctrine and naming
 {const src=fs.readFileSync(R+'/src/app.js','utf8')+fs.readFileSync(R+'/.build/index.html','utf8');if(/Left out today/.test(src))issue('"Left out today" still in the sources');}
+// ---------- A-047 ----------
+// Tired today: Today follows the training page (a due Skill Trial waits on both), a picked Skill Trial stays allowed
+{const z=boot(),k=z.k,D=prof(z,2);let td=null,s='2026-10-05';
+ for(let i=0;i<70&&!td;i++){k.today(s);const r=k.recAll(s,false);if(r.id==='CH'&&r.btn==='train'){td=s;break;}sim(k,1,s);s=addD(s,1);}
+ if(!td)issue('A-047: no Skill Trial day found');else{D.opt.ready=true;k.day().ready=3;const a=k.recAll(td,false),t=k.trainId(k.day());
+   if(a.id==='CH')issue('A-047: Today still recommends the Skill Trial on a tired day');if(a.id!==t.id)issue('A-047: Today '+a.id+' ≠ training page '+t.id+' on a tired day');
+   D.tab='start';k.render();const tx=z.$('#app').textContent;if(/Skill Trial ·/.test(tx))issue('A-047: Today card still names the Skill Trial');
+   D.tab='train';k.render();const hero=(z.$('.hero')||z.$('#app')).textContent;if(!hero.includes(k.NAMES[t.id]))issue('A-047: training page does not show '+k.NAMES[t.id]);
+   k.day().pick='CH';if(k.trainId(k.day()).id!=='CH')issue('A-047: a picked Skill Trial is not allowed on a tired day');delete k.day().pick;
+   k.day().ready=2;if(k.recAll(td,false).id!=='CH')issue('A-047: Skill Trial gone without the tired tap');}
+ ERR.push(...z.errs);}
+// Plain: the entries/calendar tab is "Log"; the other themes keep a fitting name
+for(const [th,word] of [['plain','Log'],['templar','Chronicle'],['sanguine','Annals'],['sisters','Chronicle of faith'],['slaanesh','Indulgences'],['nurgle','The tally']]){
+ const z=boot(),k=z.k,D=ready(k,{theme:th});D.tab='start';k.render();const b=z.$('#nav [data-tab=verlauf]');if(!b||b.textContent!==word)issue('A-047 '+th+': tab "'+(b&&b.textContent)+'" ≠ '+word);
+ if(th==='plain'&&z.$$('#nav button').some(x=>x.textContent==='Stats'))issue('A-047 plain: a tab still says Stats');ERR.push(...z.errs);}
+// class link: kickboxing wording only with kickboxing days; without them "another class or activity", gone with Other activity off
+{const z=boot(),k=z.k,D=ready(k,{kickDays:[]});D.tab='start';k.render();let tx=z.$('#app').textContent;
+ if(/Did a kickboxing or other class/.test(tx))issue('A-047: kickboxing link without kickboxing days');if(/Did another class or activity/.test(tx))issue('A-047: class link although Other activity is off');
+ D.opt.oa=true;k.render();tx=z.$('#app').textContent;const l=z.$$('[data-tab=other]');if(!/Did another class or activity\? Log it →/.test(tx))issue('A-047: no "Did another class or activity?" link with Other activity on');
+ if(l.length!==1)issue('A-047: '+l.length+' links to other activities (1 expected)');else{z.click(l[0]);if(D.tab!=='other')issue('A-047: class link does not open the activity page');}
+ D.tab='start';D.kickDays=[2,5];k.render();tx=z.$('#app').textContent;if(/Did another class or activity/.test(tx))issue('A-047: "another class" wording with kickboxing days');
+ if(!z.$('[data-tab=kick]'))issue('A-047: no kickboxing card with kickboxing days');if(!z.$('[data-tab=other]'))issue('A-047: Other activity link gone with kickboxing days');
+ D.opt.oa=false;k.render();if(z.$('[data-tab=other]'))issue('A-047: Other activity link while off');ERR.push(...z.errs);}
 // ---------- Playwright 390×844 ----------
 let chromium;try{({chromium}=require('playwright'));}catch(e){issue('playwright missing');return done();}
 const guard=require('./netguard');const b=await chromium.launch();const errs=[];
