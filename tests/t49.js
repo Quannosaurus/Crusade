@@ -11,7 +11,7 @@
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {longSim,addD}=require('./fixtures/longsim.js');const PROF=require('./fixtures/profiles.json');
-const ACTIVE=['A-030b'];
+const ACTIVE=['A-030b','A-037'];
 const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',names:'A-043',run:'A-044'};
 const sharp=x=>ACTIVE.includes(STONE[x]);
 const ONLY=process.argv.slice(2).filter(a=>!a.startsWith('-'));const WEEKS=+(process.argv.find(a=>/^--weeks=/.test(a))||'--weeks=104').split('=')[1];
