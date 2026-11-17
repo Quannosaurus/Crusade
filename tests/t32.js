@@ -52,7 +52,7 @@ const names=(k,s,b)=>b.items.map(it=>it.opts[Math.max(0,k.curVar(it,k.LOC()))].n
  const logKA=reps=>{const dy=k.day();dy.pick='KA';dy.fin={rpe:6};const s=k.S('KA',k.ctx(k.today()));s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(it.gx)dy.inp['KA-'+bi+'-'+ii]={s:[String(reps),String(reps)]};}));k.saveTrain();};
  if(k.lvl()!==0)issue('setup level');logKA(3);if(D.profile.pull!==4)issue('log lowered the profile: '+D.profile.pull);
  k.today('2026-11-18');logKA(6);if(D.profile.pull!==6)issue('log did not raise the profile: '+D.profile.pull);
- const t=(z.$('.toast')||{}).textContent||'';if(!/Level up: Intermediate/.test(t))issue('no level-up toast: '+t);
+ const t=(z.$('.toast')||{}).textContent||'';/* A-041: the toast names the axis that rose */if(!/Level up: Upper Intermediate/.test(t))issue('no level-up toast: '+t);
  const old=JSON.parse(k.bkJSON());old.logs.push({d:'2026-10-01',id:'CH',t:'Skill Trial',rpe:8});old.logs.sort((a,b)=>a.d<b.d?-1:1);
  const y=boot();y.k.today('2026-11-18');if(!y.k.restore(JSON.stringify(old)))issue('backup with an old CH log rejected');else{const E=y.k.D();if(!E.logs.some(l=>l.id==='CH'&&l.d==='2026-10-01'))issue('old CH log lost');
    ['verlauf','stand','start'].forEach(t=>{E.tab=t;y.k.render();});if(y.errs.length)issue('old CH log JS errors '+y.errs.join('; '));if(!(y.k.hist('2026-11-18').CH>40))issue('old CH log not counted');}}

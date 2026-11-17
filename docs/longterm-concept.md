@@ -95,6 +95,16 @@ Problem: Drei Stufen, nur über Klimmzüge, Dips und Muscle-ups. Ein Unterkörpe
 Daten: nichts Neues; der Stand wird aus `D.profile`, `D.ex` und `D.pr` berechnet. Migration: nein.
 Entscheidung: freigegeben (Captain). Risiko: Pläne ändern sich für Unterkörper-Profile (mehr Runden). Test-Fixture t31 wird neu aufgenommen (`node tools/record-fixture.js`). Aufwand: mittel. Auftrag: **A-041**.
 
+Umsetzung (A-041): Unterkörper-Stand = bestes Gewicht der Anker-Variante (`g_ht`, `gl_ht`, `c_sq`, `gl_sq`) gegen ihr erstes
+Gewicht und die Wochen seitdem. Stufen [Verhältnis, Wochen]: 1 = ×1,25 und 12 Wochen, 2 = ×1,5 und 26 Wochen, 3 = ×1,75 und
+52 Wochen. Begründung: Einsteiger gelten nach etwa 6 Monaten als fortgeschritten, Fortgeschrittene nach Jahren [Q3]; die
+Kraftzuwächse sinken von etwa 40 % (untrainiert) über 20 % auf etwa 10 % (fortgeschritten) [Q58]. Wer im Oberkörper über
+Basic liegt oder als „Experienced“ startet, ist nach [Q3] kein Neuling: Unterkörper ≥ 1. Oberkörper: Stufe 1 wie bisher
+(5 Klimmzüge, 8 Dips), Stufe 2 mit 3 Muscle-ups oder über dasselbe Verhältnis der Klimmzüge (ab mindestens 5) zum
+ersten Testwert, Stufe 3 nur über das Verhältnis, ohne Muscle-up. Runden je Block nach dem Stand seiner Achse; das Satzband eines
+Musters steigt auf der vierten Stufe seiner Achse um 2 Sätze an der Obergrenze [Q2][Q4]. Die Variantenwahl (`lvl()`)
+bleibt unverändert. t31 blieb unverändert (Fixture nicht neu aufgenommen): die Pläne der ersten Wochen ändern sich nicht.
+
 ## L4 – Blöcke mit wechselndem Akzent (groß)
 
 Problem: Woche 13 ist Woche 1 (T1), Volumen bleibt zwei Jahre gleich (T2).
@@ -235,4 +245,5 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 - [Q55] Baz-Valle E, Schoenfeld BJ, Torres-Unda J, Santos-Concejero J, Balsalobre-Fernández C. The effects of exercise variation in muscle thickness, maximal strength and motivation in resistance trained men. *PLoS One* 2019;14(12):e0226989.
 - [Q56] Bickel CS, Cross JM, Bamman MM. Exercise dosing to retain resistance training adaptations in young and older adults. *Med Sci Sports Exerc* 2011;43(7):1177–1187.
 - [Q57] Spiering BA, Mujika I, Sharp MA, Foulis SA. Maintaining physical performance: the minimal dose of exercise needed to preserve endurance and strength over time. *J Strength Cond Res* 2021;35(5):1449–1458.
+- [Q58] Kraemer WJ, Ratamess NA. Fundamentals of resistance training: progression and exercise prescription. *Med Sci Sports Exerc* 2004;36(4):674–688 (strength gains of about 40 % untrained, 20 % moderately trained, 16 % trained, 10 % advanced, 2 % elite over 4 weeks to 2 years).
 - [Q9] Bell L et al. 2023 (Deload-Konsens): siehe `docs/training-audit.md`.
