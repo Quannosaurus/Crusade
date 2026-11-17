@@ -83,7 +83,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
     if(l.exs&&typeof l.exs==="object"&&!Array.isArray(l.exs)){var xs={};Object.keys(l.exs).slice(0,60).forEach(function(k){var v=l.exs[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&Array.isArray(v)){var a=setsArr(v);if(a.length)xs[k]=a;}});if(Object.keys(xs).length)o.exs=xs;}
     if(l.tv&&typeof l.tv==="object"){o.tv={};Object.keys(l.tv).forEach(function(k){if(/^[a-z]+$/.test(k)&&okKey(k))o.tv[k]=numv(l.tv[k]);});}
     return o;});
-  if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);if(Array.isArray(e.s)){var sa=setsArr(e.s);if(sa.length)x.s=sa;}}});
+  if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);if(Array.isArray(e.s)){var sa=setsArr(e.s);if(sa.length)x.s=sa;}if(e.lad!=null){var ld=Math.round(numv(e.lad));if(ld>=1&&ld<=5)x.lad=ld;}}});
   if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80)};if(e.p!=null)x.p=numv(e.p);if(e.km!=null)x.km=lim(numv(e.km),KMMAX)||0;if(e.min!=null)x.min=lim(numv(e.min),MINMAX)||0;}});
   if(typeof n.emph==="string"&&EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(typeof n.favP==="boolean")b.favP=n.favP; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90&&okKey(x);}).slice(0,20); if(own(THEMES,n.theme))b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string"&&x.length<40&&okKey(x);}).slice(0,50);
   if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&okKey(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
@@ -329,7 +329,7 @@ var EMPH=[["bal","Balanced","Upper and lower body evenly. The standard plan."],
 function emph(){var e=D.emph||"bal";return EMPH.some(function(x){return x[0]===e;})?e:"bal";}
 function GLUTEX(){var g=GLUTES();return [g[0],g[1],g[3],
   P("g_fp",15,25,"reps","Soles together, knees out, squeeze hard at the top",["Cable pull-through|g|w","Frog pumps","Banded glute bridge|b"],"more reps or weight","3"),
-  P("g_45",10,15,"reps","Round the upper back slightly, push the hips into the pad with the glutes",["45° back extension, glute-biased|g","Reverse hyperextension|g","Hip extension on the floor (superman)"],"hold a plate","3"),
+  P("g_45",10,15,"reps","Round the upper back slightly, push the hips into the pad with the glutes",["45° back extension, glute-biased|g|w","Reverse hyperextension|g","Hip extension on the floor (superman)"],"hold a plate","3"),
   g[5]];}
 function UPPERX(){return [
   P("u_lat",10,15,"reps","Lead with the elbows, stop at shoulder height",["Cable lateral raises|g|w","Dumbbell lateral raises|d|w","Band lateral raises|b"],"more weight or slower","3"),
@@ -847,7 +847,30 @@ function kgRnd(x,w){var u=kgUnit(w);return Math.max(0,Math.round(x/u)*u);}
 /* Only where the option list is a known progression: stage lists ("next stage") run upward, items with start variants
    (lv = [base, advanced]) run toward the advanced one. Gym-only weighted options and easier forms are never "next". */
 var EASYV=/assist|negative|knee|incline|easier|between (two )?chairs|bench dips|wall push/i;
+/* ===== A-039 step ladder (L2). Options stay in their stored order (variant indices are saved data); ORD lists the
+   bodyweight forms of an item from easy to hard, so "Next variation" also works where the list mixes equipment.
+   After the variations, every bodyweight progression gets fixed rungs (D.ex[key].lad 0–5): slow lowering 3 s, 5 s, a 2 s
+   pause at the hardest point, 15 s less rest between sets, then a load (vest, backpack, plate) with normal weight steps.
+   Holds in seconds skip the tempo rungs. A rung is offered after the top of the range twice in a row; the range starts
+   again at the bottom. Source: [Q52] (repetitions, tempo and rest are valid overload where load is not possible). */
+var ORD={x_sp:[2,1,0],x_lr:[2,1,0],x_aw:[2,1,0],x_be:[2,1,0],g_45:[2,1,0],h_dip:[2,0,1],a2_ww:[2,0,1],h_sq:[0,2,3],g_bss:[2,1,0],g_su:[2,1],
+  c_calf:[0,1],h_ham:[0,2],g_ht:[2,3],h_pike:[1,0],c_lu:[2,0],ch_row:[3,0],a2_row:[0],u_row:[3],h_pull:[2,0],b_pu:[3,2],b2_dp:[2],g_fp:[2,1],x_db:[1,0]};
+var LADN=["","Slow lowering, 3 s","Slow lowering, 5 s","2 s pause at the hardest point","15 s less rest between sets","Add a load (vest, backpack or plate)"];
+var LADC=["","Lower for 3 s on every rep.","Lower for 5 s on every rep.","Hold 2 s at the hardest point of every rep.","Rest 15 s less between sets than the block says.","Add a light load: about 2.5–5 kg to start, then the weight goes up."];
+var LADMAX=5;
+function ladOf(it,v){var st=it&&it.k&&D.ex[it.k+"#"+v];return st&&st.lad?st.lad:0;}
+/* weight entry: the option has one, or the load rung of the ladder is reached */
+function wOn(it,v){return !!(it.opts[v]&&it.opts[v].w)||(!it.f&&!it.iso&&!it.test&&ladOf(it,v)>=LADMAX);}
+function ladNext(it,v){var l=ladOf(it,v),isS=it.unit.indexOf("s")===0;if(l>=LADMAX)return 0;var n=l+1;if(isS&&n<4)n=4;return n;}
+/* top of the range twice in a row: the stored weakest set now and the previous log of the same variant */
+/* one tap: the next rung, the range starts at the bottom (shown as "New step" until the next log) */
+function ladTake(it,v){if(!it||!it.k)return false;var e=D.ex[it.k+"#"+v],nl=e&&ladNext(it,v);if(!nl)return false;e.lad=nl;e.r=it.lo;e.hold=true;e.stall=0;return true;}
+function topTwice(it,v){var K=it.k+"#"+v,st=D.ex[K];if(!st||st.r<it.hi)return false;var L=D.logs,n=0;
+  for(var i=L.length-1,i0=Math.max(0,L.length-400);i>=i0;i--){var l=L[i];if(l.bl||!l.ex||!own(l.ex,K))continue;var x=l.exs&&own(l.exs,K)?Math.min.apply(null,l.exs[K]):l.ex[K][0];if(x>=it.hi)n++;else break;if(n>=2)return true;}
+  return false;}
 function nextVar(it,v,loc){if(it.kx||it.fx||it.test||it.iso||it.f)return -1;
+  if(own(ORD,it.k)&&!/next stage/.test(it.up||"")&&!(it.lv&&it.lv[0]!==it.lv[1])){var od=ORD[it.k],p=od.indexOf(v),a0=avail(it,loc);if(p<0)return -1;
+    for(var q=p+1;q<od.length;q++)if(a0.indexOf(od[q])>=0)return od[q];return -1;}
   var dir=/next stage/.test(it.up||"")?1:(it.lv&&it.lv[0]!==it.lv[1]?(it.lv[1]>it.lv[0]?1:-1):0);if(!dir)return -1;var a=avail(it,loc);
   /* A-037: a stage ladder ends at its highest stage ("Full …"); nothing after it is offered as the next step. */
   var top=-1;it.opts.forEach(function(o,i){if(top<0&&/^Full /i.test(o.n))top=i;});if(top>=0&&dir>0&&v>=top)return -1;
@@ -879,24 +902,29 @@ function backTwice(it,v,step){var K=it.k+"#"+v,p=patKey(it.k),h=[];D.logs.forEac
   var rT=Math.max(Math.min(it.lo,prev[0]),Math.min(it.hi,prev[0])-bl*step),wT=prev[1]?kgRnd(prev[1]-bl*kgStep(prev[1]),prev[1]):0;
   return !(last[1][0]>=rT&&(last[1][1]||0)>=wT);}
 function target(it,v){
-  var o=it.opts[v], st=D.ex[it.k+"#"+v], isS=it.unit.indexOf("s")===0, step=isS?(it.hi-it.lo>=20?5:2):1, w=null;
+  var o=it.opts[v], st=D.ex[it.k+"#"+v], isS=it.unit.indexOf("s")===0, step=isS?(it.hi-it.lo>=20?5:2):1, w=null, ow=wOn(it,v);
   if(!st) return {r:it.lo,w:null,note:"",first:true};
+  var g=target0(it,v,o,st,isS,step,ow),lad=st.lad||0;if(lad){g.ladC=LADC[lad];if(lad>=LADMAX)g.wl=true;}
+  if(g.top&&!ow&&nextVar(it,v,LOC())<0&&topTwice(it,v)){var nl=ladNext(it,v);if(nl){g.lad=nl;g.note="Top of the range twice: next step “"+LADN[nl]+"”.";}}
+  return g;}
+function target0(it,v,o,st,isS,step,ow){var w=null;
   w=st.w||null; var p0=patLast(it.k,st.d), gap=gapDays(p0,TODAY), inc=w?kgStep(w):0, rh=rhythm(patKey(it.k),p0), back=backSteps(gap,rh);
   if(back&&backTwice(it,v,step)) back=0;
-  if(back){var fl=Math.max(1,Math.min(it.lo,st.r)), r0=Math.max(fl,Math.min(it.hi,st.r)-back*step), w0=(o.w&&w)?kgRnd(w-back*inc,w):w;
+  if(back){var fl=Math.max(1,Math.min(it.lo,st.r)), r0=Math.max(fl,Math.min(it.hi,st.r)-back*step), w0=(ow&&w)?kgRnd(w-back*inc,w):w;
     return {r:r0,w:w0,note:"Last entry "+gap+" days"+(rh?" (usual rhythm about "+Math.round(rh)+" days)":"")+": "+(back===2?"two steps":"one step")+" back."};}
   if(cbInfo(TODAY).low) return {r:Math.min(it.hi,Math.max(st.r,1)),w:w,note:"Comeback after a break: same target as last time, no step up yet."};
+  if(st.hold&&st.lad&&st.r===it.lo) return {r:it.lo,w:w,note:"New step: "+LADN[st.lad]+". Start at the bottom of the range."};
   if(st.hold) return {r:Math.min(it.hi,Math.max(st.r,1)),w:w,note:"At the limit last time: same target."};
   if((st.stall||0)>=3){
-    if(o.w&&w){var w1=kgRnd(w*0.9,w);if(w1>=w)w1=kgRnd(w-kgUnit(w),w);
+    if(ow&&w){var w1=kgRnd(w*0.9,w);if(w1>=w)w1=kgRnd(w-kgUnit(w),w);
       return {r:Math.min(it.hi,Math.max(st.r,it.lo)),w:w1,note:"Three times without progress: 10 % lighter, then build back up.",low:true,reset:true};}
     var rr=Math.max(Math.max(1,Math.min(it.lo,st.r)),Math.min(it.hi,st.r)-2*step),dd=Math.min(it.hi,st.r)-rr;
     return {r:rr,w:w,note:"Three times without progress: "+(dd>0?dd+" "+(isS?"s":"reps")+" fewer":"hold at the bottom of the range")+", then build back up.",low:true,reset:true};}
-  if(st.r>=it.hi){ if(o.w&&w) return {r:it.lo,w:w+inc,note:"Last time "+st.r+" at "+fmtKg(w)+" kg: weight up.",top:true};
+  if(st.r>=it.hi){ if(ow&&w) return {r:it.lo,w:w+inc,note:"Last time "+st.r+" at "+fmtKg(w)+" kg: weight up.",top:true};
     return {r:it.hi,w:w,note:"Top of the range reached"+(it.up?". Next step: "+it.up:"")+". If it stays easy, "+(nextVar(it,v,LOC())>=0?"take the next variation.":"swap the variation."),top:true}; }
-  if(st.r<it.lo){ if(o.w&&w) return {r:it.lo,w:kgRnd(w-inc,w),note:"Last time only "+st.r+": weight down.",low:true};
+  if(st.r<it.lo){ if(ow&&w) return {r:it.lo,w:kgRnd(w-inc,w),note:"Last time only "+st.r+": weight down.",low:true};
     return {r:Math.max(1,st.r+1),w:w,note:"Below the range. Easier variation or band via “Swap” until "+it.lo+" are clean.",low:true}; }
-  return {r:Math.min(it.hi,st.r+step),w:w,note:"Last time "+st.r+(o.w&&w?" at "+fmtKg(w)+" kg":"")+"."};
+  return {r:Math.min(it.hi,st.r+step),w:w,note:"Last time "+st.r+(ow&&w?" at "+fmtKg(w)+" kg":"")+"."};
 }
 function setsOf(it,b,c,id){ if(b&&b.rounds){var r=rounds(b,c,id);return b.lowb&&it.ts!=null?Math.min(it.ts,r):r;} var n=parseInt(String(it.sets),10); if(it.ts!=null) return it.ts; return isNaN(n)?1:n; }
 
@@ -1532,11 +1560,11 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(it.f) tg=it.f;
   else if(it.iso){var m=D.profile[it.iso],q=isoP(m);n=q.n;isS=true;tg=q.n+" × "+q.h+" s";g={r:q.h};
     if(q.lev<0) extra='<div class="c gold">Max under 11 s: pick an easier variation via “Swap”.</div>';
-    if(q.lev>0) extra='<div class="c gold">Max over 33 s: pick a harder variation'+(it.iso==="hsw"?' or hands closer to the wall, only the toes touch':(it.iso==="tuck"?', so practise the straight-leg L-sit':''))+'.</div>';
-    extra+='<div class="c">Your max: '+Math.round(m)+' s. Complete all sets and it goes up automatically.</div>';}
+    if(q.lev>0) extra='<div class="c gold">3 × 20 s reached: the harder form is the next step, not more seconds'+(it.iso==="hsw"?'. Hands closer to the wall, only the toes touch':(it.iso==="lsit"?'. Lift the legs higher, toward a V':(it.iso==="hsf"?'. Hold longer only once the line is clean':'')))+'.</div>'+(it.iso==="tuck"?'<div class="c"><button type="button" class="lnk nxv isoup" data-a="isoup" data-k="tuck">→ Harder form: L-Sit, legs straight</button></div>':'');
+    extra+='<div class="c">Your max: '+Math.round(m)+' s.'+(q.lev>0?'':' Complete all sets and it goes up automatically.')+'</div>';}
   else if(it.test&&it.tvo){n=1;isS=it.unit==="s";var lt=lastTv(it.test);tg="Max "+(isS?"s":"reps")+(it.lw?" · "+fmtKg(it.lw)+" kg":"")+(lt!=null?" · last trial "+lt+(isS?" s":""):" · first trial");g={r:""};}
   else if(it.test){n=1;isS=it.unit==="s";tg=(D.profile[it.test]||0)>0?"Max · so far "+D.profile[it.test]+" "+it.unit:"Max "+it.unit+" · first trial";g={r:""};}
-  else {g=target(it,v);n=setsOf(it,b,c,sid);isS=it.unit.indexOf("s")===0;tg=n+" × "+g.r+" "+it.unit+(o.w&&g.w?" · "+fmtKg(g.w)+" kg":"");}
+  else {g=target(it,v);n=setsOf(it,b,c,sid);isS=it.unit.indexOf("s")===0;tg=n+" × "+g.r+" "+it.unit+(wOn(it,v)&&g.w?" · "+fmtKg(g.w)+" kg":"");}
   var pc=picFor(o.n);
   var h='<div class="ex'+(pc?" pose":"")+(on?" done":"")+(sk?" skip":"")+'"><input type="checkbox" id="c'+id+'" data-a="done" data-id="'+id+'"'+(on?" checked":"")+(sk?" disabled":"")+' aria-label="'+esc(o.n)+' done">'+(pc?'<div class="pw">'+pc+'</div>':'')+'<div class="exb">';
   h+='<label class="n" for="c'+id+'">'+((D.fav||[]).indexOf(o.n)>=0?'<span class="fvs" aria-label="favourite">★ </span>':'')+esc(o.n)+'</label>';
@@ -1554,10 +1582,12 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(it.c) h+='<div class="c">'+esc(it.c)+'</div>';
   var tn=termNote(o.n+" "+tg+" "+(it.c||"")),hw=((pc?"":howto(o.n))+(tn?" "+tn:"")).trim(); if(hw) h+='<details class="how"><summary>How?</summary><p>'+esc(hw)+'</p></details>';
   if(g&&g.note) h+='<div class="c gold">'+esc(g.note)+'</div>';
-  if(g&&g.top&&!o.w){var nv=nextVar(it,v,loc);if(nv>=0)h+='<div class="c"><button type="button" class="lnk nxv" data-a="nxv" data-id="'+id+'" data-v="'+nv+'">→ Next variation: '+esc(it.opts[nv].n)+'</button></div>';}
+  if(g&&g.ladC) h+='<div class="c gold ladc">'+esc(g.ladC)+'</div>';
+  if(g&&g.lad) h+='<div class="c"><button type="button" class="lnk nxv lad" data-a="lad" data-id="'+id+'" data-v="'+v+'">→ Next step: '+esc(LADN[g.lad])+'</button></div>';
+  if(g&&g.top&&!wOn(it,v)){var nv=nextVar(it,v,loc);if(nv>=0)h+='<div class="c"><button type="button" class="lnk nxv" data-a="nxv" data-id="'+id+'" data-v="'+nv+'">→ Next variation: '+esc(it.opts[nv].n)+'</button></div>';}
   h+=extra;
   if(!it.f){ h+='<div class="inp">';
-    if(o.w&&!it.iso&&!it.test) h+='<label>kg<input type="number" step="0.5" inputmode="decimal" data-inp="w" data-id="'+id+'" value="'+esc(inp.w)+'" placeholder="'+(g.w||"")+'"></label>';
+    if(wOn(it,v)&&!it.iso&&!it.test) h+='<label>kg<input type="number" step="0.5" inputmode="decimal" data-inp="w" data-id="'+id+'" value="'+esc(inp.w)+'" placeholder="'+(g.w||"")+'"></label>';
     h+=setBoxes(id,n,inp,g.r,isS,rest,last)+'</div>'; }
   var isFav=(D.fav||[]).indexOf(o.n)>=0,pl=!it.f&&!it.test&&!it.iso;
   var mn=(pl&&!it.kx?'<button type="button" class="lnk fv'+(isFav?" on":"")+'" data-a="fav" data-n="'+esc(o.n)+'" aria-pressed="'+isFav+'">'+(isFav?"★ Favourite":"☆ Favourite")+'</button>':'')+
@@ -2543,18 +2573,18 @@ function saveTrain(){
     /* P-5: after three stalls the target steps back (10 % or 2 reps); that session starts the rebuild. */
     if(pv&&(pv.stall||0)>=3)stall=0;
     /* The top of a bodyweight range is no stall: the next step is a harder variation, not a smaller target. */
-    if(r>=it.hi&&!(it.opts[v].w&&w))stall=0;
+    if(r>=it.hi&&!(wOn(it,v)&&w))stall=0;
     var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(sets.length||setsOf(it,b,c,id)));
     if(kit){D.kitD=D.kitD||{};D.kitD[patKey(it.k)]=TODAY;}
     /* Field kit days never downgrade a shared variant and never count towards a stall (A-019 addendum). */
-    if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) {D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};if(pv.s)D.ex[it.k+"#"+v].s=pv.s;}
-    else {D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:kit||cbk?(pv&&pv.stall||0):stall};if(sets.length)D.ex[it.k+"#"+v].s=setsArr(sets);}
+    if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) {D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};if(pv.s)D.ex[it.k+"#"+v].s=pv.s;if(pv.lad)D.ex[it.k+"#"+v].lad=pv.lad;}
+    else {D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:kit||cbk?(pv&&pv.stall||0):stall};if(sets.length)D.ex[it.k+"#"+v].s=setsArr(sets);if(pv&&pv.lad)D.ex[it.k+"#"+v].lad=pv.lad;}
     /* I-43: every set's reps/seconds go into the log additively (l.exs[key]); progression and stall still use the weakest set. */
     if(sets.length)exs[it.k+"#"+v]=setsArr(sets);
     if((it.k==="fl_h"||it.k==="pl_h")&&v<=4&&r>=it.lo){var pk=it.k==="fl_h"?"flSt":"plSt";if(v>D.profile[pk])D.profile[pk]=v;}
     /* Re-rating from logs (P-3): a clean set of a pattern variant above the status raises it, never lowers it. */
     var pk=PATP[it.opts[v].n];if(pk&&!(w>0)&&sets.length){var mxs=Math.max.apply(null,sets);if(mxs>(D.profile[pk]||0))D.profile[pk]=mxs;}
-    if(it.opts[v].w&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
+    if(wOn(it,v)&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
     if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
   });});
   var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
@@ -2646,6 +2676,8 @@ document.addEventListener("click",function(e){
   else if(a==="kitok"){D.kit=(D._kitSel||[]).filter(function(x){return "kbdsr".indexOf(x)>=0;});dy.kit=true;D._kitAsk=false;delete D._kitSel;}
   else if(a==="kitno"){D._kitAsk=false;delete D._kitSel;}
   else if(a==="skip"){var sid=t.dataset.id;if(dy.skip[sid])delete dy.skip[sid];else{dy.skip[sid]=1;delete dy.done[sid];autoNext(sid);}}
+  else if(a==="lad"){var ix=findItem(t.dataset.id);if(ix&&ladTake(ix,+t.dataset.v))delete dy.inp[t.dataset.id];}
+  else if(a==="isoup"){if(t.dataset.k==="tuck"&&D.profile.lsit<11){D.profile.lsit=11;}}
   else if(a==="nxv"){var lx=D.tab==="kick"?"h":LOC(),ix=findItem(t.dataset.id),nv=+t.dataset.v;if(ix&&avail(ix,lx).indexOf(nv)>=0){D.vr[lx+"|"+vkey(ix)]=nv;delete dy.inp[t.dataset.id];}}
   else if(a==="chg"){var lc=D.tab==="kick"?"h":LOC(),it=findItem(t.dataset.id),av=avail(it,lc),cur=curVar(it,lc);D.vr[lc+"|"+vkey(it)]=av[(av.indexOf(cur)+1)%av.length];delete dy.inp[t.dataset.id];}
   else if(a==="runtype"){dy.run=t.dataset.v;}
@@ -2809,5 +2841,5 @@ function startHold(sec,sides){document.body.classList.add("tmr");audio();stop();
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();

@@ -13,7 +13,7 @@
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {longSim,addD}=require('./fixtures/longsim.js');const PROF=require('./fixtures/profiles.json');
-const ACTIVE=['A-030b','A-037','A-038'];
+const ACTIVE=['A-030b','A-037','A-038','A-039'];
 const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',names:'A-043',run:'A-044'};
 const sharp=x=>ACTIVE.includes(STONE[x]);
 const ONLY=process.argv.slice(2).filter(a=>!a.startsWith('-'));const WEEKS=+(process.argv.find(a=>/^--weeks=/.test(a))||'--weeks=104').split('=')[1];
@@ -33,7 +33,7 @@ function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math
   longSim(k,DAYS,START,course,7+p.n.length,ev=>{const Q=q(ev.i);
     if(ev.type==='target'){const {it,g,st,v}=ev;
       if(st&&st.r>=it.lo&&g.r<it.lo){m.under++;if(!m.underEx)m.underEx=ev.d+' '+ev.name+' '+g.r+' < '+it.lo;}
-      const kk=it.k+'#'+v;if(!it.opts[v].w&&g.top&&ev.nv<0){const t=m.top[kk]||(m.top[kk]={from:ev.d});const wks=(Date.parse(ev.d)-Date.parse(t.from))/864e5/7;if(wks>m.topMax){m.topMax=wks;m.topEx=ev.name;}}
+      const kk=it.k+'#'+v;if(!it.opts[v].w&&!g.wl&&g.top&&ev.nv<0&&!g.lad){const t=m.top[kk]||(m.top[kk]={from:ev.d});const wks=(Date.parse(ev.d)-Date.parse(t.from))/864e5/7;if(wks>m.topMax){m.topMax=wks;m.topEx=ev.name;}}
       else delete m.top[kk];}
     if(ev.type==='session'){const S=ev.s,bl=S.blocks;
       if(STR.includes(ev.id)){const wi=bl.findIndex(b=>b.warm),ci=bl.findIndex(b=>b.cool);

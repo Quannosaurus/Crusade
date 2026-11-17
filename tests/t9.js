@@ -20,4 +20,7 @@ if(!/&lt;img/.test(d.getElementById('app').innerHTML))issue('Text nicht maskiert
 {const c=k.cleanImport({v:3,logs:[{d:'2026-11-10',id:'KA',t:'A',rpe:6,exs:{'p_pull#0':['8','<b>',8,-2],'<x>#0':[1],'p_dip#0':'8,8'}}],ex:{'p_pull#0':{r:8,w:0,d:'2026-11-10',n:'P',s:['<script>',7,{}]}}});
  const l=c.logs[0];if(!l.exs||JSON.stringify(l.exs['p_pull#0'])!=='[8,8]'||l.exs['<x>#0']||l.exs['p_dip#0'])issue('I-43 exs not cleaned: '+JSON.stringify(l.exs));
  if(JSON.stringify(c.ex['p_pull#0'].s)!=='[7]')issue('I-43 D.ex s not cleaned: '+JSON.stringify(c.ex['p_pull#0'].s));}
+// A-039: ladder rung 1–5 only
+{const c=k.cleanImport({v:3,ex:{'p_pull#0':{r:8,n:'P',lad:'<b>'},'p_dip#0':{r:8,n:'D',lad:9},'p_row#0':{r:8,n:'R',lad:4}}});
+ if(c.ex['p_pull#0'].lad!=null||c.ex['p_dip#0'].lad!=null||c.ex['p_row#0'].lad!==4)issue('A-039 lad not cleaned: '+JSON.stringify(c.ex));}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

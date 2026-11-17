@@ -78,6 +78,8 @@ Nach einer neuen Sprosse beginnt die Spanne wieder unten. Halteübungen: nach 3 
 (z. B. L-sit → erhöhte Beine), nicht mehr Sekunden. Für Front lever und Planche endet „Next variation“ bei „Full“ (vorgezogen in A-037).
 
 Daten: `D.ex[key].lad` (Sprosse 0–5), optional. Fehlt das Feld, gilt 0. `cleanImport` lässt 0–5 zu.
+
+Umsetzung (A-039, Session 14): Die Optionslisten bleiben in ihrer gespeicherten Reihenfolge, weil die Varianten-Indizes in `D.vr` und `D.ex` stehen; eine eigene Reihenfolge `ORD` ordnet die Körpergewichtsformen nach Schwierigkeit. Gewicht steht als letzte Sprosse (5), weil es danach unbegrenzt in normalen Gewichtsschritten weitergeht; die Sprossen 1–4 sind Tempo, Pause und Satzpause (−15 s einmal). Halteübungen in Sekunden beginnen bei Sprosse 4.
 Migration: nein. Aufwand: mittel. Auftrag: **A-039**.
 
 ## L3 – Level mit klaren Kriterien, auch für Beine (mittel)
