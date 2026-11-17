@@ -1,0 +1,236 @@
+# Langzeit-Konzept: Begleiter auf Dauer (A-030)
+
+Stand: freigegeben (A-030b, Session 13). Grundlage: 104-Wochen-Simulation von 5 Profilen auf b5af25f (A-030a).
+
+## Entscheidungen des Captains
+
+- Alle Bausteine L1–L8 sind freigegeben und werden **gestaffelt** umgesetzt, je Baustein ein eigener Auftrag (Tabelle „Aufträge“).
+- L4: **vier Akzent-Blöcke** zu je 6 Trainingswochen (Grundlage, Kraft, Umfang, Fertigkeit und Tempo), nicht nur die Rotation auf Phase 1/2.
+- L3: Der **Unterkörper-Stand** kommt ins Level, auch wenn sich damit die Pläne der Unterkörper-Profile ändern (mehr Runden).
+- L8: Das **Love-Theme** ist vom Textausbau (Tagessprüche, Abschluss-Meldungen) ausgenommen; seine Notizen bleiben verschlüsselt und werden nur vom Captain gepflegt.
+- L7 Erhaltung und der Tagesmodus „Tired“ stützen sich auf **dieselben Quellen**: Bell et al. 2023 [Q9], Spiering et al. 2021 [Q57], Bickel et al. 2011 [Q56].
+
+## Aufträge
+
+| Auftrag | Baustein | Inhalt |
+|---|---|---|
+| A-030b | Prüfstein | Konzept einchecken, Langzeit-Test t49 als eigener Lauf (`sh tests/longterm.sh`) |
+| A-037 | L1 + Teil S4 | Pausenregel nach üblichem Rhythmus; „Next variation“ endet bei „Full“ |
+| A-038 | L8 Technik | `cycWk` merken, Import-Deckel 20.000 mit Hinweis, Datum mit Jahr |
+| A-039 | L2 | Steigerungsleiter für Körpergewichts- und Halteübungen, Gewichtsfeld am Glute-Anker |
+| A-040 | L7 Teil 1 | Folgeziel-Vorschlag, Zielketten Lauf, Stillstand ohne Ziel |
+| A-041 | L3 | Level mit Unterkörper-Stand und vierter Stufe |
+| A-042 | L4 | Blöcke mit vier Akzenten |
+| A-043 | L5 | Übungsrotation je Block, neue Übungen, Deload/Test in 3 Fassungen |
+| A-044 | L6 | Lauf über Saisons, Intervall-Formen, Tempo-Hinweis |
+| A-045 | L7 Teil 2 | Erhaltungs-Modus |
+| A-046 | L8 Ansichten | Langzeit-Ansichten, Jahresrückblick, gestufte Ehrungen, Ränge, mehr Texte (ohne Love-Theme) |
+
+Abhängigkeiten: A-039 nach A-037; A-042 nach A-041; A-043, A-044 und A-045 nach A-042; A-046 nach A-038.
+
+## Kurzfassung
+
+Die App plant 12 Wochen gut und wiederholt sie dann. Sechs Stellen enden hart, vier bleiben stehen, zwei werden eintönig.
+Dieses Konzept schließt sie mit acht Bausteinen. Jeder Baustein hält die Doktrin: Usability vor Features, Gamification
+passiv, eigene Begriffe, 60–90 min, Warm-up und Cool-down, Daten lokal, kein Bruch alter Daten.
+
+Reihenfolge nach Wirkung: erst die Fehler, die Werte senken (L1), dann Steigerungswege (L2, L3), dann Inhalt (L4, L5),
+dann Lauf (L6), dann Ansichten und Gamification (L7, L8).
+
+## Forschungsstand (kompakt, mit Folgerung)
+
+| Thema | Befund | Folgerung für die App |
+|---|---|---|
+| Steigerung | Mehr Wiederholungen bei gleicher Last wirken über 8 Wochen ähnlich wie mehr Last [Q52]. | Wo kein Gewicht möglich ist, sind Wiederholungen, Tempo, Pausen und einseitige Varianten gültige Wege. |
+| Periodisierung | Periodisierte Pläne bringen mehr Maximalkraft als nicht periodisierte, mit mittlerer Effektstärke; Variation des Reizes gilt als wesentlich [Q53]. | Blöcke mit wechselndem Akzent statt einer 12-Wochen-Schleife. |
+| Übungswechsel | Wechsel der Übungen kann Zuwachs beeinflussen; zu häufiger Wechsel kann schaden [Q54]. Variierte Auswahl hob in einer Studie die Trainingsmotivation bei gleichem Zuwachs [Q55]. | Anker bleibt fest, Nebenübungen wechseln planmäßig je Block, nicht je Einheit. |
+| Erhaltung | Ein Drittel bis ein Neuntel des Aufbau-Umfangs hielt bei Jüngeren Kraft und Masse über 32 Wochen; Ältere brauchten mehr [Q56]. | Ein Erhaltungs-Modus mit kleinem Umfang und gleicher Last ist tragfähig. |
+| Lauf | 80/20-Verteilung, Wochenumfang in kleinen Schritten, Taper: siehe [Q44], [Q50] und Audit Abschnitt 7. | Saison-Phasen mit Entlastungswoche, Tempo aus eigenen Zeiten. |
+
+## L1 – Pausenregel reparieren (klein)
+
+Problem: Die Regel „14 Tage Abstand, ein Schritt zurück“ greift bei Profilen, deren Einheiten von sich aus 16–18 Tage
+auseinanderliegen. Die Vorgabe sinkt jedes Mal (S1).
+
+Regel neu:
+- Der Abstand misst sich am **üblichen Rhythmus** der Übung: Median der letzten 4 Abstände desselben Bewegungsmusters.
+- Ein Schritt zurück erst bei Abstand ≥ 14 Tage **und** ≥ 1,5 × üblicher Rhythmus. Zwei Schritte bei > 28 Tagen und ≥ 2 × Rhythmus.
+- Nie zweimal in Folge zurück, ohne dass dazwischen die Vorgabe erreicht wurde.
+- Untergrenze: nie unter das untere Ende der Spanne der Übung.
+
+Daten: keine neuen Felder. Migration: nein. Bestehende gesunkene Werte steigen über die normale Progression wieder.
+Aufwand: klein. Auftrag: **A-037**. Test: 104 Wochen Runner, keine Übung fällt unter ihre Spanne (t49, ab A-037 hart).
+
+## L2 – Steigerungswege nach dem oberen Ende (mittel)
+
+Problem: 20 Körpergewichtsübungen frieren ein (S2). Halteübungen stehen ab 34 s bei 3 × 20 s (S4).
+
+Jede Progressionsübung bekommt eine **Steigerungsleiter** mit festen Sprossen. Erreicht jemand zweimal in Folge das obere
+Ende, bietet die App die nächste Sprosse mit einem Tipp an (wie heute „Next variation“):
+
+1. Gewicht, wo ein Gewichtsfeld sinnvoll ist (zuerst der Glute-Anker: Scheibe halten).
+2. Schwerere Variante, auch einseitig.
+3. Langsames Absenken (3 s, dann 5 s).
+4. Pause am schwersten Punkt (2 s).
+5. Kürzere Pause zwischen den Sätzen (−15 s, höchstens zweimal).
+
+Nach einer neuen Sprosse beginnt die Spanne wieder unten. Halteübungen: nach 3 × 20 s folgt die schwerere Form
+(z. B. L-sit → erhöhte Beine), nicht mehr Sekunden. Für Front lever und Planche endet „Next variation“ bei „Full“ (vorgezogen in A-037).
+
+Daten: `D.ex[key].lad` (Sprosse 0–5), optional. Fehlt das Feld, gilt 0. `cleanImport` lässt 0–5 zu.
+Migration: nein. Aufwand: mittel. Auftrag: **A-039**.
+
+## L3 – Level mit klaren Kriterien, auch für Beine (mittel)
+
+Problem: Drei Stufen, nur über Klimmzüge, Dips und Muscle-ups. Ein Unterkörper-Profil bleibt zwei Jahre „Basic“ (S3).
+
+- Zwei Maße statt einem: **Oberkörper-Stand** (wie heute) und **Unterkörper-Stand** aus dem Anker
+  (z. B. Hip thrust oder Squat im Verhältnis zum Startwert und zur Trainingsdauer).
+- Rundenzahl und Satzband richten sich nach dem Stand des jeweiligen Musters, nicht nach einem Gesamtlevel.
+- Eine vierte Stufe für beide Maße, mit Kriterien, die ohne Muscle-up erreichbar sind.
+- Der Aufstieg wird wie heute nur gemeldet („Level up“), nie abgefragt.
+
+Daten: nichts Neues; der Stand wird aus `D.profile`, `D.ex` und `D.pr` berechnet. Migration: nein.
+Entscheidung: freigegeben (Captain). Risiko: Pläne ändern sich für Unterkörper-Profile (mehr Runden). Test-Fixture t31 wird neu aufgenommen (`node tools/record-fixture.js`). Aufwand: mittel. Auftrag: **A-041**.
+
+## L4 – Blöcke mit wechselndem Akzent (groß)
+
+Problem: Woche 13 ist Woche 1 (T1), Volumen bleibt zwei Jahre gleich (T2).
+
+Aus der 12-Wochen-Schleife wird eine Folge von **Blöcken zu 6 Trainingswochen** (5 Wochen Arbeit, 1 Woche Deload mit Test,
+wie heute). Vier Akzente wechseln sich ab:
+
+| Block | Akzent | Wirkung |
+|---|---|---|
+| 1 | Grundlage | Spannen wie heute, Band wie heute |
+| 2 | Kraft | Anker und Hauptübungen: untere Spanne, +1 Satz, längere Pausen; Nebenübungen −1 Satz |
+| 3 | Umfang | obere Spanne, Band +2 für das Schwerpunkt-Muster, kürzere Pausen |
+| 4 | Fertigkeit und Tempo | Skill-Blöcke in der langen Form, explosive Varianten, Band am unteren Rand |
+
+Regeln: Der Akzent ändert Spannen, Sätze und Pausen, nie die 60–90 min und nie Warm-up oder Cool-down. Ein aktives Ziel
+bestimmt den Akzent des laufenden Blocks mit (kg-Ziel → Kraft, Skill-Ziel → Fertigkeit). Nach vier Blöcken beginnt die
+Folge neu, aber mit den Nebenübungen des nächsten Rotationssatzes (L5). Die Kopfzeile nennt Block und Akzent in einem Wort.
+
+Daten: Der Block ergibt sich aus der Trainingswoche (`cycWk`), kein neues Feld. `c.phase` bleibt als interner Schlüssel.
+Migration: nein. Aufwand: groß (S0, `rounds`, `vBand`, `design`, Tests t22–t42 prüfen). Entscheidung: vier Akzente (Captain). Auftrag: **A-042**.
+
+## L5 – Planmäßige Übungsrotation (mittel)
+
+Problem: Nach dem ersten Quartal kommt kein neuer Inhalt (M1).
+
+- Jede Nebenübung gehört zu einem Muster mit **3 gleichwertigen Sätzen** (A, B, C). Je Block gilt ein Satz.
+- Der Anker bleibt fest. Zielanker, Favoriten, „Never suggest“ und der Schmerzfilter behalten Vorrang.
+- Fortschritt bleibt je Variante gespeichert (wie heute bei Field kit). Kehrt ein Satz nach 12 Wochen zurück, gilt die
+  reparierte Pausenregel (L1) mit einem Schritt zurück.
+- Deload und Test bekommen je 3 Fassungen im Wechsel.
+- Der Katalog wächst um etwa 30 Übungen, vor allem für Unterkörper und Rumpf.
+
+Daten: keine neuen Felder (Satz = Blocknummer modulo 3). Migration: nein. Aufwand: mittel, dazu Inhaltsarbeit. Auftrag: **A-043**.
+
+## L6 – Lauf über Saisons (mittel)
+
+Problem: Deckel bei 10 und 16 km, 8 × 3 min, feste lockere Läufe, kein Tempo (S5).
+
+- **Vier Phasen zu je 6 Wochen** im Gleichschritt mit den Blöcken: Grundlage (Umfang wächst), Aufbau (langer Lauf wächst),
+  Tempo (Intervalle wechseln die Form), Erhalt (Umfang −20 %).
+- Intervall-Formen im Wechsel: 3 min, 1 min schnell mit 1 min Trab, 6–8 min zügig, Steigerungsläufe.
+- Lockerer Lauf wächst mit: Anteil am Wochenumfang statt fester 5 oder 6 km.
+- Der Deckel des langen Laufs hängt am 4-Wochen-Mittel (höchstens 35 % des Wochenumfangs), nicht an einer festen Zahl.
+  Die 130-%-Grenze bleibt.
+- Tempo-Hinweis aus eigenen Bestzeiten (`run:t5`, `run:t10`): „zuletzt 6:10/km, heute locker ab 7:00/km“. Nur Text.
+- Laufziele über 21 km: 25, 30, 42 km als weitere Stufen.
+
+Daten: `GOALS` um Schlüssel erweitert; alte Backups kennen sie nicht und brauchen sie nicht. `D.runKm` und `D.runI`
+bleiben. Migration: nein. Aufwand: mittel. Auftrag: **A-044**.
+
+## L7 – Folgeziel und Erhaltung (klein bis mittel)
+
+Problem: Nach einem erreichten Ziel ist die Zielzeile leer (S4). Wer bewusst bleiben will, hat keinen Modus (T3).
+
+Folgeziel:
+- Nach „erreicht“ zeigt die Startseite eine Zeile mit **zwei Vorschlägen und „Kein Ziel“**: die nächste Stufe desselben
+  Ziels und ein verwandtes Ziel (z. B. Muscle-up × 1 → Muscle-up × 3 oder Front lever). Ein Tipp, sonst nichts.
+- Feste Laufziele werden zur Kette: 5 → 10 → 21 → 25 km, danach Zeitziele.
+- Ein Ziel, das schon erfüllt wäre, wird nicht angeboten.
+
+Erhaltung:
+- Schalter unter „More“ je Bereich (Kraft, Lauf, Skills): „Stand halten“.
+- Wirkung: etwa ein Drittel weniger Sätze im Muster, gleiche Last, keine Stillstands-Senkung, keine Plateau-Meldung.
+- Quellen wie beim Tagesmodus „Tired“: Umfang senken, Intensität halten [Q9][Q57]; ein Drittel bis ein Neuntel des Aufbau-Umfangs hält Kraft und Masse [Q56].
+- Stillstand ohne Ziel bekommt dieselbe Antwort wie mit Ziel: leichte Woche, dann +2 Sätze, dann Variantenwechsel.
+
+Daten: `D.hold` = `{str,run,sk}` (Booleans, Standard alle aus), `D.goalNext` (Liste von Schlüsseln, flüchtig).
+`cleanImport` erweitert. Migration: Standardwerte, kein Bruch. Aufwand: Folgeziel klein (**A-040**), Erhaltung mittel (**A-045**).
+
+## L8 – Langzeit-Ansichten und passive Gamification (mittel)
+
+Ansichten:
+- Zeitraum-Wahl 12 Wochen, 1 Jahr, alles für Kalender, Belastung und Kilometer (Monatswerte ab 1 Jahr).
+- Übungsverlauf: ab 40 Punkten Monatsbestwerte statt Einzelpunkte.
+- Datum mit Jahr, sobald der Eintrag nicht im laufenden Jahr liegt.
+- **Jahresrückblick** als eine Karte in den Statistiken: Einheiten, Kilometer, Rekorde, erreichte Ziele, längste Serie.
+  Erscheint von selbst nach 52 Wochen und zum Jahreswechsel, kein Tipp nötig.
+
+Gamification (passiv):
+- Ränge: nach dem höchsten Rang zählt eine Stufe weiter (eigener Name je Theme plus Zahl), alle 8.000 XP.
+- Ehrungen: 6 gestufte Ehrungen (Einträge 100/500/1000/2000, Kilometer 100/500/1000/2000, Wochenserie 4/26/52/104,
+  Jahre 1/2/3, Rekorde 10/50/100, Core Blitz 25/100/250).
+- Texte: Tagessprüche und Abschluss-Meldungen je Theme von 16 auf mindestens 60; Auswahl ohne Wiederholung innerhalb
+  eines Durchlaufs. **Ausgenommen: das Love-Theme** (Entscheidung des Captains; seine Notizen bleiben verschlüsselt).
+
+Technik:
+- `cycWk()` einmal je Tag und Eintragszahl berechnen und merken (wie `cbInfo`).
+- Import-Deckel von 2000 auf 20.000 Einträge; Hinweis, falls ein Backup gekürzt würde.
+- Chronicle lädt ältere Einträge erst beim Aufklappen.
+
+Daten: `honSeen` nimmt neue Schlüssel auf. Migration: nein. Aufwand: mittel. Aufträge: Technik **A-038**, Ansichten und Gamification **A-046**.
+
+## Datenmodell und Migration im Überblick
+
+| Baustein | Neue Felder | Migration | Alte Backups |
+|---|---|---|---|
+| L1 Pausenregel | keine | nein | laden unverändert |
+| L2 Steigerungsleiter | `D.ex[*].lad` (optional) | nein | fehlt = Sprosse 0 |
+| L3 Level | keine (berechnet) | nein | Pläne für Unterkörper ändern sich |
+| L4 Blöcke | keine (aus Trainingswoche) | nein | laufender Zyklus wird Block 1 oder 2 |
+| L5 Rotation | keine | nein | laden unverändert |
+| L6 Lauf | neue `GOALS`-Schlüssel | nein | laden unverändert |
+| L7 Folgeziel, Erhaltung | `D.hold`, `D.goalNext` | Standardwerte | laden unverändert |
+| L8 Ansichten | neue Schlüssel in `honSeen` | nein | Import-Deckel höher |
+
+Regel für alle: `fresh()` liefert den Standard, `cleanImport()` wird je Feld erweitert, t05 und t09 bekommen je einen Fall.
+
+## Prüfstein
+
+Ein neuer Test simuliert 104 Wochen für 5 Profile in zwei Verläufen und prüft:
+- keine Vorgabe fällt unter die Spanne ihrer Übung;
+- in jedem Quartal erscheinen neue Übungsnamen;
+- keine Körpergewichtsübung steht länger als 12 Wochen am oberen Ende ohne angebotene Sprosse;
+- Wochenkilometer und langer Lauf ändern sich zwischen den Phasen;
+- jede Einheit bleibt bei 60–90 min mit Warm-up und Cool-down;
+- die Wochenvorschau braucht nach 2 Jahren höchstens das Doppelte der Zeit von Woche 12.
+
+Der Test läuft wegen der Dauer als eigener Lauf, nicht bei jedem `tests/run.sh`: **t49 longterm**, `sh tests/longterm.sh`.
+Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“ statt als Fehler. Ab A-037 schlägt
+„keine Vorgabe fällt unter die Spanne ihrer Übung“ hart fehl; jeder weitere Auftrag schaltet seinen Prüfstein scharf.
+
+| Prüfstein | scharf ab |
+|---|---|
+| keine Vorgabe unter der Spanne | A-037 |
+| Wochenvorschau ≤ 2 × Woche 12 | A-038 |
+| keine Körpergewichtsübung > 12 Wochen am oberen Ende ohne Sprosse | A-039 |
+| neue Übungsnamen in jedem Quartal | A-043 |
+| Wochenkilometer und langer Lauf ändern sich zwischen den Phasen | A-044 |
+| 60–90 min mit Warm-up und Cool-down | sofort (A-030b) |
+
+## Quellen
+
+[Q1]–[Q51]: siehe `docs/training-audit.md` und `docs/personalisation-concept.md`.
+
+- [Q52] Plotkin D, Coleman M, Van Every D, et al. Progressive overload without progressing load? The effects of load or repetition progression on muscular adaptations. *PeerJ* 2022;10:e14142.
+- [Q53] Williams TD, Tolusso DV, Fedewa MV, Esco MR. Comparison of periodized and non-periodized resistance training on maximal strength: a meta-analysis. *Sports Med* 2017;47(10):2083–2100.
+- [Q54] Kassiano W, Nunes JP, Costa B, Ribeiro AS, Schoenfeld BJ, Cyrino ES. Does varying resistance exercises promote superior muscle hypertrophy and strength gains? A systematic review. *J Strength Cond Res* 2022;36(6):1753–1762.
+- [Q55] Baz-Valle E, Schoenfeld BJ, Torres-Unda J, Santos-Concejero J, Balsalobre-Fernández C. The effects of exercise variation in muscle thickness, maximal strength and motivation in resistance trained men. *PLoS One* 2019;14(12):e0226989.
+- [Q56] Bickel CS, Cross JM, Bamman MM. Exercise dosing to retain resistance training adaptations in young and older adults. *Med Sci Sports Exerc* 2011;43(7):1177–1187.
+- [Q57] Spiering BA, Mujika I, Sharp MA, Foulis SA. Maintaining physical performance: the minimal dose of exercise needed to preserve endurance and strength over time. *J Strength Cond Res* 2021;35(5):1449–1458.
+- [Q9] Bell L et al. 2023 (Deload-Konsens): siehe `docs/training-audit.md`.
