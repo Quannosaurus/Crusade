@@ -63,8 +63,11 @@ const sig=(k,id)=>JSON.stringify(k.S(id,k.ctx(k.today())).blocks.map(b=>[b.name,
  if(z.errs.length)issue('progress JS errors: '+z.errs.join('; '));}
 // 4 More: chips, Adjust (value, date, remove); start line; status ladder
 {const z=boot(),k=z.k,D=ready(k);D.tab='mehr';k.render();
- if(z.$$('[data-a=goal]').length<17)issue('More: catalogue chips '+z.$$('[data-a=goal]').length);
- z.click('[data-a=goal][data-k=dips]');if(!D.goal||D.goal.k!=='dips')issue('More: one tap');
+ // A-028: goal card and 2-step choice (kind, then goal with prefilled number) instead of the chip wall
+ let nch=0;for(let c=0;c<3;c++){z.click('[data-a=gpopen]');z.click('[data-a=gpc][data-k="'+c+'"]');nch+=z.$$('[data-a=gpk]').length;z.click('[data-a=gpx]');}
+ if(nch<16)issue('More: catalogue goals '+nch);
+ z.click('[data-a=gpopen]');z.click('[data-a=gpc][data-k="1"]');z.click('[data-a=gpk][data-k=dips]');z.click('[data-a=gpsave]');if(!D.goal||D.goal.k!=='dips')issue('More: choose and save');
+ z.click('[data-a=gadj]');
  z.change('#m_gv','25');if(D.goal.v!==25)issue('Adjust value '+D.goal.v);
  z.change('#m_gd','2027-02-01');if(D.goal.d!=='2027-02-01')issue('Adjust date '+D.goal.d);
  z.change('#m_gd','2020-01-01');if(D.goal.d!=='2027-02-01')issue('Adjust accepted a past date');

@@ -96,7 +96,7 @@ console.log('forecast for tomorrow came true: '+hits+'/'+tot);
   const x=await p.locator('.wkx').textContent().catch(()=>'');if(!x)issue('tap on a day shows no detail');
   await p.locator('.wk').scrollIntoViewIfNeeded();await p.screenshot({path:R+'/.build/t27-week.png'});
   const kc=await p.evaluate(()=>{const P=window.__kz.weekPlan();const i=P.findIndex(e=>/^(KA|KB|KC|CH)$/.test(e.id));return i;});
-  if(kc>=0){await p.locator('.wkd').nth(kc).click();await p.waitForTimeout(60);const x2=await p.locator('.wkx').textContent();if(!/≈ \d+ min/.test(x2))issue('strength day detail without duration: '+x2);}
+  if(kc>=0){if(kc!==1)await p.locator('.wkd').nth(kc).click();await p.waitForTimeout(60);const x2=await p.locator('.wkx').textContent();if(!/≈ \d+ min/.test(x2))issue('strength day detail without duration: '+x2);}
   await p.locator('.wkd').nth(kc>=0?kc:1).click();await p.waitForTimeout(60);
   if(await p.locator('.wkx').count())issue('second tap does not close the detail');
   const ls1=await p.evaluate(()=>localStorage.getItem('kz_app_v3'));if(ls1!==ls0)issue('kz_app_v3 changed by opening/tapping the preview');
