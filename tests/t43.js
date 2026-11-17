@@ -197,5 +197,8 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
 // A-039: prototype names as exercise keys with a ladder rung are refused
 {const z=boot();const c=z.k.cleanImport(JSON.parse('{"v":3,"ex":{"__proto__":{"r":1,"lad":3},"constructor":{"r":1,"lad":2},"p_pull#0":{"r":5,"lad":1}}}'));
  if(Object.getOwnPropertyNames(c.ex).join()!=='p_pull#0'||c.ex['p_pull#0'].lad!==1||({}).lad!==undefined)issue('A-039: prototype ex keys with lad: '+JSON.stringify(Object.getOwnPropertyNames(c.ex)));}
+// A-040: prototype names as next-goal keys are refused without pollution
+{const z=boot();const c=z.k.cleanImport(JSON.parse('{"v":3,"goalNext":[{"k":"__proto__","v":1},{"k":"constructor","v":2},{"k":"toString","v":3},{"k":"pull","v":12}]}'));
+ if(JSON.stringify(c.goalNext)!=='[{"k":"pull","v":12}]'||({}).v!==undefined)issue('A-040: prototype keys in goalNext: '+JSON.stringify(c.goalNext));}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);
 })();

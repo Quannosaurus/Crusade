@@ -108,7 +108,7 @@ function dOK(s){return typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&ds(pd
 var DSOK={test:dOK},KMMAX=300,MINMAX=1440,TRKMAX=20*1024*1024;
 function lim(v,hi){v=typeof v==="number"?v:num(v);return v!=null&&isFinite(v)&&v>0?Math.min(hi,v):null;}
 var TODAY=ds(new Date());
-function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],opt:{ready:false,rest:false,oa:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
+function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],goalNext:[],opt:{ready:false,rest:false,oa:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
     var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
@@ -172,6 +172,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   if(Array.isArray(n.kit))b.kit=n.kit.filter(function(x){return typeof x==="string"&&"kbdsr".indexOf(x)>=0&&x.length===1;}).filter(function(x,i,a){return a.indexOf(x)===i;});
   ["never","favAsk","favQ"].forEach(function(k){if(Array.isArray(n[k])){var a=n[k].filter(function(x,i,arr){return typeof x==="string"&&x.length>0&&x.length<90&&okKey(x)&&arr.indexOf(x)===i;}).slice(-200);if(k==="never")a=a.slice(-100);if(k==="favQ")a=a.slice(-20);b[k]=a;}});
   b.goal=cleanGoal(n.goal,DS);
+  if(Array.isArray(n.goalNext))b.goalNext=n.goalNext.filter(function(x){return x&&typeof x==="object"&&typeof x.k==="string"&&own(GOALS,x.k)&&okKey(x.k)&&isFinite(+x.v)&&+x.v>0&&+x.v<=100000;}).slice(0,2).map(function(x){return {k:x.k,v:Math.round(+x.v*100)/100};});
   if(Array.isArray(n.goalsDone))b.goalsDone=n.goalsDone.map(function(x){var g=cleanGoal(x,DS);return g&&DS.test(x.d)?{k:g.k,v:g.v,d:x.d,r:x.r==="e"?"e":"f"}:null;}).filter(Boolean).slice(-30);
   if(n.vr&&typeof n.vr==="object")Object.keys(n.vr).slice(0,300).forEach(function(k){if(vrKeyOK(k))b.vr[k]=Math.max(0,Math.min(20,Math.floor(numv(n.vr[k]))));});
   return b;}
@@ -1196,7 +1197,7 @@ function vHot(p){return goalPat()===p||(EMPAT[emph()]||[]).indexOf(p)>=0;}
 var UNITS={str:4,bal:3,run:2};
 function vUnits(){return UNITS[D.focus]||3;}
 function vBand(p){var gp=goalPat(),hot=vHot(p),b=hot?[12,20]:[8,14+2*Math.max(0,vUnits()-3)];
-  if(gp===p&&plBoost())b=[b[0]+2,b[1]+2];return b;}
+  if(gp===p&&plBoost())b=[b[0]+2,b[1]+2];else if(!D.goal){var ng=plNoGoal();if(ng&&ng.pm==="s"&&ng.p===p)b=[b[0]+2,b[1]+2];}return b;}
 function legLow(b){var t=vs7(TODAY);return t.on&&t.legs+t.hinge<10&&b.items.some(function(it){var p=itPat(it);return (p==="legs"||p==="hinge")&&curVar(it,LOC())>=0;});}
 function volBias(b){var P={};b.items.forEach(function(it){var p=itPat(it);if(p&&curVar(it,LOC())>=0)P[p]=1;});var ps=Object.keys(P);if(!ps.length)return 0;
   var t=vs7(TODAY);if(!t.on)return 0;
@@ -1754,9 +1755,47 @@ var GOALS={
   ht:{n:"Hip thrust",g:"k",u:"kg",rx:/^Barbell hip thrust$/i},
   rdl:{n:"Romanian deadlift",g:"k",u:"kg",rx:/^Romanian deadlift$/i},
   d5:{n:"Run 5 km",g:"d",u:"km",km:5},d10:{n:"Run 10 km",g:"d",u:"km",km:10},d21:{n:"Run 21 km",g:"d",u:"km",km:21},
+  d25:{n:"Run 25 km",g:"d",u:"km",km:25},d30:{n:"Run 30 km",g:"d",u:"km",km:30},d42:{n:"Run 42 km",g:"d",u:"km",km:42},
   t5:{n:"5 km under",g:"t",u:"min",km:5},t10:{n:"10 km under",g:"t",u:"min",km:10}};
 var GOALQ=[["mu","Muscle-Up"],["hs","Handstand"],["fl","Front lever"],["pull","Pull-ups"],["legs","Strong legs"],["d5","Run 5 km"],["d10","Run 10 km"]];
-var GOALG=[["Skills",["mu","hs","fl","pl","ls"]],["Strength",["pull","dips","push","sq","ht","rdl"]],["Running",["d5","d10","d21","t5","t10"]]];
+var GOALG=[["Skills",["mu","hs","fl","pl","ls"]],["Strength",["pull","dips","push","sq","ht","rdl"]],["Running",["d5","d10","d21","d25","d30","d42","t5","t10"]]];
+/* ===== A-040 next goal (L7, part 1): after a reached goal the Today page offers two goals and "No goal" in one tap: the next
+   stage of the same goal and a related goal (D.goalNext = [{k,v},{k,v}], cleared by the choice). Run distances form a chain
+   5 → 10 → 21 → 25 → 30 → 42 km, then time goals. A goal that would already be met is never offered. */
+var GCHAIN={d5:"d10",d10:"d21",d21:"d25",d25:"d30",d30:"d42",d42:"t10"};
+var GREL={mu:"fl",fl:"pl",pl:"hs",hs:"ls",ls:"mu",pull:"dips",dips:"pull",push:"dips",sq:"rdl",ht:"sq",rdl:"ht",d5:"t5",d10:"t10",d21:"t10",d25:"t10",d30:"t10",d42:"t5",t5:"d10",t10:"d21"};
+function gUp(k,v){var G=GOALS[k];if(!G)return null;
+  if(own(GCHAIN,k))return {k:GCHAIN[k],v:goalDef(GCHAIN[k])};
+  if(k==="mu")return {k:k,v:v<3?3:v+2};if(k==="hs")return {k:k,v:v+10};if(k==="ls")return {k:k,v:v+5};
+  if(G.u==="stage")return v>=4?null:{k:k,v:v+1};if(k==="pull"||k==="dips")return {k:k,v:v+5};if(k==="push")return {k:k,v:v+10};
+  if(G.g==="k")return {k:k,v:Math.max(r25(v*1.1),v+2.5)};if(G.g==="t")return {k:k,v:Math.max(1,Math.floor(v*0.95*2)/2)};return null;}
+function gOpen(x){return x&&GOALS[x.k]&&!goalMet(x);}
+function goalNextOf(g){var out=[],a=gUp(g.k,g.v),i=0;
+  while(a&&!gOpen(a)&&i++<12)a=a.k===g.k||own(GCHAIN,a.k)?gUp(a.k,a.v):null;if(gOpen(a))out.push(a);
+  var r=GREL[g.k],j=0;while(r&&j++<6){var b={k:r,v:goalDef(r)};if(gOpen(b)&&!out.some(function(x){return x.k===b.k;})){out.push(b);break;}r=GREL[r];}
+  return out.slice(0,2);}
+function goalNextHTML(){var a=D.goal?[]:(D.goalNext||[]).filter(gOpen);if(!a.length)return "";
+  return '<div class="sec gnext" role="group" aria-label="Next goal"><p class="eyebrow">'+esc(W("gdone"))+' · Next '+esc(W("goal").toLowerCase())+'?</p><div class="chips">'+a.map(function(x,i){return '<button type="button" class="chip" data-a="gnext" data-k="'+i+'">'+esc(goalName(x))+'</button>';}).join("")+'<button type="button" class="chip" data-a="gnext" data-k="none">No goal</button></div></div>';}
+/* ===== A-040 standstill without a goal: the same answer as with a goal (plateau doctrine A-035), per exercise. A check is a
+   strength log of the exercise (not past-day, comeback or simulated logs), at most one per training week; 3 checks without
+   beating the best so far and at least 21 days since the last progress (paused days not counted) → one measure: high load →
+   easy week, else +2 sets a week for its movement pattern (while the checks stay without progress, about 3 weeks); 6 checks
+   and 42 days → swap the variation. A bodyweight exercise at the top of its range is the ladder's job (A-039), not a plateau.
+   Computed from the logs (no field), kept per day and entries. */
+var NGC={k:"",D:null,r:null},HIK=null;
+function hiOf(k){if(!HIK){HIK={};var c=favCatalog();Object.keys(c).forEach(function(n){var it=c[n].it;if(it.k&&it.hi!=null&&!own(HIK,it.k))HIK[it.k]=it.hi;});}return own(HIK,k)?HIK[k]:null;}
+function plNoGoal(){if(D.goal)return null;var L=D.logs,ln=L.length,ky=TODAY+"|"+ln+"|"+(ln?L[ln-1].d+L[ln-1].id:"");if(NGC.k===ky&&NGC.D===D)return NGC.r;
+  var from=addD(TODAY,-180),i0=ln;while(i0>0&&L[i0-1].d>=from)i0--;var per={};
+  for(var i=i0;i<ln;i++){var l=L[i];if(!STR[l.id]||l.bl||l.cb||l.sim||!l.ex||l.d>TODAY)continue;var wk=blkStart(l.d);
+    for(var q in l.ex){if(!own(l.ex,q))continue;var e=l.ex[q],pk=patKey(q.split("#")[0]);if(!own(PATK,pk)||!Array.isArray(e))continue;var sc=(+e[1]||0)*1000+(+e[0]||0),a=per[q]||(per[q]=[]),z=a[a.length-1];
+      if(z&&z.wk===wk){if(sc>z.sc)z.sc=sc;}else a.push({wk:wk,d:l.d,sc:sc});}}
+  var best=null;Object.keys(per).forEach(function(q){var a=per[q];if(a.length<4||diff(a[a.length-1].d,TODAY)>21)return;
+    var st=D.ex[q],k0=q.split("#")[0],hi=hiOf(k0);if(st&&!(st.w>0)&&hi!=null&&st.r>=hi)return;
+    var b=a[0].sc,lp=a[0].d,np=0;for(var j=1;j<a.length;j++){if(a[j].sc>b){b=a[j].sc;lp=a[j].d;np=0;}else np++;}
+    var age=diff(lp,TODAY)-pausedIn(lp,TODAY);if(np<3||age<21)return;
+    if(!best||np>best.np||(np===best.np&&lp<best.lp))best={q:q,n:st&&st.n||q,p:PATK[patKey(k0)],np:np,lp:lp,age:age};});
+  if(best)best.pm=best.np>=6&&best.age>=42?"v":(loadHigh()?"e":"s");
+  NGC={k:ky,D:D,r:best};return best;}
 function goalKg(rx){var m=0;[D.ex,D.pr].forEach(function(o){Object.keys(o||{}).forEach(function(k){var e=o[k];if(e&&e.n&&rx.test(e.n)&&+e.w>m)m=+e.w;});});return m;}
 function goalCur(k){var G=GOALS[k];if(!G)return 0;
   if(G.p)return +D.profile[G.p]||0;
@@ -1797,7 +1836,7 @@ function goalVal(x){return x.stage?(x.ok?"done":"next "+x.l):(x.lo?(x.c?fmtKg(x.
 function goalLine(){var g=D.goal;if(!g||!GOALS[g.k])return "";var q=goalPos(g),n=q.s.length,c=q.cur;
   var tail=c.stage?(c.ok?"stage reached":"next "+c.l):goalVal(c);
   var tr=gTrend();return esc(W("goal"))+': '+esc(goalName(g))+' · step '+Math.min(n,q.done+1)+' of '+n+' · '+esc(tail)+(tr?' · '+tr:'');}
-function setGoal(k){D._gmsg="";if(k==="none"||!k){D.goal=null;return;}
+function setGoal(k){D._gmsg="";D.goalNext=[];if(k==="none"||!k){D.goal=null;return;}
   if(k==="legs")k=emph()==="glutes"?"ht":"sq";if(!GOALS[k])return;
   var G=GOALS[k],c=goalCur(k);D.goal={k:k,v:goalDef(k),b:c,s:TODAY,h:[[TODAY,c]]};if(G.g==="k"&&!c)D.goal.nb=1;D.goal.st=goalPos(D.goal).done;D.goal.s0=D.goal.st;
   if(G.sk&&!D.skills[G.sk]){D.skills[G.sk]=true;D._gmsg=SKN[G.sk]+" was added to your skills.";}}
@@ -1825,7 +1864,10 @@ function plStep(g,c,best){/* progress is measured against the value at the last 
   g.np=Math.min(99,(g.np||0)+1);
   if(!g.pm&&g.np>=3&&plAge(g)>=21){if(loadHigh())g.pm="e";else{g.pm="s";g.pz=TODAY;delete g.pk;}}
   else if(g.pm&&g.pm!=="v"&&g.np>=6&&plAge(g)>=42)g.pm="v";}
-function platHTML(){var g=D.goal;if(!g||!GOALS[g.k]||!(g.np>=3)||!g.pm)return "";
+function platHTML(){var g=D.goal;if(!g){var ng=plNoGoal();if(!ng)return "";
+    var tn=ng.pm==="e"?"Take an easy week first: More → "+W("easy")+".":(ng.pm==="s"?"Its movement gets 2 extra sets a week for the next 3 weeks.":"Swap the variation of "+ng.n+" for a while.");
+    return '<p class="gplat" role="status"><b>'+esc(W("plat"))+'</b> · '+esc(ng.n)+': '+ng.np+' checks without progress. '+esc(tn)+'</p>';}
+  if(!GOALS[g.k]||!(g.np>=3)||!g.pm)return "";
   var t=g.pm==="e"?"Take an easy week first: More → "+W("easy")+".":(g.pm==="s"?(goalPat()?"Your goal exercise gets 2 extra sets a week for 3 weeks.":"Add one more easy run a week for the next 3 weeks."):"Swap the variation of your goal exercise for a while.");
   return '<p class="gplat" role="status"><b>'+esc(W("plat"))+'</b> · '+g.np+' checks without progress. '+esc(t)+'</p>';}
 function goalCheck(lg){var g=D.goal;if(!g||!GOALS[g.k])return "";var c=goalCur(g.k),h=g.h||(g.h=[]),m="",best=goalBest(g);
@@ -1835,7 +1877,7 @@ function goalCheck(lg){var g=D.goal;if(!g||!GOALS[g.k])return "";var c=goalCur(g
   if(goalIsCheck(g,lg)){var wk=blkStart(lg.d||TODAY);if(g.cw!==wk){g.cw=wk;plStep(g,c,best);}}
   if(!h.length||h[h.length-1][1]!==c){if(h.length&&h[h.length-1][0]===TODAY)h[h.length-1][1]=c;else h.push([TODAY,c]);if(h.length>12)h.splice(0,h.length-12);}
   if(goalMet(g)){(D.goalsDone=D.goalsDone||[]).push({k:g.k,v:g.v,d:TODAY,r:"f"});if(D.goalsDone.length>30)D.goalsDone.splice(0,D.goalsDone.length-30);D.goal=null;
-    return W("gdone")+": "+goalName(g)+". Choose your next goal under More.";}
+    D.goalNext=goalNextOf(g);return W("gdone")+": "+goalName(g)+"."+(D.goalNext.length?" Your next goal is one tap on Today.":" Choose your next goal under More.");}
   var q=goalPos(g);if(q.done>(g.st||0)){m=W("gstep")+" "+q.done+" of "+q.s.length+": "+(q.s[q.done-1].stage?q.s[q.done-1].l:goalVal(q.s[q.done-1]))+".";}
   g.st=q.done;return m;}
 function goalChips(list){var cur=D.goal?D.goal.k:"";return '<div class="chips">'+list.map(function(x){var k=x[0],on=k==="none"?!D.goal:(k==="legs"?(cur==="sq"||cur==="ht"):cur===k);
@@ -1989,7 +2031,7 @@ function vStart(){
   if(bd) h+='<button type="button" class="bkrem" data-a="bkfile" id="bkrem"><b>'+esc(W("bkrem"))+'</b><span class="muted">'+(bd.none?'No backup yet · '+bd.n+' entries live only on this device.':'Last backup '+(bd.d===0?'today':(bd.d===1?'yesterday':bd.d+' days ago'))+(bd.n?' · '+bd.n+' new entr'+(bd.n===1?'y':'ies'):'')+'.')+' Tap to save a backup file.</span></button>';
   function big(tab,title,sub){var rec=r.btn===tab&&!dn[tab],nid=tab=="train"&&r.id!=="RS"?trainId(dy).id:r.id;
     return '<button type="button" class="big'+(dn[tab]?" done":(rec?" rec":""))+'" data-tab="'+tab+'"><span class="bt"><b>'+title+'</b>'+(dn[tab]?'<i class="tag ok">Done</i>':(rec?'<i class="tag">Recommended</i>':''))+'</span><span>'+(dn[tab]?esc(doneSub(tab)):(rec?'<span class="rn">'+esc(shortN(nid))+'</span>'+esc(recDur(nid)):esc(sub)))+'</span></button>';}
-  h+=goalCard();h+=platHTML();
+  h+=goalCard();h+=goalNextHTML();h+=platHTML();
   if(D.logs.length){var xp0=xpTotal(),st0=streaks();h+='<button type="button" class="rkline lnk" data-tab="stand"><span><b>'+esc(rankName(rankOf(xp0)))+'</b> · '+xp0+' XP</span><span>'+(st0.day.now>1?st0.day.now+'-day streak · ':'')+'Stats →</span></button>';}
   h+=loveCard();
   if(TH().notes){var nt=TH().notes;h+='<p class="quote"><span aria-hidden="true">'+({templar:"✠",sanguine:"✦",sisters:"⚜",slaanesh:"✧",nurgle:"☣",love:"♥",plain:"•"}[thKey()]||"•")+'</span> '+esc(nt[Math.floor(pd(TODAY).getTime()/864e5)%nt.length])+'</p>';}
@@ -2796,7 +2838,8 @@ document.addEventListener("click",function(e){
   else if(a==="never"){var nn=t.dataset.n;D.never=nev().slice();if(D.never.indexOf(nn)<0)D.never.push(nn);D._nvMsg=D.tab==="train"?nn:"";save();keepRender();return;}
   else if(a==="unnever"){var un=t.dataset.n;D.never=nev().filter(function(x){return x!==un;});save();keepRender();return;}
   else if(a==="favkeep"||a==="favnot"){var fq=(D.favQ||[]).shift();if(a==="favkeep"&&fq){D.fav=D.fav||[];if(D.fav.indexOf(fq)<0)D.fav.push(fq);D._toast="★ "+fq+" joins your strength sessions.";}}
-  else if(a==="goal"){setGoal(t.dataset.k);save();keepRender();return;}
+  else if(a==="goal"){setGoal(t.dataset.k);D.goalNext=[];save();keepRender();return;}
+  else if(a==="gnext"){var gx=(D.goalNext||[]).filter(gOpen)[+t.dataset.k];D.goalNext=[];if(gx){setGoal(gx.k);if(D.goal){D.goal.v=gx.v;D.goal.st=goalPos(D.goal).done;D.goal.s0=D.goal.st;}}save();keepRender();return;}
   else if(a==="goalx"){setGoal("none");D._gadj=false;D._gp=null;}
   else if(a==="gpopen"){D._gp={};D._gadj=false;D._gmsg="";}
   else if(a==="gpx"){D._gp=null;}
@@ -2923,7 +2966,7 @@ function startHold(sec,sides){document.body.classList.add("tmr");audio();stop();
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

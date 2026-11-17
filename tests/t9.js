@@ -23,4 +23,7 @@ if(!/&lt;img/.test(d.getElementById('app').innerHTML))issue('Text nicht maskiert
 // A-039: ladder rung 1–5 only
 {const c=k.cleanImport({v:3,ex:{'p_pull#0':{r:8,n:'P',lad:'<b>'},'p_dip#0':{r:8,n:'D',lad:9},'p_row#0':{r:8,n:'R',lad:4}}});
  if(c.ex['p_pull#0'].lad!=null||c.ex['p_dip#0'].lad!=null||c.ex['p_row#0'].lad!==4)issue('A-039 lad not cleaned: '+JSON.stringify(c.ex));}
+// A-040: next-goal suggestions – unknown keys, markup and junk values refused, at most 2
+{const c=k.cleanImport({v:3,goalNext:[{k:'<img>',v:1},{k:'pull',v:'1e9'},'x',null,{k:'d42',v:42},{k:'mu',v:3},{k:'fl',v:2}]});
+ if(JSON.stringify(c.goalNext)!=='[{"k":"d42","v":42},{"k":"mu","v":3}]')issue('A-040 goalNext not cleaned: '+JSON.stringify(c.goalNext));}
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

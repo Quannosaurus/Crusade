@@ -30,6 +30,8 @@ if(th&&(th.id==='KC'||th.id==='RH'))issue('Vor Kick-Tag Beine/starker Lauf');
  const D5=w5.__kz.D();if(D5.logs[0].exs||D5.ex['p_dip#0'].s)issue('I-43: old entry got per-set values');if(JSON.stringify(D5.logs[1].exs)!=='{"p_pull#0":[8,8,7]}'||JSON.stringify(D5.ex['p_pull#0'].s)!=='[8,8,7]')issue('I-43: per-set values lost on load');}
 {const w6=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{'p_pull#0':{r:7,w:0,d:'2026-11-11',n:'Pull-ups',lad:2},'p_dip#0':{r:8,w:0,d:'2026-11-10',n:'Dips'}},vr:{},pain:{},home:{b:true}});
  const D6=w6.__kz.D();if(D6.ex['p_pull#0'].lad!==2||D6.ex['p_dip#0'].lad!=null)issue('A-039: ladder rung not kept or added on load');}
+{const w7=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{},vr:{},pain:{},home:{b:true}});if(JSON.stringify(w7.__kz.D().goalNext)!=='[]')issue('A-040: old state without goalNext not defaulted');
+ const w8=boot({v:3,start:'2026-10-01',tab:'start',onb:true,profile:{pull:8},logs:[],days:{},ex:{},vr:{},pain:{},home:{b:true},goalNext:[{k:'pull',v:13}]});if(JSON.stringify(w8.__kz.D().goalNext)!=='[{"k":"pull","v":13}]')issue('A-040: goalNext lost on load');}
 console.log('\n=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));
 // focus UI + migration hint
 P.length=0;
