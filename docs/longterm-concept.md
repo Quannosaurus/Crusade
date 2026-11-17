@@ -261,6 +261,22 @@ Technik:
 
 Daten: `honSeen` nimmt neue Schlüssel auf. Migration: nein. Aufwand: mittel. Aufträge: Technik **A-038**, Ansichten und Gamification **A-046**.
 
+Umsetzung (A-046):
+- Zeitraum-Wahl (Chips „12 weeks / 1 year / All“, flüchtig in `D._per`) für Kalender (Chronicle), Einheiten, Belastung und
+  Kilometer (Status); ab 1 Jahr Monatswerte (`perMonths`), „All“ ab dem ersten Monat mit Einträgen.
+- Übungsverlauf: ab 40 Punkten der beste Wert je Monat (Hinweis „Best value per month“), die Tabelle bleibt vollständig.
+- Jahresrückblick (`yearRev`) als Karte unter Status, von selbst: nach 52 Wochen die letzten 12 Monate, im Januar das Vorjahr;
+  Einheiten, Kilometer, Rekorde, erreichte Ziele, längste Tagesserie.
+- Ränge: nach dem höchsten Rang (16.000 XP) alle 8.000 XP eine Stufe weiter, Name je Theme plus Zahl (Templar „Hero of the
+  Crusade 1“, Plain „Legend 1“), Aufstieg nur als Meldung.
+- Gestufte Ehrungen (`honTiers`): Einträge 100/500/1000/2000, Kilometer 100/500/1000/2000, Wochen mit 3+ Einheiten in Folge
+  4/26/52/104, Jahre 1/2/3, Rekorde 10/50/100, Core Blitz 25/100/250; gesehene Stufen in `honSeen` als `<Schlüssel><Stufe>`
+  (eine erreichte Stufe bleibt), Meldung beim Erreichen, Plain mit eigenen Namen.
+- Texte: Tagessprüche und Abschlussmeldungen je Theme (Templar, Sanguine, Sisters, Slaanesh, Nurgle, Plain) von 16 auf 60,
+  Auswahl über eine je Durchlauf gemischte Reihenfolge (`pickNR`), also ohne Wiederholung innerhalb eines Durchlaufs; das
+  Love-Theme bleibt unverändert.
+- Chronicle: 20 Einträge, ältere erst auf Tipp („Show older entries“, je 50).
+
 ## Datenmodell und Migration im Überblick
 
 | Baustein | Neue Felder | Migration | Alte Backups |
