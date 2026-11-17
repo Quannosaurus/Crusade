@@ -1,4 +1,4 @@
-# Builds the app from src/: the PWA into the repo root (served by GitHub Pages) and a single-file copy into .build/index.html (for tests).
+# Builds the app from src/ (A-048: every file list is sorted, so the build is byte-identical on macOS and Linux): the PWA into the repo root (served by GitHub Pages) and a single-file copy into .build/index.html (for tests).
 import re,shutil,os,glob
 R=os.path.dirname(os.path.dirname(os.path.abspath(__file__)));B=R+'/src';O=R
 # Love notes: only the ciphertext from src/love.enc.json (made by tools/encrypt_love.py) is embedded, never plaintext.
@@ -17,7 +17,7 @@ for fam,file,wt in [('Cinzel','cinzel',600),('Cinzel','cinzel',800),('Source San
     shutil.copy(B+'/fonts/'+fn,O+'/fonts/'+fn)
     fonts+="@font-face{font-family:'%s';font-style:normal;font-weight:%d;font-display:swap;src:url(fonts/%s) format('woff2')}\n"%(fam,wt,fn)
 open(O+'/app.css','w').write(fonts+css)
-for lic in glob.glob(B+'/fonts/LICENSE-*'): shutil.copy(lic,O+'/fonts/')
+for lic in sorted(glob.glob(B+'/fonts/LICENSE-*')): shutil.copy(lic,O+'/fonts/')
 csp="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'"
 # Safety net: drop any <link> that points off-site (preconnect, remote stylesheets). The app loads nothing external.
 h=re.sub(r'<link\b[^>]*\bhref="(?:https?:)?//[^"]*"[^>]*>\n?','',h)
@@ -30,7 +30,7 @@ js=open(B+'/pics.js').read()+'\n'+open(B+'/app.js').read().replace(LM,LJ)+'\nif(
 open(O+'/app.js','w').write(js)
 import hashlib
 ver=hashlib.sha256((h+js+fonts+css).encode()).hexdigest()[:8]
-files=['./','index.html','app.js','app.css','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','icon-maskable-512.png']+['fonts/'+os.path.basename(f) for f in glob.glob(O+'/fonts/*.woff2')]
+files=['./','index.html','app.js','app.css','manifest.webmanifest','icon.svg','icon-192.png','icon-512.png','icon-maskable-512.png']+sorted('fonts/'+os.path.basename(f) for f in glob.glob(O+'/fonts/*.woff2'))
 open(O+'/sw.js','w').write('''// Offline cache. Network first, cache as fallback, so new versions arrive whenever you are online.
 const C="crusade-%s";
 const FILES=%s;

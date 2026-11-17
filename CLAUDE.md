@@ -18,7 +18,7 @@ A personal training app (calisthenics, gym, running, mobility, kickboxing days) 
 | `src/pics.js` | Pose pictograms (SVG from joint angles), `picFor(name)` |
 | `src/app.js` | The whole app logic (~1300 lines) |
 | `src/icons/`, `src/fonts/` | App icons, self-hosted fonts (OFL) |
-| `tools/build.py` | Builds the PWA into the **repo root** (`index.html`, `app.js`, `app.css`, `sw.js`, manifest, icons, fonts) and `.build/index.html` (single file for tests) |
+| `tools/build.py` | Builds the PWA into the **repo root** (`index.html`, `app.js`, `app.css`, `sw.js`, manifest, icons, fonts) and `.build/index.html` (single file for tests); every file list is sorted, so the build is byte-identical on macOS and Linux (A-048, `t61`) |
 | `tools/record-fixture.js` | Re-records `tests/fixtures/t31-nogoal.json` and prints the changed days per profile by kind (session type / exercises / order / estimate only); `--check` writes nothing. Only with a documented rule change (A-034) |
 | `tests/` | Playwright/JSDOM tests, `tests/run.sh` runs all of them, `tests/README.md` lists every test and the retired numbers |
 | Repo root | **Generated** – never edit by hand, only via `tools/build.py` |
