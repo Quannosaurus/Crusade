@@ -321,9 +321,10 @@ function lvl(){var p=D.profile;if(p.pull<5||p.dips<8)return 0;if(p.mu>=3)return 
    stage 2 also with 3 muscle-ups; the ratio counts pull-ups (from at least 5) against the first trial value. Both axes have a
    fourth stage, reached without a muscle-up. LVQ [ratio, weeks]: [Q3] novice → intermediate after about 6 months of
    training, advanced after years; [Q58] strength gains shrink from about 40 % (untrained) over 20 % to about 10 %
-   (advanced), so the stages ask +25 %/12 weeks, +50 %/26 weeks, +75 %/52 weeks. Training status is about training
+   (advanced), so the stages ask +25 %/12 weeks, +50 %/26 weeks, +75 %/104 weeks (A-049: [Q3] places "advanced" only after years of
+   training, so the fourth stage also needs 104 weeks since the first value). Training status is about training
    experience [Q3]: whoever is past Basic in the upper body or started as "Experienced" (s2) is no novice, lower ≥ 1. */
-var LVN=["Basic","Intermediate","Advanced","Veteran"],LVQ=[[1.25,12],[1.5,26],[1.75,52]],LANK=/^(g_ht|gl_ht|c_sq|gl_sq)#/;
+var LVN=["Basic","Intermediate","Advanced","Veteran"],LVQ=[[1.25,12],[1.5,26],[1.75,104]],LANK=/^(g_ht|gl_ht|c_sq|gl_sq)#/;
 var LVW=typeof WeakMap!=="undefined"?new WeakMap():null,LVLAST=null;
 function lvClr(){LVLAST=null;if(LVW)LVW=new WeakMap();}
 function lvStep(r,w){var s=0;LVQ.forEach(function(q,i){if(r>=q[0]-1e-9&&w>=q[1])s=i+1;});return s;}
@@ -2048,7 +2049,7 @@ function vOnb(){
   }
   if(st===3) h+='<p>Almost done. Do you have a fixed kickboxing class, and what do you have at home?</p><h3>Kickboxing days</h3>'+kickSel("o_kick")+
     '<h3>At home</h3><p class="muted">The yoga mat is always there.</p>'+Object.keys(EQ).map(function(k){return '<label class="chk"><input type="checkbox" data-a="eq" data-k="'+k+'"'+(D.home[k]?" checked":"")+'>'+EQ[k]+'</label>';}).join("")+
-    '<div class="sum"><b>'+W("crusade")+'</b><span>'+lvTxt()+' · '+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · emphasis '+EMPH.filter(function(x){return x[0]===emph();})[0][1]+(selSk().length?' · '+["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", "):'')+(D.goal&&GOALS[D.goal.k]?' · '+esc(goalName(D.goal)):'')+'</span></div>';
+    '<div class="sum"><b>'+W("crusade")+'</b><span>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+' · emphasis '+EMPH.filter(function(x){return x[0]===emph();})[0][1]+(selSk().length?' · '+["hs","mu","ls","fl","pl"].filter(function(k){return D.skills[k];}).map(function(k){return SKN[k];}).join(", "):'')+(D.goal&&GOALS[D.goal.k]?' · '+esc(goalName(D.goal)):'')+'</span></div>';
   h+='</div><div class="dlgf">'+(st>0?'<button type="button" class="b" data-a="obback">Back</button>':'<span></span>')+(st<3?'<button type="button" class="b red" data-a="obnext">Next</button>':'<button type="button" class="b red" data-a="onb">'+W("begin")+'</button>')+'</div></section>';
   return h;
 }
@@ -2675,7 +2676,7 @@ function render(){try{render0();}catch(e){rendering=false;rescue();}}
 function render0(){
   updNames(); applyTheme(); setTimeout(wake,0);
   var c=ctx(TODAY),d=new Date();
-  document.getElementById("subline").textContent=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" · Week "+c.week+" · "+lvTxt();
+  document.getElementById("subline").textContent=["Sun","Mon","Tue","Wed","Thu","Fri","Sat"][d.getDay()]+" "+d.getDate()+" "+["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"][d.getMonth()]+" · Week "+c.week;
   var top={morgen:"start",train:"start",run:"start",kick:"start",other:"start",favs:D._favFrom==="mehr"?"mehr":"start"}[D.tab]||D.tab;
   document.getElementById("nav").innerHTML=D.onb?tabs().map(function(t){return '<button type="button" data-tab="'+t[0]+'" class="'+(top===t[0]?"on":"")+'"'+(top===t[0]?' aria-current="page"':'')+'>'+t[1]+'</button>';}).join(""):"";
   document.body.className=D.onb?(["train","morgen","run","kick","other"].indexOf(D.tab)>=0?"train":""):"ob";if(D.onb&&(iv||(D.tab==="train"&&setLogged())))document.body.classList.add("tmr");

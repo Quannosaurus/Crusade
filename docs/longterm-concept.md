@@ -105,6 +105,11 @@ ersten Testwert, Stufe 3 nur über das Verhältnis, ohne Muscle-up. Runden je Bl
 Musters steigt auf der vierten Stufe seiner Achse um 2 Sätze an der Obergrenze [Q2][Q4]. Die Variantenwahl (`lvl()`)
 bleibt unverändert. t31 blieb unverändert (Fixture nicht neu aufgenommen): die Pläne der ersten Wochen ändern sich nicht.
 
+Nacharbeit (A-049): Die vierte Stufe „Veteran“ verlangt auf beiden Achsen zusätzlich mindestens **104 Wochen** seit dem
+ersten Wert (Faktor ×1,75 bleibt), Stufen 2 und 3 bleiben bei 12 und 26 Wochen. Begründung: ACSM 2009 [Q3] ordnet
+„advanced“ erst nach Jahren Training ein; ein Jahr reicht dafür nicht. Das Level steht nicht mehr in der Kopfzeile und nicht
+in der Onboarding-Zusammenfassung; die Kacheln unter Status sind die einzige Anzeige. Die Kopfzeile zeigt Datum und Woche.
+
 ## L4 – Blöcke mit wechselndem Akzent (groß)
 
 Problem: Woche 13 ist Woche 1 (T1), Volumen bleibt zwei Jahre gleich (T2).
