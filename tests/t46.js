@@ -9,7 +9,7 @@
 // down to 45 min, the other floors stay. Run focus: ≥ 1 leg session and 2 strength sessions per training week (deload week
 // excepted), Skill Trial every 14 ± 2 days without deload days (N-5), the focus text matches. A-027 rests: kickboxing
 // cool-down through the pain filter, additions on the pain list like painApply, b2_tr counts as push (also old logs).
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD,doTrain}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');const TBL=require('./fixtures/pattern-table.js');
 const P=[];const issue=m=>P.push(m);const rep=[];

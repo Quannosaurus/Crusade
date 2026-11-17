@@ -5,7 +5,7 @@
 // warm-up, cool-down and anchor in place, Shoulder stability at least in its compact form on Strength A, at least two
 // favourites on Strength C while pure accessory work is present, no trim list anywhere, the duration still in the header,
 // the leg block surviving Limited time when the week needs it (and allowed to go when it does not), and old backups.
-const {JSDOM}=require('jsdom');const fs=require('fs');
+const {JSDOM}=require('./domguard');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];

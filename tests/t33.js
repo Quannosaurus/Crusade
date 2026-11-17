@@ -7,7 +7,7 @@
 // C / hard run, in the week preview too; past days too; not a training week for the cycle), "Easy week now" (deload moves
 // forward, cycle, tests, Skill Trial and week preview follow, one-tap undo until the week begins). Backup round trip with
 // the new fields, junk refused, old backup. Playwright 390×844 screenshots.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

@@ -8,7 +8,7 @@
 // after 3 checks without progress (A-035: checks only where the goal value is measurable, 1 per training week, at the earliest after 3 weeks; boost at most 6 weeks), exactly one measure (easy week / +2 sets / swap), English, theme words. Logged past days
 // (bl) count for the pause rule and frequency but never for progression, stall, plateau or the bands. Captain 6-week
 // simulation: pull and push ≤ ~20 sets per week, legs ≥ 10. Backup round trip, junk refused, old backup.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

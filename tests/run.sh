@@ -10,6 +10,7 @@
 #
 # A test file declares its name in line 1 ("// @name <kebab-name>").
 # "// @report" marks a manual report: it passes if it runs without crashing.
+# "// @longrun" (line 2) marks a long run: skipped here, run by tests/longterm.sh.
 # A test passes when it exits 0 and every result line ("... (n)") shows (0).
 cd "$(dirname "$0")/.." || exit 2
 python3 tools/build.py >/dev/null || { echo "FAIL build – tools/build.py failed"; echo "0 passed, 1 failed (1)"; exit 1; }
@@ -17,6 +18,7 @@ python3 tools/build.py >/dev/null || { echo "FAIL build – tools/build.py faile
 pass=0; fail=0
 for t in $(ls tests/t*.js | sed 's/^tests\/t\([0-9]*\)\.js$/\1/' | sort -n); do
   f="tests/t$t.js"; id=$(printf 't%02d' "$t")
+  sed -n '2p' "$f" | grep -q '^// @longrun' && continue
   name=$(sed -n '1s/^\/\/ @name \([a-z0-9-]*\).*$/\1/p' "$f"); [ -n "$name" ] || name="(unnamed)"
   out=$(timeout 300 node "$f" 2>&1); rc=$?
   reason=""

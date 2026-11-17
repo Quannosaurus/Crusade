@@ -5,7 +5,7 @@
 // the replaced state is kept one generation (kz_app_v3_prev) with "Undo restore" for 1 day and a preview line before
 // the confirm tap; the old kickDay field migrates like load(); distance/minutes have limits (also saveRun); dates are real
 // calendar dates; the run file import has a size limit; the love key stays outside backups; old backups still load.
-const {JSDOM}=require('jsdom');const fs=require('fs');
+const {JSDOM}=require('./domguard');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre,url,extra){const dom=new JSDOM(html,{runScripts:'outside-only',url:url||'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
@@ -49,6 +49,40 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
  // the restored state renders with the default theme
  const D=base(x.k);x.k.setD(Object.assign(ci(JSON.parse('{"profile":{},"logs":[],"theme":"constructor","onb":true}')),{tab:'mehr'}));x.k.render();
  if(x.$('body').getAttribute('data-theme')!=='templar')issue('restored proto theme not templar');if(x.errs.length)issue('JS errors (1): '+x.errs.join('; '));}
+
+// 1b A-034: the remaining whitelist fields (profile, fav, honSeen, never, favAsk, favQ, favP, seenFav, onb, runKm/runI,
+// logs.sk/rd, days.add/ready/fin, pause, pauseH, easy/easyP, bkDate, goal.s0 and the other goal fields, top-level
+// prototype keys) refuse prototype names without pollution, and the restored state renders on every tab.
+{const x=boot();x.k.today(TD);const ci=x.k.cleanImport;const WOP=x.w.eval('Object.prototype');const own=(o,q)=>Object.prototype.hasOwnProperty.call(o,q);
+ BAD.forEach(nm=>{const J=JSON.stringify(nm);
+  const raw='{"__proto__":{"polluted":1},"constructor":{"prototype":{"x":1}},"profile":{'+J+':5,"pull":7},"start":"2026-10-01",'+
+   '"fav":['+J+',"Pull-ups"],"honSeen":['+J+',"first"],"never":['+J+',"Burpees"],"favAsk":['+J+',"Dips"],"favQ":['+J+',"Dips"],'+
+   '"favP":'+J+',"seenFav":'+J+',"onb":'+J+',"runKm":'+J+',"runI":'+J+',"bkDate":'+J+',"easy":'+J+',"easyP":'+J+',"abs":'+J+','+
+   '"logs":[{"d":"2026-11-10","id":"KA","t":"A","sk":['+J+',"hs"],"rd":'+J+',"vs":{'+J+':5,"pull":4}}],'+
+   '"days":{"2026-11-15":{"add":['+J+',"Hip thrust"],"ready":'+J+',"fin":{'+J+':1,"rpe":5,"oan":"Hike"}}},'+
+   '"pause":{"from":"2026-11-01","to":'+J+',"why":'+J+'},"pauseH":[{"f":'+J+',"t":'+J+'},{"f":"2026-10-01","t":"2026-10-05"}],'+
+   '"goal":{"k":"pull","v":12,"b":5,"s":"2026-10-01","s0":'+J+','+J+':1,"h":[['+J+',1],["2026-10-02",6]],"pm":'+J+',"pz":'+J+',"lp":'+J+',"cw":'+J+',"ck":'+J+'}}';
+  let b;try{b=ci(JSON.parse(raw));}catch(e){issue('1b '+nm+': cleanImport throws '+e.message);return;}
+  if(Object.getPrototypeOf(b)!==WOP)issue('1b '+nm+': state prototype changed');if(own(b,'polluted')||b.x!==undefined)issue('1b '+nm+': top-level prototype key taken');
+  if(own(b.profile,nm)||Object.getPrototypeOf(b.profile)!==WOP)issue('1b '+nm+': profile key kept');if(b.profile.pull!==7)issue('1b '+nm+': real profile value lost');
+  [['fav','Pull-ups'],['honSeen','first'],['never','Burpees'],['favAsk','Dips'],['favQ','Dips']].forEach(([f,real])=>{const a=b[f]||[];if(a.indexOf(nm)>=0)issue('1b '+nm+': '+f+' keeps the prototype name');if(a.indexOf(real)<0)issue('1b '+nm+': real '+f+' entry lost');});
+  if(typeof b.favP==='string'||typeof b.seenFav==='string'||b.onb!==false)issue('1b '+nm+': favP/seenFav/onb taken');
+  if(b.runKm!==6||b.runI!==4)issue('1b '+nm+': runKm/runI '+b.runKm+'/'+b.runI);
+  if(b.bkDate||b.easy||b.easyP)issue('1b '+nm+': bkDate/easy/easyP taken');if(b.abs!==0)issue('1b '+nm+': abs '+b.abs);
+  const l=b.logs[0]||{};if((l.sk||[]).join()!=='hs')issue('1b '+nm+': logs.sk '+JSON.stringify(l.sk));if(l.rd!==undefined)issue('1b '+nm+': logs.rd taken');
+  if(l.vs&&(own(l.vs,nm)||l.vs.pull!==4))issue('1b '+nm+': logs.vs '+JSON.stringify(l.vs));
+  const dd=b.days['2026-11-15']||{};if((dd.add||[]).indexOf(nm)>=0||(dd.add||[]).indexOf('Hip thrust')<0)issue('1b '+nm+': days.add '+JSON.stringify(dd.add));
+  if(dd.ready!==undefined)issue('1b '+nm+': days.ready taken');if(!dd.fin||own(dd.fin,nm)||dd.fin.rpe!==5||dd.fin.oan!=='Hike')issue('1b '+nm+': days.fin '+JSON.stringify(dd.fin));
+  if(!b.pause||b.pause.to!==''||b.pause.why!=='pause')issue('1b '+nm+': pause '+JSON.stringify(b.pause));
+  if(b.pauseH.length!==1||b.pauseH[0].f!=='2026-10-01')issue('1b '+nm+': pauseH '+JSON.stringify(b.pauseH));
+  const g=b.goal;if(!g)issue('1b '+nm+': real goal lost');else{if(g.s0!==undefined)issue('1b '+nm+': goal.s0 taken ('+g.s0+')');if(own(g,nm))issue('1b '+nm+': goal key kept');
+    if(g.h.length!==1||g.h[0][0]!=='2026-10-02')issue('1b '+nm+': goal.h '+JSON.stringify(g.h));if(g.pm||g.pz||g.lp||g.cw)issue('1b '+nm+': goal pm/pz/lp/cw taken');
+    if(Object.getPrototypeOf(g)!==WOP)issue('1b '+nm+': goal prototype changed');}
+  const y=boot();y.k.today(TD);y.k.setD(Object.assign(b,{onb:true,seenFocus:true,seenFav:true}));
+  ['start','train','run','kick','morgen','verlauf','stand','mehr','favs'].forEach(t=>{y.k.D().tab=t;try{y.k.render();}catch(e){issue('1b '+nm+': render '+t+' throws '+e.message);}});
+  if(y.$('#app')&&/rescue|Reset all data/i.test(y.$('#app').className||''))issue('1b '+nm+': rescue page');
+  if(polluted(y.w))issue('1b '+nm+': prototype polluted after render');if(y.errs.length)issue('1b '+nm+': JS errors '+y.errs.join('; '));});
+ if(polluted(x.w))issue('1b prototype polluted');}
 
 // 2 restore falls back when the new state cannot be rendered
 {const x=boot();const D=base(x.k);D.logs=logs(3);D.tab='mehr';x.k.render();x.k.D().tab='mehr';

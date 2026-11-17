@@ -4,7 +4,7 @@
 // storage gives an identical D.vr; the variant shown in a session is the same as before. Crafted keys (__proto__,
 // "g|__proto__", constructor, overlong, wrong prefix, markup) are refused, values stay 0–20, at most 300 keys, no
 // prototype pollution. Other composite-key fields (ex, pr, kitD, fav, log ex, days) keep their real keys. Old backups load.
-const {JSDOM}=require('jsdom');const fs=require('fs');
+const {JSDOM}=require('./domguard');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];

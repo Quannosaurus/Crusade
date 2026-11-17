@@ -8,7 +8,7 @@
 // run out over the pause. Injury: knee/lower back/ankle/hip with filter and rehab block, knee/ankle → no runs, upper body
 // normal, the pain filter ranks above additions and band swaps, "Healed" in one tap; old pain data, backup round trip,
 // junk refused; Playwright 390×844 screenshots (More, start card, knee day).
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD,doTrain}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

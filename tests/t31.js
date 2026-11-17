@@ -9,9 +9,9 @@
 // ≥ 2 runs and 1 long run per week, time goal adds fast runs. Date: taper only in the 7 days before it (about half the
 // working sets, same exercises), test on the date, deload week replaced, ended after the date; trend label; one-time focus
 // hint; never list vs goal exercise; Field kit bodyweight goal anchor; additions stay outside the precedence.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
-const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json'),FX=require('./fixtures/t31-nogoal.json');
+const {sim,addD}=require('./fixtures/sim.js');const INV=require('./fixtures/invariants.js');const PROF=require('./fixtures/profiles.json'),FX=require('./fixtures/t31-nogoal.json');
 const P=[];const issue=m=>P.push(m);const rep=[];
 function boot(){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
   w.addEventListener('error',e=>errs.push(e.message));w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);const $=s=>w.document.querySelector(s);
@@ -22,7 +22,10 @@ function setup(k,p,start){const D=k.D();Object.assign(D.profile,p.prof);D.focus=
 const prof=n=>PROF.find(p=>p.n===n);
 const vol=(k,s,c,id)=>{let n=0;s.blocks.forEach(b=>{if(b.warm||b.cool)return;b.items.forEach(it=>{if(k.curVar(it,k.LOC())<0||!it.k||it.f||it.iso||it.test)return;n+=k.setsOf(it,b,c,id);});});return n;};
 // 1 regression without a goal
-PROF.forEach(p=>{const {k,errs}=boot();setup(k,p);const got=sim(k,42,START).map(r=>r.id+(r.sig?' '+r.sig:''));let d=0;
+/* A-034: invariants on the same run instead of the snapshot alone: 60–90 min, warm-up first, cool-down last, 2 working
+   sets, tolerance rule. Re-record the snapshot only with a documented rule change: node tools/record-fixture.js. */
+PROF.forEach(p=>{const {k,errs}=boot();setup(k,p);const got=sim(k,42,START,(r,s)=>INV.session(k,r,s,issue,'no goal, '+p.n+' ')).map(r=>r.id+(r.sig?' '+r.sig:''));let d=0;
+  INV.tolerance(k,START,42,issue,'no goal, '+p.n+': ',rep);
   got.forEach((x,i)=>{if(x!==FX[p.n][i]){d++;if(d<=2)issue('no goal, '+p.n+' day '+(i+1)+' differs: '+x.slice(0,90)+' ≠ '+FX[p.n][i].slice(0,90));}});
   if(d>2)issue('no goal, '+p.n+': '+d+' days differ');if(errs.length)issue('regression JS errors: '+errs.join('; '));});
 // 2 six-week simulations per goal type (open goal: target out of reach, no date)

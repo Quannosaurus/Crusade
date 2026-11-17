@@ -8,7 +8,7 @@
 // exercise. Units: cut order and floors (2 sets/rounds, anchor last, emphasis
 // exercise swapped for one with room), goal anchor, additions, warm-up and skill blocks never cut, a logged session does
 // not shrink afterwards, Limited time, Level 0 vs Level 1 in rounds(), the cut sets reach the target text and l.vs.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

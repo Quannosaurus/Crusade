@@ -4,7 +4,7 @@
 // anchor and leg block kept, estimate 60–90 min. Then the flow (2 taps with a remembered kit), logging under the kit
 // (records per variant, no false records), next day off, week preview unaffected, Limited time combined, backups.
 // Playwright 390×844: screenshots of the quick question and a Strength A session with "Nothing".
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);let checked=0;

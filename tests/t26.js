@@ -4,7 +4,7 @@
 // file. File and text backup hold the full user state including day progress ("days"), never the love key; a round
 // trip into fresh storage restores identical logs, profile, progress and days. Old backups load, oversized input only
 // gives a hint.
-const {JSDOM}=require('jsdom');const fs=require('fs');
+const {JSDOM}=require('./domguard');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre,ls){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];

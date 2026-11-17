@@ -7,7 +7,7 @@
 // normally and lead once to "Keep as favourite?". "+ Easy run" works on a day without a planned run and on top of a
 // training: both entries are saved, training progress is kept, the order hint shows, the next day keeps the day-before-
 // kickboxing rule and the week preview follows. Backup round trip with the new fields. Playwright 390×844 screenshots.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);

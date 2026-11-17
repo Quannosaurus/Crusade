@@ -5,7 +5,7 @@
 // training week, no Strength C / hard run the day before kickboxing (Skill Trial there only as the fallback at 16 days), the week preview of the day before shows
 // every Skill Trial. Beginner: the trial tests an earlier stage (dead hang, then negative pull-ups in seconds) and shows its
 // last value instead of "0 reps"; values land in profile/tv. Old logs and backups load.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

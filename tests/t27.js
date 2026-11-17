@@ -4,7 +4,7 @@
 // are visible, the forecast for tomorrow comes true when the plan is followed, and building the preview changes no state.
 // Then Playwright (390×844): strip with 7 days, tap shows the detail, kz_app_v3 identical before/after, render time,
 // EMOM/AMRAP explanations, favourites unchanged, screenshots.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);

@@ -1,7 +1,7 @@
 // @name naming-doctrine
 // A-011: the app uses its own names. No terms from foreign programmes, brands or authors in sources or build;
 // internal IDs stay, old backups load, honours and stats keep counting.
-const {JSDOM}=require('jsdom');const fs=require('fs');const path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs');const path=require('path');
 const R=p=>path.resolve(__dirname,'..',p);
 const P=[];const issue=m=>P.push(m);
 // Forbidden display terms (case-insensitive). Extend this list when the Captain bans another name.

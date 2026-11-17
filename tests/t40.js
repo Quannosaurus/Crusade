@@ -5,7 +5,7 @@
 // list under More brings it back; favourites page toggles it. "Log a past day": training, run or kickboxing up to 14 days
 // back; the entry shows in the Chronicle, counts for leg frequency, the pause rule (no step back), recommendations,
 // records and XP; validation. Backup round trip with the new fields, junk refused, old backup loads.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);let checked=0;
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];

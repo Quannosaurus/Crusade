@@ -5,7 +5,7 @@
 // working weight, tv.lb) for lower/glutes, goal anchor for kg goals. Values go into the log's tv and the profile; clean
 // sets in training raise the profile but never lower it, level-up toast; old CH logs stay valid; doctrine text 14 days;
 // Playwright 390×844 screenshots of the Skill Trial.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD,doTrain}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

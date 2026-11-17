@@ -5,7 +5,7 @@
 // calf raises and abduction pattern-free and outside the leg count (LEGK derived, legSets), Core Blitz counts for core,
 // fixed items with real load count by their pattern, Field kit / Never groups follow the pattern; old logs are read by
 // the new mapping (vm 2; vm 3 since A-035 with b2_tr push) without being changed.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const TBL=require('./fixtures/pattern-table.js');
 const P=[];const issue=m=>P.push(m);

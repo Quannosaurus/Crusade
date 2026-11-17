@@ -1,6 +1,11 @@
 // @name persona-report
-// @report
-const {JSDOM}=require('jsdom');const fs=require('fs');
+// 10-persona simulation over 8 weeks (A-034: a real test with conditions instead of a report). Checks per persona:
+// recommendation every day, never the same session 3 days in a row (home excepted), the overachiever never more than
+// 4 hard days in a row; every unit has ≥ 5 doable exercises and no empty block; gym strength sessions (Strength A/B/C,
+// Skill Trial where the pain table allows it) are estimated by the app at 60–90 min (Limited time: 30–60 min), home
+// sessions ≤ 90 min, every unit ≤ 90 min with warm-up first and cool-down last; every tab renders; focus advice on
+// Status, "at the limit" for the overachiever, a rehab block with pain; no runtime errors.
+const {JSDOM}=require('./domguard');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const F=[];
 function boot(){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];w.addEventListener('error',e=>errs.push(e.message));w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);return {w,k:w.__kz,d:w.document,errs};}
@@ -27,7 +32,7 @@ const out=[];
 P.forEach(p=>{const {w,k,d,errs}=boot();const D=k.D();const flags=[];
  Object.assign(D.profile,p.prof);D.focus=p.focus;D.skills={hs:!!p.skills.hs,mu:!!p.skills.mu,ls:!!p.skills.ls,fl:!!p.skills.fl,pl:!!p.skills.pl};D.kickDays=p.kick;D.loc=p.loc;if(p.home)D.home=Object.assign({},p.home);D.pain=p.pain||{};D.short=!!p.short;D.onb=true;D.logs=[];D.start='2026-09-21';
  let dt=new Date('2026-09-21T12:00Z'),seq=[],durs=[],same=0,last='',hardStreak=0,maxHard=0;const rnd=(()=>{let x=7+p.n.length;return()=>{x=(x*9301+49297)%233280;return x/233280;};})();
- for(let i=0;i<56;i++){const s=dt.toISOString().slice(0,10);const rec=k.recAll(s,false);let id=rec.id;
+ for(let i=0;i<56;i++){const s=dt.toISOString().slice(0,10);const rec=k.recAll(s,false);let id=rec.id;if(!rec||(!id&&rec.btn!=='pause'))flags.push('No recommendation on '+s);
   if(rec.btn==='train'&&p.loc==='h'){id=k.recTrain(s,'h',false).id;}
   const paused=p.pause&&i>=p.pause[0]&&i<p.pause[1];
   if(!paused&&rnd()<p.freq){const sk=['KA','KB','KC','SK'].includes(id)?k.skillPlan(id,s):[];D.logs.push({d:s,id,t:id,rpe:p.rpe||[4,6,6,8][Math.floor(rnd()*4)],sk,km:rec.btn==='run'?(id==='RE'?5:8):0,min:rec.btn==='run'?(id==='RE'?32:52):0,abs:rnd()<0.6?1:0});seq.push(id);
@@ -43,9 +48,13 @@ P.forEach(p=>{const {w,k,d,errs}=boot();const D=k.D();const flags=[];
   const avail=s.blocks.map(b=>b.items.filter(it=>k.curVar(it,p.loc)>=0).length),tot=avail.reduce((a,b)=>a+b,0);
   if(tot<5)flags.push(id+': only '+tot+' doable exercises');
   s.blocks.forEach((b,i)=>{if(b.items.length&&avail[i]===0&&b.name!=='Cool-down')flags.push(id+': block "'+b.name+'" empty with this equipment');});
-  const dm=est(k,D,s,p.loc);durs.push(id+' '+dm+'m');
-  if(!['DL','RS','HK'].includes(id)&&(dm>95||dm<25))flags.push(id+' duration '+dm+' min');
-  if(D.short&&dm>50&&!['DL','RS'].includes(id))flags.push(id+' limited-time still '+dm+' min');
+  const dm=s.min;durs.push(id+' '+dm+'m');
+  const painUp=p.pain&&(p.pain.s||p.pain.w),gymStr=['KA','KB','KC'].concat(painUp?[]:['CH']).includes(id);
+  if(gymStr&&!D.short&&(dm<60||dm>90))flags.push(id+' estimated '+dm+' min (60–90)');
+  if(gymStr&&D.short&&(dm<30||dm>60))flags.push(id+' Limited time estimated '+dm+' min (30–60)');
+  if(dm>90)flags.push(id+' estimated '+dm+' min (over 90)');
+  if(!['RS'].includes(id)){const wi=s.blocks.findIndex(b=>b.warm),ci=s.blocks.findIndex(b=>b.cool);
+    if(ci>=0&&ci!==s.blocks.length-1)flags.push(id+': cool-down not last');if(wi>0)flags.push(id+': warm-up not first');if(!['DL','TE','SK','HK'].includes(id)&&wi!==0)flags.push(id+': no warm-up');}
   if(p.pain){s.blocks.forEach(b=>{if(b.rehab)return;b.items.forEach(it=>{const v=k.curVar(it,p.loc);if(v<0)return;const nm=it.opts[v].n;if(/Handstand|Push-up|Pike|wrist prep|Wrist prep|Planche/i.test(nm)&&b.name!=='Cool-down'){/* allowed only if pain filter skips at render */}});});}
  });
  // render all screens
@@ -60,5 +69,5 @@ P.forEach(p=>{const {w,k,d,errs}=boot();const D=k.D();const flags=[];
  if(errs.length)flags.push('JS errors: '+errs.join(';'));
  out.push({n:p.n,flags:[...new Set(flags)],cnt,durs,ins:ins.slice(0,3)});
 });
-out.forEach(o=>{console.log('\n### '+o.n);console.log('  sessions:',JSON.stringify(o.cnt));console.log('  durations:',o.durs.join(', '));console.log('  advice:',o.ins.join(' | '));o.flags.forEach(f=>console.log('  ⚠ '+f));});
-process.exit(0);
+const P2=[];out.forEach(o=>{console.log('\n### '+o.n);console.log('  sessions:',JSON.stringify(o.cnt));console.log('  durations:',o.durs.join(', '));console.log('  advice:',o.ins.join(' | '));o.flags.forEach(f=>{console.log('  ⚠ '+f);P2.push(o.n.split(' ')[0]+': '+f);});});
+console.log('=== AUFFÄLLIGKEITEN ('+P2.length+') ===');P2.forEach(m=>console.log(' - '+m));process.exit(0);

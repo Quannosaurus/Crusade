@@ -33,5 +33,7 @@ for(let n=1;n<=max;n++){
   if(inRet&&inRes)issue(pad(n)+' is listed as retired and reserved');
   if(nums.includes(n)&&inRet)issue(pad(n)+' exists but is listed as retired');
 }
+// A-034: every JSDOM test loads jsdom through the guard (runtime errors from click handlers fail the test)
+nums.forEach(n=>{const src=fs.readFileSync(path.join(dir,'t'+n+'.js'),'utf8');if(/require\(['"]jsdom['"]\)/.test(src))issue('t'+n+'.js: loads jsdom directly, use require(\'./domguard\')');});
 console.log('tests:',nums.map(pad).join(' '));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

@@ -6,7 +6,7 @@
 // never raised, 12 weeks of "good" every day keep the band tolerance (peak ≤ upper + 2 / + 4, average ≤ upper limit).
 // Log rd, passive stats line, backup fields, junk refused; Extras switch and bar in the UI, Plain wording; Playwright
 // 390×844 screenshots.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD,doTrain,sig}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

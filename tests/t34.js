@@ -5,7 +5,7 @@
 // carry 40–60 % fewer km (taper), the date keeps the full test. Long run +10 % after an easy rating; extra easy runs and
 // logged past runs count for the weekly km and the easy share; km insight > 30 %; texts and names (long run, taper);
 // week preview uses the planned km; legs ≥ 2 per week stay (not with the run focus, which caps strength at 2 per week); a run that would break the 30 % cap is not suggested; old backup.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const {doTrain,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

@@ -2,7 +2,7 @@
 // A-028 / A-029: vow card and 2-step goal choice under More, goal card on Today, numbered step ladder on Status;
 // UX polish (see tests/README.md). JSDOM checks plus Playwright 390×844 screenshots in Templar and Plain;
 // runtime errors from click handlers are collected (0 expected).
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];

@@ -4,7 +4,7 @@
 // item with its easy variant; the front lever / planche skill brings its own work. M-6: no Skill Trial the day after a hard
 // other activity; a trial on such a day carries only the emphasis anchor with 2 sets and no jumps. Day before kickboxing
 // (also the 16-day fallback): no jumps, every Romanian deadlift at most 2 sets.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
 const P=[];const issue=m=>P.push(m);const rep=[];

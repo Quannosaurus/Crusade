@@ -3,7 +3,7 @@
 // Simulates 6 weeks for the three audit profiles with the real recommender and saveTrain(), then checks that no
 // session is estimated over 90 min, warm-up comes first and cool-down last, leg days warm up the legs, heavy lifts
 // show warm-up sets that never reach volume, records or XP, and old backups still load.
-const {JSDOM}=require('jsdom');const fs=require('fs');
+const {JSDOM}=require('./domguard');const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];

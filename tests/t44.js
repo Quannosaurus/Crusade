@@ -7,7 +7,7 @@
 // floor holds; unit table: knee/ankle/hip → no Strength C, no leg block on upper-body days, no run goal day; shoulder/
 // elbow/wrist → no Skill Trial or test (postponed, also the goal date); knee/ankle → kickboxing with a hint and a
 // one-tap skip; comeback lock also on the goal day; word boundaries without the known false hits.
-const {JSDOM}=require('jsdom');const fs=require('fs'),path=require('path');
+const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');const TBL=require('./fixtures/pattern-table.js');
 const P=[];const issue=m=>P.push(m);
