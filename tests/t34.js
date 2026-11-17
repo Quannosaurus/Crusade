@@ -47,7 +47,11 @@ function weeks(k,out){const W=[];out.forEach(r=>{const w=wkOf(r.d),x=W[w]||(W[w]
  k.today(addD(gd,-3));const ri=k.runInfo('RE');if(!/Taper week/.test(ri.p))issue('no taper text: '+ri.p);
  rep.push('taper: week before '+tw+' km, 3 weeks before '+pre.join('/')+' → '+Math.round((1-ratio)*100)+' % fewer; date '+(day&&day.id+' '+day.km+' km'));}
 // 3 long run: +10 % after an easy rating, names and texts; hard run outside long-run mode
-{const z=boot(),k=z.k,D=setup(k,prof('Runner'),'2026-10-05','2026-11-16');D.runKm=10;D.logs=[{d:'2026-11-10',id:'RE',t:'Easy run',rpe:4,km:6,min:38}];
+// A-044: the long run grows by 10 % only in the build season and only up to 35 % of the 4-week mean, so this case has
+// 8 weeks of history (3 easy runs of 8 km + a 10 km long run, ≈ 34 km/week → cap 12 km) and lies in block 2 (build)
+{const z=boot(),k=z.k,D=setup(k,prof('Runner'),'2026-09-21','2026-11-16');D.runKm=10;D.logs=[];
+ for(let w=0;w<8;w++){const a=addD('2026-09-21',w*7);D.logs.push({d:a,id:'RE',t:'Easy run',rpe:4,km:8,min:52},{d:addD(a,2),id:'RE',t:'Easy run',rpe:4,km:8,min:52},{d:addD(a,4),id:'RE',t:'Easy run',rpe:4,km:8,min:52},{d:addD(a,6),id:'RH',t:'Long run',rpe:4,km:10,min:66});}
+ if(k.runPh('2026-11-16')!=='build')issue('t34 case 3 not in the build season: '+k.runPh('2026-11-16'));
  const dy=k.day();dy.run='RH';dy.fin={rpe:4,km:'10',min:'65'};D.tab='run';k.render();if(!/long run/i.test(z.txt()))issue('run page without long run text');
  k.saveRun();if(D.runKm!==11)issue('long run +10 % after easy: '+D.runKm);const l=D.logs[D.logs.length-1];if(l.t!=='Long run')issue('long run name '+l.t);
  if(!/long run/.test(k.runInfo('RH').h))issue('runInfo long run '+k.runInfo('RH').h);
@@ -58,7 +62,10 @@ function weeks(k,out){const W=[];out.forEach(r=>{const w=wkOf(r.d),x=W[w]||(W[w]
  ['2026-10-19','2026-10-26','2026-11-02','2026-11-09'].forEach(a=>{D.logs.push({d:a,id:'RE',t:'Easy run',rpe:4,km:5,min:32},{d:addD(a,3),id:'RH',t:'Hard run',rpe:8,km:5,min:28});});
  D.logs.push({d:ws,id:'RE',t:'Easy run',rpe:4,km:5,min:31},{d:addD(ws,1),id:'RE',t:'Easy run',rpe:4,km:4,min:26,bl:1});D.logs.sort((a,b)=>a.d<b.d?-1:1);k.day('2026-11-16').xr=true;
  const st=k.kmStat();if(st.cur!==9||st.avg!==10)issue('km stat with extra/past runs '+JSON.stringify(st));
- const pl=k.runPlan('RE');if(pl.km>4||pl.why!=='cap')issue('km cap: plan '+JSON.stringify(pl)+' (room 13 − 9 = 4)');
+ /* A-044: the easy run is a share of the 4-week mean (25 % of 10 km → the 4 km floor), so it fits the room of 4 km on its
+    own; the cap is checked with the long run (10 km > room 4) */
+ const pl=k.runPlan('RE');if(pl.km>4)issue('km cap: easy plan '+JSON.stringify(pl)+' (room 13 − 9 = 4)');
+ const plh=(D.runKm=10,k.runPlan('RH'));if(plh.km>4||plh.why!=='cap')issue('km cap: plan '+JSON.stringify(plh)+' (room 13 − 9 = 4)');
  D.tab='stand';k.render();let t=z.txt();if(!/easy share/.test(t))issue('no easy share in the stats');if(!z.$('svg[aria-label="Kilometres per week, last 12 weeks"] .rf'))issue('no average line in the km chart');
  const m=t.match(/easy share (\d+) % of (\d+) runs/);if(!m||m[2]!=='9'||m[1]!=='56')issue('easy share '+(m&&m[0]));
  D.logs.push({d:'2026-11-18',id:'RE',t:'Easy run',rpe:4,km:5,min:32});k.render();t=z.txt();if(!/more than 30 % above/.test(t))issue('no km insight at 14 km vs 10');

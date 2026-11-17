@@ -192,6 +192,24 @@ Problem: Deckel bei 10 und 16 km, 8 × 3 min, feste lockere Läufe, kein Tempo (
 Daten: `GOALS` um Schlüssel erweitert; alte Backups kennen sie nicht und brauchen sie nicht. `D.runKm` und `D.runI`
 bleiben. Migration: nein. Aufwand: mittel. Auftrag: **A-044**.
 
+Umsetzung (A-044): Laufsaison = `blkNo % 4` (Grundlage, Aufbau, Tempo, Erhalt), im Gleichschritt mit den Akzent-Blöcken;
+Ziele verschieben die Saison nicht.
+- Lockerer Lauf: Anteil am 4-Wochen-Mittel (Grundlage 30 %, sonst 25 %), die alte feste Strecke (4/5/6 km) bleibt Untergrenze,
+  Obergrenze 8 km (Läufer 12 km); ohne Laufhistorie gilt die alte Strecke. 80/20: der Großteil der Kilometer locker [Q44][Q59].
+- Langer Lauf (nur im Langlauf-Modus): Deckel `longCap` = 35 % des 4-Wochen-Mittels (mindestens 6 km; mit Laufziel wie bisher bis
+  Zielstrecke + 2, höchstens 24 km) [Q61]. Wachstum nach „Easy“: Aufbau +10 %, Grundlage +0,5 km, Tempo und Erhalt halten. Im Aufbau
+  steigt der geplante lange Lauf zusätzlich um 5 % je Trainingswoche des Blocks (bis zum Deckel). Ein schon längerer gespeicherter
+  Lauf wird nicht gekürzt; die 130-%-Grenze und „höchstens 1 von 3 Läufen hart“ bleiben. Einzelne Läufe, die über die längste
+  Strecke der letzten 30 Tage um mehr als 10 % hinausgehen, sind mit mehr Verletzungen verbunden [Q62] – deshalb höchstens 10 % je Lauf.
+- Intervall-Formen [Q60]: Grundlage 3 min; Aufbau abwechselnd 3 min und 6–8 min zügig; Tempo im Wechsel 3 min, 1 min schnell /
+  1 min Trab, 6–8 min zügig, Steigerungsläufe; Erhalt 3 min mit 20 % weniger Wiederholungen. `D.runI` steigt nur nach der 3-min-Form.
+- Erhalt: jeder Lauf −20 % Strecke bei gleicher Intensität [Q57].
+- Tempo-Hinweis (nur Text) aus `run:t5`/`run:t10`: locker ab Bestzeit-Tempo + 1:00/km, schnelle Wiederholungen etwa 5-km-Tempo,
+  zügig etwa +0:20/km [Q61].
+- Harter Lauf im Modus „Balanced“ (kein langer Lauf) behält seinen Deckel von 10 km.
+- Einsteiger-Laufen bleibt (4 Wochen nur locker), Laufziele bis 42 km stehen seit A-040 in der Zielkette.
+Prüfstein t49 „run“ vergleicht seit A-044 je Saison statt je Quartal: Wochen-km und mittlerer langer Lauf unterscheiden sich um ≥ 10 %.
+
 ## L7 – Folgeziel und Erhaltung (klein bis mittel)
 
 Problem: Nach einem erreichten Ziel ist die Zielzeile leer (S4). Wer bewusst bleiben will, hat keinen Modus (T3).
@@ -284,3 +302,7 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 - [Q57] Spiering BA, Mujika I, Sharp MA, Foulis SA. Maintaining physical performance: the minimal dose of exercise needed to preserve endurance and strength over time. *J Strength Cond Res* 2021;35(5):1449–1458.
 - [Q58] Kraemer WJ, Ratamess NA. Fundamentals of resistance training: progression and exercise prescription. *Med Sci Sports Exerc* 2004;36(4):674–688 (strength gains of about 40 % untrained, 20 % moderately trained, 16 % trained, 10 % advanced, 2 % elite over 4 weeks to 2 years).
 - [Q9] Bell L et al. 2023 (Deload-Konsens): siehe `docs/training-audit.md`.
+- [Q59] Seiler S. What is best practice for training intensity and duration distribution in endurance athletes? *Int J Sports Physiol Perform* 2010;5(3):276–291.
+- [Q60] Billat LV. Interval training for performance: a scientific and empirical practice. Part I: aerobic interval training. *Sports Med* 2001;31(1):13–31.
+- [Q61] Daniels J. *Daniels' Running Formula*. 3rd ed. Human Kinetics; 2014 (long run as a share of the weekly volume; easy pace well below 5 km race pace, threshold close to 10 km pace).
+- [Q62] Frandsen JSB, Hulme A, Parner ET, et al. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. *Br J Sports Med* 2025 (single sessions more than 10 % longer than the longest run of the last 30 days raised the injury risk).
