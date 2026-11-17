@@ -16,10 +16,12 @@ function setup(k,wk,o){o=o||{};const D=k.D();Object.assign(D,{onb:true,seenFocus
 const sets=(k,S,c,id)=>S.blocks.reduce((a,b)=>b.warm||b.cool?a:a+b.items.reduce((x,it)=>it.gone||it.f||it.iso||it.test?x:x+k.setsOf(it,b,c,id),0),0);
 // 1 default off, the Extras row, one tap per area, Plain wording
 {const {k,d}=boot();const D=setup(k,3);if(k.hold('str')||k.hold('run')||k.hold('sk'))issue('hold on by default');
-  D.tab='mehr';k.render();const btn=[...d.querySelectorAll('[data-a=hold]')];if(btn.length!==3)issue('Extras: '+btn.length+' hold switches');
-  const b=btn.find(x=>x.dataset.k==='run');if(b){b.click();if(!k.hold('run'))issue('one tap does not switch hold running on');const b2=d.querySelector('[data-a=hold][data-k=run]');if(b2.getAttribute('aria-pressed')!=='true')issue('switch state not shown');b2.click();if(k.hold('run'))issue('second tap does not switch it off');}
+  D.tab='mehr';k.render();const btn=[...d.querySelectorAll('[data-a=holdm]')];if(btn.length!==3)issue('Extras: '+btn.length+' hold switches');
+  const b=btn.find(x=>x.dataset.k==='run');if(b){b.click();if(!k.hold('run'))issue('one tap does not switch hold running on');const b2=d.querySelector('[data-a=holdm][data-k=run]');if(b2.getAttribute('aria-pressed')!=='true')issue('switch state not shown');b2.click();if(k.hold('run'))issue('second tap does not switch it off');}
   const t1=(d.querySelector('.xrow.hold b')||{}).textContent;D.theme='plain';k.render();const t2=(d.querySelector('.xrow.hold b')||{}).textContent;
   if(t1!=='Hold the line'||t2!=='Hold')issue('wording templar/plain: '+t1+' / '+t2);rep.push('Extras: '+btn.length+' switches, templar "'+t1+'", plain "'+t2+'"');}
+// 1b the hold timer (data-a="hold" with seconds) is not taken over by the hold-mode switches
+{const {k,d}=boot();const D=setup(k,3);D.tab='mehr';k.render();if(d.querySelector('[data-a=hold][data-k]'))issue('a hold-mode switch uses the hold-timer action');}
 // 2 strength: about a third fewer working sets (± 1), anchors and load stay, warm-up/cool-down complete, ≥ 45 min
 {const {k}=boot();const res=[];[['KA',3],['KB',3],['KC',3],['KC',9]].forEach(([id,wk])=>{let D=setup(k,wk);let c=k.ctx(k.today());const S0=k.S(id,c),n0=sets(k,S0,c,id);
     D.hold.str=true;c=k.ctx(k.today());const S1=k.S(id,c),n1=sets(k,S1,c,id);const want=Math.round(n0*2/3);
