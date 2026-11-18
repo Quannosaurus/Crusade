@@ -847,7 +847,7 @@ function trialItems(){var sk=D.skills,g=D.goal&&GOALS[D.goal.k]?D.goal.k:"",out=
   var lb=lbTest();if(lb)out.push(lb);return out;}
 function lbTest(){var e=emph();if(e!=="lower"&&e!=="glutes")return null;var key=(ANCH[e].KC||[])[0],src=(e==="lower"?GLUTES():GLUTEX()).filter(function(it){return it.k===key;})[0];if(!src)return null;
   var v=curVar(src,LOC());if(v<0)return null;var o=src.opts[v],st=D.ex[src.k+"#"+v],w=o.w&&st?st.w:0;
-  return {test:"lb",tvo:1,unit:"reps",lw:w,opts:[{n:o.n,req:o.req,w:false}],c:"Max clean reps"+(w?" with your working weight "+fmtKg(w)+" kg":" at your working weight")+". Stop when the form breaks."};}
+  return {test:"lb",tvo:1,unit:"reps",lw:w,lk:src.k+"#"+v,opts:[{n:o.n,req:o.req,w:false}],c:"Max clean reps"+(w?" with your working weight "+fmtKg(w)+" kg":" at your working weight")+". Stop when the form breaks."};}
 function lastTv(k){for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(l.tv&&l.tv[k]!=null)return l.tv[k];}return null;}
 /* A-033 (M-5): blocks 2–4 of the Skill Trial follow skills and level. Lever, planche and dragon-flag work only with the front
    lever / planche skill (the back lever goes with the front lever); without any skill the trial brings the "Pull & push"
@@ -1535,6 +1535,12 @@ function sesHas(s,m,skip){var loc=LOC(),q=curVar(m,loc);if(q<0)return false;var 
 function dupWhy(a,b,loc){var va=curVar(a,loc),vb=curVar(b,loc);if(va<0||vb<0)return "";var na=a.opts[va].n,nb=b.opts[vb].n;if(na===nb)return "name";
   var f=funOf(na);if(f&&f===funOf(nb))return "fun";if(a.k&&b.k&&patKey(a.k)===patKey(b.k))return "key";return "";}
 function ddFix(it,b){return !!(it.anc||it.gx||it.test||it.add||b.fav||isFavIt(it));}
+/* A-061 (I-50): the lower-body trial measures max clean reps at one exercise's working weight; that is its unit. Merged
+   into a slot with another weight store (the goal anchor gl_ht carries its own weight, the Strength C anchor g_ht another),
+   the value is a different measurement: it goes into its own series "lbx" (tv.lbx, record and progress test:lbx), so the
+   lb series, its last-trial line and its record compare only like with like. No conversion between weights (a rep-max
+   formula would add a model error). Merged into the anchor of the same store, it stays "lb". */
+function lbKey(t,it,loc){return t.test==="lb"&&t.lk!==it.k+"#"+curVar(it,loc)?"lbx":t.test;}
 function planDedup(s){var loc=LOC(),L=[],cat=null,n0=0;
   s.blocks.forEach(function(b){if(b.warm||b.cool||b.add||(D.short&&b.p>1))return;b.items.forEach(function(it,ii){L.push({it:it,b:b,ii:ii});});});
   function live(x){return !x.it.gone&&curVar(x.it,loc)>=0;}
@@ -1553,8 +1559,8 @@ function planDedup(s){var loc=LOC(),L=[],cat=null,n0=0;
   for(var i=0;i<L.length;i++){var x=L[i];if(!live(x))continue;
     for(var j=0;j<i;j++){var y=L[j];if(!live(y)||!live(x))continue;if(!dupWhy(y.it,x.it,loc))continue;n0++;
       var tst=x.it.test?x:(y.it.test?y:null),oth=tst===x?y:x;
-      if(tst&&!oth.it.test&&oth.it.k&&!oth.it.f&&!oth.it.iso&&!oth.it.tsv){var t0=tst.it,m=cp(oth.it);
-        m.tsv={t:t0.test,tvo:t0.tvo?1:0,n:t0.opts[0].n};m.c="Set 1 is your trial: max clean reps, it counts for trial and goal."+(m.c?" · "+m.c:"");swapIn(oth,m);drop(tst,"tsg");continue;}
+      if(tst&&!oth.it.test&&oth.it.k&&!oth.it.f&&!oth.it.iso&&!oth.it.tsv){var t0=tst.it,m=cp(oth.it),tk=lbKey(t0,oth.it,loc),lt=lastTv(tk);
+        m.tsv={t:tk,tvo:t0.tvo?1:0,n:t0.opts[0].n};m.c="Set 1 is your trial: max clean reps, it counts for trial and goal"+(lt!=null?" (last trial "+lt+")":"")+"."+(m.c?" · "+m.c:"");swapIn(oth,m);drop(tst,"tsg");continue;}
       var lose=ddFix(x.it,x.b)?(ddFix(y.it,y.b)?null:y):x;if(lose)yieldIt(lose);}}
   return n0;}
 function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},fun={},C=[],cat=null,nsw=0;
@@ -3122,7 +3128,9 @@ function saveTrain(){
       return; }
     if(it.test){ if(sets.length){ if(!it.tvo)D.profile[it.test]=sets[0]; tv[it.test]=sets[0]; rec("test:"+it.test,sets[0],it.lw||0,it.opts[0].n); } return; }
     if(it.f){ if(fPat(it)&&dy.done[iid]) vsA[it.fp]=Math.min(60,vsA[it.fp]+(it.fv||1)); return; }
-    var g=target(it,v), r, w=num(inp.w);
+    var g=target(it,v), r, w=num(inp.w), all=sets;
+    /* A-061 (I-50): with a merged trial, set 1 is the test; progression, best set, record and goal check use the working sets */
+    if(it.tsv&&sets.length>1)sets=sets.slice(1);
     if(sets.length) r=Math.min.apply(null,sets); else if(dy.done[iid]) r=g.r; else return;
     if(w===null) w=g.w||0;
     var pv=D.ex[it.k+"#"+v],stall=(pv&&!pv.hold&&r<=pv.r&&(w||0)<=(pv.w||0))?(pv.stall||0)+1:0;if(holdOn("str"))stall=pv?(pv.stall||0):0;
@@ -3132,20 +3140,20 @@ function saveTrain(){
     if(g.ret||g.rng||g.back)stall=pv?(pv.stall||0):0;
     /* The top of a bodyweight range is no stall: the next step is a harder variation, not a smaller target. */
     if(r>=it.hi&&!(wOn(it,v)&&w))stall=0;
-    var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(sets.length||setsOf(it,b,c,id)));
+    var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(all.length||setsOf(it,b,c,id)));
     if(kit){D.kitD=D.kitD||{};D.kitD[patKey(it.k)]=TODAY;}
     /* Field kit days never downgrade a shared variant and never count towards a stall (A-019 addendum). */
     if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) {D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};if(pv.s)D.ex[it.k+"#"+v].s=pv.s;if(pv.lad)D.ex[it.k+"#"+v].lad=pv.lad;}
     else {D.ex[it.k+"#"+v]={r:r,w:w,d:TODAY,hold:hold,n:it.opts[v].n,stall:kit||cbk?(pv&&pv.stall||0):stall};if(sets.length)D.ex[it.k+"#"+v].s=setsArr(sets);if(pv&&pv.lad)D.ex[it.k+"#"+v].lad=pv.lad;}
     /* I-43: every set's reps/seconds go into the log additively (l.exs[key]); progression and stall still use the weakest set. */
-    if(sets.length)exs[it.k+"#"+v]=setsArr(sets);
+    if(all.length)exs[it.k+"#"+v]=setsArr(all);
     if((it.k==="fl_h"||it.k==="pl_h")&&v<=4&&r>=it.lo){var pk=it.k==="fl_h"?"flSt":"plSt";if(v>D.profile[pk])D.profile[pk]=v;}
     /* Re-rating from logs (P-3): a clean set of a pattern variant above the status raises it, never lowers it. */
-    var pk=PATP[it.opts[v].n];if(pk&&!(w>0)&&sets.length){var mxs=Math.max.apply(null,sets);if(mxs>(D.profile[pk]||0))D.profile[pk]=mxs;}
+    var pk=PATP[it.opts[v].n];if(pk&&!(w>0)&&all.length){var mxs=Math.max.apply(null,all);if(mxs>(D.profile[pk]||0))D.profile[pk]=mxs;}
     if(wOn(it,v)&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
     if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
     /* A-060: a test merged into this slot (planDedup) takes set 1 as the trial value; it counts for test and goal. */
-    if(it.tsv&&sets.length){var t1=it.tsv.t;if(!it.tsv.tvo)D.profile[t1]=sets[0];tv[t1]=sets[0];rec("test:"+t1,sets[0],(t1==="lb"&&w)||0,it.tsv.n);}
+    if(it.tsv&&all.length){var t1=it.tsv.t;if(!it.tsv.tvo)D.profile[t1]=all[0];tv[t1]=all[0];rec("test:"+t1,all[0],((t1==="lb"||t1==="lbx")&&w)||0,it.tsv.n+(t1==="lbx"?" (trial set)":""));}
   });});
   var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
@@ -3413,5 +3421,5 @@ document.getElementById("tstop").addEventListener("click",function(){stop();cloc
 render();
 /* A-054 (N-12): the test hook only outside the live site (file:, localhost, *.test) */
 var TESTENV=(function(){try{var h=location.hostname||"";return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||/\.test$/.test(h);}catch(e){return false;}})();
-if(TESTENV)window.__kz={planDedup:planDedup,dupWhy:dupWhy,sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+if(TESTENV)window.__kz={lbKey:lbKey,planDedup:planDedup,dupWhy:dupWhy,sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();

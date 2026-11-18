@@ -63,13 +63,14 @@ function unit(html,tag,log){const bad=[];
   {const {k,errs}=boot(html),D=setup(k,prof('Partner glutes'),'ht');const dy=k.day();dy.pick='CH';dy.fin={rpe:6};const c=k.ctx(START),s=k.S('CH',c);
    const d=dups(k,s);if(d.length)bad.push('case 2: '+d.join('; '));
    let anc=null,key='';s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(it.gx&&!it.gone){anc=it;key='CH-'+(b.bi!=null?b.bi:bi)+'-'+ii;}}));
-   if(!anc||!anc.tsv||anc.tsv.t!=='lb')bad.push('case 2: the goal anchor carries no trial set ('+JSON.stringify(anc&&anc.tsv)+')');
+   /* A-061 (I-50): the goal anchor has its own weight store, so its trial set is the series lbx */
+   if(!anc||!anc.tsv||anc.tsv.t!=='lbx')bad.push('case 2: the goal anchor carries no trial set ('+JSON.stringify(anc&&anc.tsv)+')');
    else{const n=k.setsOf(anc,s.blocks.find(b=>b.items.includes(anc)),c,'CH');dy.inp[key]={s:[15].concat(Array(n-1).fill(8)).map(String),w:'40'};dy.done[key]=true;k.saveTrain();
-     const l=D.logs[D.logs.length-1];if(!l.tv||l.tv.lb!==15)bad.push('case 2: trial value of set 1 not logged (tv '+JSON.stringify(l.tv)+')');
-     if(!D.pr['test:lb']||D.pr['test:lb'].w!==40)bad.push('case 2: trial record without the working weight');
+     const l=D.logs[D.logs.length-1];if(!l.tv||l.tv.lbx!==15)bad.push('case 2: trial value of set 1 not logged (tv '+JSON.stringify(l.tv)+')');
+     if(!D.pr['test:lbx']||D.pr['test:lbx'].w!==40)bad.push('case 2: trial record without the working weight');
      const st=D.ex[anc.k+'#'+k.curVar(anc,'g')];if(!st||st.r!==8||st.w!==40)bad.push('case 2: anchor progression not from its working sets ('+JSON.stringify(st)+')');
      if(!/trial/i.test(anc.c))bad.push('case 2: the anchor does not say that set 1 is the trial');
-     if(log)log.push(tag+'case 2: goal anchor set 1 = trial (tv.lb '+l.tv.lb+', anchor '+st.r+' × '+st.w+' kg)');}
+     if(log)log.push(tag+'case 2: goal anchor set 1 = trial (tv.lbx '+l.tv.lbx+', anchor '+st.r+' × '+st.w+' kg)');}
    if(errs.length)bad.push('JS '+errs.join('; '));}
   {const {k,errs}=boot(html),D=setup(k,prof('Captain'),'pull');const dy=k.day();dy.pick='CH';dy.fin={rpe:6};const c=k.ctx(START),s=k.S('CH',c);
    let anc=null,key='';s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(it.gx&&!it.gone){anc=it;key='CH-'+(b.bi!=null?b.bi:bi)+'-'+ii;}}));
