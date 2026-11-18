@@ -698,7 +698,9 @@ function S(id,c){
   if(id==="CH") trialDay(s,c);
   accApply(s,id,c);
   holdSk(s);
+  planDedup(s);
   design(s,id,c);
+  if(planDedup(s))s.min=estMin(s,c,id);
   var adb=ADDIDS[id]&&ADDB();
   if(adb){var ci=-1;s.blocks.forEach(function(b,i){if(b.cool&&ci<0)ci=i;});if(ci<0)s.blocks.push(adb);else s.blocks.splice(ci,0,adb);s.min=estMin(s,c,id);s.addMin=1;}
   return s;
@@ -934,7 +936,8 @@ function lastTv(k){for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(l.tv&&
    circuit plus one core block; at level 0 every item starts with its easy variant (it.lv). */
 function trialBlocks(L){var sk=D.skills,fl=!!sk.fl,pl=!!sk.pl,any=["hs","mu","ls","fl","pl"].some(function(k){return sk[k];});
   function ez(it){it.lv=[1,0];return it;}
-  function core(cue){return ez(F("5",cue,fl?["Negative Dragon Flags","Lying leg lowers (easier)"]:["Lying leg lowers","Bent-knee leg lowers (easier)"]));}
+  /* A-060: a third form, never the default (lv picks 0 or 1), so the core finishers of blocks 2–4 can differ (planDedup). */
+  function core(cue){return ez(F("5",cue,fl?["Negative Dragon Flags","Lying leg lowers (easier)","Reverse crunches"]:["Lying leg lowers","Bent-knee leg lowers (easier)","Reverse crunches"]));}
   if(!any)return [{name:"Core",info:"60 s rest between exercises",p:1,rest:60,items:[ez(F("3 × 30 s","Lower back on the floor, ribs down",["Hollow body hold","Dead bug (easier)"])),ez(F("3 × 8 each side","Straight line from head to heels",["Side plank","Side plank on knees (easier)"])),ez(F("3 × 10","5 s lowering, lower back stays down",["Lying leg lowers","Bent-knee leg lowers (easier)"]))]}];
   var b2=[ez(FL(F("30","",["Push-Ups","Knee push-ups (easier)"]),"push",3)),core("5 s lowering")],b3=[FL(F("30","",["Bodyweight Rows","Cable row"]),"pull",3),core("")],b4=[ez(FL(F("30","",["Jumping Squats","Bodyweight squats (easier)"]),"legs",3)),core("")];
   b2.unshift(fl?ez(F("60 s accumulated","",["Tuck Front Lever","Straight-arm pulldown hold"])):F("60 s accumulated","Arms straight, pull the bar to the thighs and hold",["Straight-arm pulldown hold","Band straight-arm pulldown hold|b"]));
@@ -1602,6 +1605,40 @@ function funOf(n){for(var i=0;i<FUNX.length;i++)if(FUNX[i][1].test(n))return FUN
 function sesHas(s,m,skip){var loc=LOC(),q=curVar(m,loc);if(q<0)return false;var n=m.opts[q].n,f=funOf(n),pk=m.k?patKey(m.k):"";
   return s.blocks.some(function(b){if(b.warm||b.cool)return false;return b.items.some(function(it){if(it===m||it===skip||it.gone)return false;var v=curVar(it,loc);if(v<0)return false;var nn=it.opts[v].n;
     return nn===n||(f&&funOf(nn)===f)||(pk&&it.k&&patKey(it.k)===pk);});});}
+/* A-060: no duplicate out of the base plan itself. planDedup(s) runs in S() after the filters and before design() (so the
+   design measures and fills the cleaned session) and once more after it, over every slot outside warm-up/cool-down:
+   same name, same function or same patKey counts as a duplicate (like sesHas).
+   - A test whose exercise is already a training slot (goal anchor "Barbell hip thrust" + lower-body test, "Clean pull-ups"
+     goal + pull test …) merges into that slot: its first set is the trial (it.tsv), the value counts for test and goal,
+     the test item goes (it.tsg). A fixed or hold slot cannot carry a test: there the other slot gives way.
+   - Otherwise the later slot gives way (an anchor, goal anchor, favourite or test never does; then the other one): another
+     form of the same item nearest in its list (it.fx, it.ddv, progression stays at its own key), else for a progression
+     item a catalogue exercise of the same group (it.ddx), else it goes (it.gone, it.ddg) and design() fills the time. */
+function dupWhy(a,b,loc){var va=curVar(a,loc),vb=curVar(b,loc);if(va<0||vb<0)return "";var na=a.opts[va].n,nb=b.opts[vb].n;if(na===nb)return "name";
+  var f=funOf(na);if(f&&f===funOf(nb))return "fun";if(a.k&&b.k&&patKey(a.k)===patKey(b.k))return "key";return "";}
+function ddFix(it,b){return !!(it.anc||it.gx||it.test||it.add||b.fav||isFavIt(it));}
+function planDedup(s){var loc=LOC(),L=[],cat=null,n0=0;
+  s.blocks.forEach(function(b){if(b.warm||b.cool||b.add||(D.short&&b.p>1))return;b.items.forEach(function(it,ii){L.push({it:it,b:b,ii:ii});});});
+  function live(x){return !x.it.gone&&curVar(x.it,loc)>=0;}
+  function clash(it,self){for(var i=0;i<L.length;i++){var y=L[i];if(y.it===self||y.it===it||!live(y))continue;if(dupWhy(it,y.it,loc))return y;}return null;}
+  function cp(it){var t={};Object.keys(it).forEach(function(k){t[k]=it[k];});return t;}
+  function swapIn(x,n){x.b.items[x.ii]=n;x.it=n;}
+  function drop(x,m){var t=cp(x.it);t.gone=1;t[m]=1;swapIn(x,t);}
+  function yieldIt(x){var it=x.it,v=curVar(it,loc),a=avail(it,loc).filter(function(q){return q!==v;});
+    a.sort(function(p,q){return Math.abs(p-v)-Math.abs(q-v)||p-q;});
+    for(var i=0;i<a.length;i++){var t=cp(it);t.fx=a[i];if(!clash(t,it)){delete t.def;t.ddv=it.opts[v].n;swapIn(x,t);return;}}
+    if(it.k&&!it.f&&!it.iso){var g=kitGroup(it);cat=cat||favCatalog();var pick=null;
+      Object.keys(cat).some(function(nm){var c0=cat[nm];if(isNever(nm)||painHit(nm)||c0.it.f||c0.it.iso||c0.it.test||!can(c0.it.opts[c0.v],loc)||kitGroup(c0.it)!==g)return false;
+        var t=cp(c0.it);t.fx=c0.v;if(clash(t,it))return false;pick=t;return true;});
+      if(pick){delete pick.def;delete pick.lv;["ts","nx","px","pxk"].forEach(function(f){if(it[f]!=null)pick[f]=it[f];});pick.ddx=it.opts[v].n;swapIn(x,pick);return;}}
+    drop(x,"ddg");}
+  for(var i=0;i<L.length;i++){var x=L[i];if(!live(x))continue;
+    for(var j=0;j<i;j++){var y=L[j];if(!live(y)||!live(x))continue;if(!dupWhy(y.it,x.it,loc))continue;n0++;
+      var tst=x.it.test?x:(y.it.test?y:null),oth=tst===x?y:x;
+      if(tst&&!oth.it.test&&oth.it.k&&!oth.it.f&&!oth.it.iso&&!oth.it.tsv){var t0=tst.it,m=cp(oth.it);
+        m.tsv={t:t0.test,tvo:t0.tvo?1:0,n:t0.opts[0].n};m.c="Set 1 is your trial: max clean reps, it counts for trial and goal."+(m.c?" · "+m.c:"");swapIn(oth,m);drop(tst,"tsg");continue;}
+      var lose=ddFix(x.it,x.b)?(ddFix(y.it,y.b)?null:y):x;if(lose)yieldIt(lose);}}
+  return n0;}
 function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},fun={},C=[],cat=null,nsw=0;
   s.blocks.forEach(function(b){b.items.forEach(function(it){var q=curVar(it,loc);if(q>=0){used[it.opts[q].n]=1;if(!b.warm&&!b.cool){var f=funOf(it.opts[q].n);if(f)fun[f]=1;}}if(it.k)keys[patKey(it.k)]=1;if(it.bx)nsw++;});});
   if(nsw>=1)return false;
@@ -3189,6 +3226,8 @@ function saveTrain(){
     var pk=PATP[it.opts[v].n];if(pk&&!(w>0)&&sets.length){var mxs=Math.max.apply(null,sets);if(mxs>(D.profile[pk]||0))D.profile[pk]=mxs;}
     if(wOn(it,v)&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
     if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
+    /* A-060: a test merged into this slot (planDedup) takes set 1 as the trial value; it counts for test and goal. */
+    if(it.tsv&&sets.length){var t1=it.tsv.t;if(!it.tsv.tvo)D.profile[t1]=sets[0];tv[t1]=sets[0];rec("test:"+t1,sets[0],(t1==="lb"&&w)||0,it.tsv.n);}
   });});
   var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
@@ -3456,7 +3495,7 @@ document.getElementById("tstop").addEventListener("click",function(){stop();cloc
 render();
 /* A-054 (N-12): the test hook only outside the live site (file:, localhost, *.test) */
 var TESTENV=(function(){try{var h=location.hostname||"";return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||/\.test$/.test(h);}catch(e){return false;}})();
-if(TESTENV)window.__kz={sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+if(TESTENV)window.__kz={planDedup:planDedup,dupWhy:dupWhy,sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

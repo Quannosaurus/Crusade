@@ -5,7 +5,9 @@ function doTrain(k,id){const D=k.D(),dy=k.day();dy.pick=id;dy.fin={rpe:6};const 
   s.blocks.forEach((b,bi)=>{if(D.short&&b.p>1)return;const bix=b.bi!=null?b.bi:bi;b.items.forEach((it,ii)=>{const v=k.curVar(it,k.LOC());if(v<0)return;const key=id+'-'+bix+'-'+ii;dy.done[key]=true;
     if(it.f||it.iso)return;const n=k.setsOf(it,b,c,id);
     if(it.test){const t=it.test,cur=D.profile[t]||0;dy.inp[key]={s:[String(cur+1)]};return;}
-    const g=k.target(it,v);dy.inp[key]={s:Array(n).fill(String(g.r)),w:it.opts[v].w?String(g.w||20):''};});});
+    const g=k.target(it,v);dy.inp[key]={s:Array(n).fill(String(g.r)),w:it.opts[v].w?String(g.w||20):''};
+    /* A-060: a test merged into this slot (it.tsv): set 1 is the trial, a max effort at or above the target */
+    if(it.tsv)dy.inp[key].s[0]=String(it.tsv.tvo?g.r+2:Math.max((D.profile[it.tsv.t]||0)+1,g.r));});});
   k.saveTrain();return s;}
 function sig(k,s){return s.blocks.map(b=>b.name+':'+b.items.map(it=>{const v=k.curVar(it,k.LOC());return v<0?'-':it.opts[v].n;}).join(',')).join('|')+' ~'+s.min;}
 function sim(k,days,start,cb){const D=k.D(),out=[];

@@ -19,6 +19,8 @@ function train(k,id,s,i,days,course,rnd,cb,o){o=o||{};const D=k.D(),dy=k.day(),l
     let r=g.r,wt=g.w||(w?(o.w0?o.w0(it.k+'#'+v):20):0);
     if(st&&(course==='still'||rnd()>hit)){r=st.r;wt=st.w||wt;}
     dy.inp[key]={s:Array(n).fill(String(r)),w:w?String(wt):''};
+    /* A-060: a test merged into this slot (it.tsv): set 1 is the trial, like a test item (rises fast at first, then rarely), never under the set value */
+    if(it.tsv){const cur=D.profile[it.tsv.t]||0;dy.inp[key].s[0]=String(it.tsv.tvo?r+(course==='prog'&&rnd()<pTest?2:1):Math.max(course==='prog'?cur+(rnd()<pTest?1:0):Math.max(cur,1),r));}
     if(course==='prog'&&g.top&&!w){const nv=k.nextVar(it,v,loc);if(nv>=0&&rnd()<0.5)swaps.push([loc+'|'+(it.k||it.iso||it.test),nv]);else if(g.lad&&rnd()<0.5)lads.push([it,v]);}});});
   k.saveTrain();swaps.forEach(([q,nv])=>{D.vr[q]=nv;});lads.forEach(([it,v])=>{if(k.ladTake)k.ladTake(it,v);});return S;}
 function run(k,id,s,i,days,course,rnd,cb){const D=k.D(),dy=k.day();dy.run=id;const km=k.runPlan(id,s).km||5;
