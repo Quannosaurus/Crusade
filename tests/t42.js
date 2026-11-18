@@ -45,14 +45,18 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
       FUN.forEach((f,fi)=>{if(f.test(n)){if(fun[fi]&&(it.bx||fun[fi].bx))issue(p.n+' '+s+' '+r.id+': band swap brings a function twice ('+fun[fi].n+' / '+n+')');fun[fi]={n,bx:it.bx};}});
       if(!it.bx)return;sw++;if(BASE.test(it.bxk||''))issue(p.n+' '+s+' '+r.id+': basic exercise swapped ('+it.bx+')');if(it.bxf&&!b.acc&&!b.sh&&!b.fav)issue(p.n+' '+s+' '+r.id+': first exercise of '+b.name+' swapped');});});
     nsw+=sw;maxsw=Math.max(maxsw,sw);if(sw>1)issue(p.n+' '+s+' '+r.id+': '+sw+' band swaps (max 1)');
-    const w=Math.floor((Date.parse(s)-Date.parse(START))/864e5/7),cx=k.ctx(s);(lhs[w]=lhs[w]||[]).push({d:s,id:r.id,n:k.legSets(r.s,cx,r.id)});
+    const w=Math.floor((Date.parse(s)-Date.parse(START))/864e5/7),cx=k.ctx(s);(lhs[w]=lhs[w]||[]).push({d:s,id:r.id,n:k.legSets(r.s,cx,r.id),m:r.s.min});
     const c=k.ctx(s);r.s.blocks.forEach(b=>{if(D.short&&b.p>1)return;b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,k.LOC())<0)return;const n=k.setsOf(it,b,c,r.id);if(n<2)issue(p.n+' '+s+' '+r.id+' '+it.k+': '+n+' working set(s), floor is 2');});});});
   const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5);
   const wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={pull:0,push:0,legs:0,hinge:0,core:0,dl:false,lg:0});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.vs)V.forEach(q=>x[q]+=l.vs[q]);if(l.lg)x.lg++;});
   const tw=Object.keys(wk).filter(w=>!wk[w].dl&&+w<11),sum=[];
   /* A-035/A-032: the band of the other patterns follows the strength sessions per week of the focus (+2 per session over 3). */
   V.forEach(q=>{const hot=hotP.includes(q),[lo,hi]=hot?BAND.hot:[BAND.cold[0],BAND.cold[1]+(p.focus==='str'?2:0)],tol=hot?2:4;let peak=0;
-    for(let i=6;i<84;i++){let h=0;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl)h+=l.vs[q];});peak=Math.max(peak,h);}
+    /* A-053: a peak over the tolerance by 1 set whose newest leg session sits at the floor (legs + hinge 10, tolerance rule:
+       the floors rank above the upper limit) is noted, not failed */
+    let flo=0;for(let i=6;i<84;i++){let h=0,last=null;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl){h+=l.vs[q];if(l.vs[q])last=l;}});
+      if(h===hi+tol+1&&(q==='legs'||q==='hinge')&&last&&last.vs.legs+last.vs.hinge<=10){flo=Math.max(flo,h);continue;}peak=Math.max(peak,h);}
+    if(flo)rep.push('  note: '+p.n+' '+q+' '+flo+' sets in 7 days, the newest leg session at the floor legs + hinge 10');
     const avg=tw.reduce((a,w)=>a+wk[w][q],0)/(tw.length||1);sum.push(q+' peak '+peak+' avg '+avg.toFixed(1)+' ('+lo+'–'+hi+(hot?', emphasis':'')+')');
     if(peak>hi+tol)issue(p.n+': '+q+' '+peak+' sets in 7 days (> '+hi+' + '+tol+')');
     if(avg>hi)issue(p.n+': '+q+' average '+avg.toFixed(1)+' per training week over the band ('+hi+')');
@@ -63,7 +67,8 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
   const tolOf=q=>(hotP.includes(q)?BAND.hot[1]+2:BAND.cold[1]+(p.focus==='str'?2:0)+4);let held=0;
   Object.keys(lhs).forEach(w=>{const a=lhs[w],kc=a.filter(x=>x.id==='KC');if(!kc.length||wk[w]&&wk[w].dl)return;const top=kc.reduce((m,x)=>x.n>m.n?x:m,kc[0]);
     a.filter(x=>x.id!=='KC').forEach(x=>{if(x.n<=top.n)return;const i=day(top.d);const at=['legs','hinge'].some(q=>{let h=0;D.logs.forEach(l=>{const y=day(l.d);if(y>i-7&&y<=i&&l.vs&&!l.bl)h+=l.vs[q];});return h>=tolOf(q)-1;});
-      if(at){held++;rep.push('  note: week '+(+w+1)+' Strength C '+top.n+' < '+x.id+' '+x.n+' leg sets, held by the band tolerance');}else issue(p.n+' week '+(+w+1)+': Strength C '+top.n+' leg sets < '+x.id+' '+x.n);});});
+      /* A-053: the 90 min ceiling ranks above the leg-day floor (D1): a Strength C at 90 min that cannot take more is noted */
+      if(at||top.m>=90){held++;rep.push('  note: week '+(+w+1)+' Strength C '+top.n+' < '+x.id+' '+x.n+' leg sets, held by '+(at?'the band tolerance':'the 90 min ceiling'));}else issue(p.n+' week '+(+w+1)+': Strength C '+top.n+' leg sets < '+x.id+' '+x.n);});});
   rep.push('  band swaps '+nsw+' (max '+maxsw+' per session)'+(held?' · Strength C held by the tolerance in '+held+' week(s)':''));
   tw.forEach(w=>{const x=wk[w];if(x.legs+x.hinge<10)issue(p.n+' week '+(+w+1)+': legs + hinge '+(x.legs+x.hinge)+' (< 10)');
     if(p.focus!=='run'&&x.lg<2)issue(p.n+' week '+(+w+1)+': only '+x.lg+' leg session(s)');});

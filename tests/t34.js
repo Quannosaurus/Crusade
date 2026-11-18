@@ -50,7 +50,7 @@ function weeks(k,out){const W=[];out.forEach(r=>{const w=wkOf(r.d),x=W[w]||(W[w]
 // A-044: the long run grows by 10 % only in the build season and only up to 35 % of the 4-week mean, so this case has
 // 8 weeks of history (3 easy runs of 8 km + a 10 km long run, ≈ 34 km/week → cap 12 km) and lies in block 2 (build)
 {const z=boot(),k=z.k,D=setup(k,prof('Runner'),'2026-09-21','2026-11-16');D.runKm=10;D.logs=[];
- for(let w=0;w<8;w++){const a=addD('2026-09-21',w*7);D.logs.push({d:a,id:'RE',t:'Easy run',rpe:4,km:8,min:52},{d:addD(a,2),id:'RE',t:'Easy run',rpe:4,km:8,min:52},{d:addD(a,4),id:'RE',t:'Easy run',rpe:4,km:8,min:52},{d:addD(a,6),id:'RH',t:'Long run',rpe:4,km:10,min:66});}
+ for(let w=0;w<8;w++){const a=addD('2026-09-21',w*7);D.logs.push({d:a,id:'RE',t:'Easy run',rpe:4,km:9,min:58},{d:addD(a,2),id:'RE',t:'Easy run',rpe:4,km:9,min:58},{d:addD(a,4),id:'RE',t:'Easy run',rpe:4,km:9,min:58},{d:addD(a,6),id:'RH',t:'Long run',rpe:4,km:10,min:66});}
  if(k.runPh('2026-11-16')!=='build')issue('t34 case 3 not in the build season: '+k.runPh('2026-11-16'));
  const dy=k.day();dy.run='RH';dy.fin={rpe:4,km:'10',min:'65'};D.tab='run';k.render();if(!/long run/i.test(z.txt()))issue('run page without long run text');
  k.saveRun();if(D.runKm!==11)issue('long run +10 % after easy: '+D.runKm);const l=D.logs[D.logs.length-1];if(l.t!=='Long run')issue('long run name '+l.t);

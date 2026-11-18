@@ -295,7 +295,7 @@ Umsetzung (A-046):
   [Q63][Q64] (Bell 2023 und Spiering 2021, siehe CLAUDE.md Tired-Doktrin). Stillstand ohne Ziel (M-1): nach einem
   Akzentwechsel oder einer echten Pause beginnt der Vergleich neu; ein planmäßig gesenkter Wert ist kein Stillstands-Check.
   Prüfstein: t49 „start“ (im Fortschritts-Verlauf endet jede gewichtete Übung ≥ Startgewicht), t62.
-- **Langer Lauf (A-053).** ≤ 30 % des 4-Wochen-Mittels [Q61] (Daniels: 25–30 % des Wochenumfangs; ersetzt die 35 % aus
+- **Langer Lauf (A-053, umgesetzt).** ≤ 30 % des 4-Wochen-Mittels [Q61] (Daniels: 25–30 % des Wochenumfangs; ersetzt die 35 % aus
   L6), mindestens lockerer Lauf + 1 km. Übergang aus Hold/Erhalt mit einer Woche × 0,9 [Q62] (höchstens 10 % über dem
   längsten Lauf der letzten 30 Tage).
 - **Harte Läufe (A-053).** Höchstens 1 von 3 der in den letzten 14 Tagen gelaufenen Läufe hart; ist der empfohlene Lauf

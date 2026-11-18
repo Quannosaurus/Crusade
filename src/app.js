@@ -59,7 +59,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   ["runKm","runI"].forEach(function(k){if(n[k]!=null&&n[k]!==""&&isFinite(+n[k]))b[k]=Math.max(0,Math.min(99,+n[k]));});
   if(n.opt&&typeof n.opt==="object")["ready","rest","oa"].forEach(function(k){b.opt[k]=n.opt[k]===true;});
   if(n.hold&&typeof n.hold==="object"&&!Array.isArray(n.hold))["str","run","sk"].forEach(function(k){b.hold[k]=own(n.hold,k)&&n.hold[k]===true;});
-  ["easy","easyP"].forEach(function(k){if(typeof n[k]==="string"&&DS.test(n[k]))b[k]=n[k];});
+  ["easy","easyP","holdR"].forEach(function(k){if(typeof n[k]==="string"&&DS.test(n[k]))b[k]=n[k];});
   /* P-7: pause mode and the ended pauses (for streaks, plateau boost and the Skill Trial gap). */
   if(n.pause&&typeof n.pause==="object"&&DS.test(n.pause.from))b.pause={from:n.pause.from,to:typeof n.pause.to==="string"&&DS.test(n.pause.to)&&n.pause.to>=n.pause.from?n.pause.to:"",why:n.pause.why==="ill"?"ill":"pause"};
   if(Array.isArray(n.pauseH))b.pauseH=n.pauseH.filter(function(x){return x&&DS.test(x.f)&&DS.test(x.t)&&x.t>=x.f;}).slice(-30).map(function(x){return {f:x.f,t:x.t};});
@@ -1579,6 +1579,9 @@ function recAll0(s,noKick,noPause){
   var strW=D.logs.filter(function(l){return STR[l.id]&&l.d>=w0&&l.d<s;}).length;
   if(dLeft<=2&&!(c.cyc===6)&&F==="run")C.forEach(function(x){if(x.id==="RH"&&!rhW&&!lowE&&dLeft===2)x.sc*=1.6;});
   if(dLeft<=1&&!(c.cyc===6))C.forEach(function(x){if(x.id==="RH"&&longMode()&&!rhW&&!lowE)x.sc*=1.6;if(x.btn!=="train")return;if((lowE&&x.id==="KC"&&!kcW)||(!lowE&&h.legW<2&&{KA:1,KB:1,CH:1,KC:1}[x.id]))x.sc*=1.5;});
+  /* A-053: a hard run on the second-last day would block a still missing Strength C on the last day (no strength after a
+     hard run); with fewer hard runs it can land there, so it waits. */
+  if(dLeft===1&&!(c.cyc===6)&&lowE&&!kcW&&!painU("kc"))C=C.filter(function(x){return !(x.id==="RI"||(x.id==="RH"&&!lm));});
   if(dLeft<=2&&!(c.cyc===6)&&F==="run"&&strW<2)C.forEach(function(x){if(x.btn==="train"&&{KA:1,KB:1,CH:1,KC:1}[x.id])x.sc*=1.6;});
   /* A-035 (N-5): from 14 days (deload days not counted) no run pushes a trial whose slot is open further out, so the gap
      holds 14 ± 2 with the run focus too. */
@@ -2301,7 +2304,10 @@ var RUNT={RE:"Easy",RI:"Intervals",RH:"Hard"};
    stay ≤ 130 % of the 4-week average (weeks with runs only). Extra easy runs and logged past runs count via their km. */
 function longMode(){return D.focus==="run"||!!gRun();}
 function hardRunL(l){return l.id==="RI"||(l.id==="RH"&&!longMode());}
-function hard3OK(s){var r=[];for(var i=D.logs.length-1;i>=0&&r.length<2;i--){var l=D.logs[i];if(isRun(l)&&l.d<=s)r.unshift(l);}return !r.some(hardRunL);}
+/* A-053: a hard run only when the last 2 runs were easy and at most 1 of 3 of the runs actually run in the last 14 days
+   (this one included) is hard; so a run that is the only one of its week is easy or brisk. */
+function hard3OK(s){var r=[],n=0,h=0,lo=addD(s,-14);for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(!isRun(l)||l.d>s)continue;if(l.d<lo&&r.length>=2)break;if(r.length<2)r.unshift(l);if(l.d>=lo){n++;if(hardRunL(l))h++;}}
+  return !r.some(hardRunL)&&(h+1)*3<=n+1;}
 /* A-038: summed from the entries per date (onDay index) instead of a scan of the whole history. */
 function weekKm(ws){var a=0;for(var i=0;i<7;i++)onDay(addD(ws,i)).forEach(function(l){a+=l.km||0;});return a;}
 function kmStat(s){s=s||TODAY;var ws=weekKey(s),cur=weekKm(ws),prev=[];
@@ -2310,19 +2316,25 @@ function kmStat(s){s=s||TODAY;var ws=weekKey(s),cur=weekKm(ws),prev=[];
 /* A-044 (L6): run seasons in step with the accent blocks (blkNo % 4, goals do not shift them): base (the easy share grows the
    weekly volume), build (the long run grows), tempo (the interval forms take turns), hold (every run −20 %: volume down,
    intensity kept, [Q57]). The easy run is a share of the 4-week mean instead of fixed km (80/20: most kilometres easy,
-   [Q44][Q59]); the long run may grow up to 35 % of the 4-week mean ([Q61]; growth per session ≤ 10 %, [Q62]); the 130 % week
+   [Q44][Q59]); the long run may grow up to 30 % of the 4-week mean (A-053, was 35 %) ([Q61]; growth per session ≤ 10 %, [Q62]); the 130 % week
    guard stays. Interval forms [Q60]: 3 min fast, 1 min fast / 1 min jog, 6–8 min brisk, strides. */
 var RUNPH=["base","build","tempo","hold"],RUNPN={base:"Base",build:"Build",tempo:"Tempo",hold:"Hold"};
 function runPh(s){return RUNPH[blkNo(s||TODAY)%4];}
 function r2(x){return Math.round(x*2)/2;}
-function easyKm(s,old){var st=kmStat(s);if(!(st.n>=2&&st.avg>0))return old;var R=D.focus==="run",E=runPh(s)==="base"?0.3:0.25;
+function easyKm(s,old){var st=kmStat(s);if(!(st.n>=2&&st.avg>0))return old;var R=D.focus==="run",E=runPh(s)==="base"&&!transWk(s)?0.3:0.25;/* A-053: the base share starts after the transition week */
   return Math.max(old,Math.min(R?12:8,r2(st.avg*E)));}
-function longCap(s){var st=kmStat(s),c=Math.max(6,r2(0.35*(st.n>=2?st.avg:0)));if(gRun())c=Math.max(c,Math.min(24,GOALS[gRun()].km+2));return c;}
+function longCap(s){var st=kmStat(s),c=Math.max(6,r2(LONGQ*(st.n>=2?st.avg:0)));if(gRun())c=Math.max(c,Math.min(24,GOALS[gRun()].km+2));return c;}
+/* A-053: long run ≤ 30 % of the 4-week mean [Q61] (25–30 % of the weekly volume), at least the easy run + 1 km; the first
+   training week after the hold season or after hold running ends runs at × 0.9 [Q62] (≤ 10 % over the longest recent run);
+   Balanced: the hard run stays ≤ 8 km and grows through brisk parts. */
+var LONGQ=0.3,HARDMAX=8;
+function transWk(s){if(holdOn("run"))return false;if(D.holdR&&D.holdR<=s&&diff(D.holdR,s)<7)return true;return runPh(s)==="base"&&blkNo(s)>0&&ctxCyc(s)===1;}
 function riForm(s){var ph=runPh(s),n=0;for(var i=0;i<D.logs.length;i++){var l=D.logs[i];if(l.id==="RI"&&l.d<s)n++;}
   return ph==="tempo"?["i3","i1","i6","str"][n%4]:ph==="build"?(n%2?"i6":"i3"):"i3";}
 /* build season: the planned long run rises 5 % per training week of the block (up to the cap), on top of the stored length */
-function runBase(id,s){s=s||TODAY;var R=D.focus==="run",km;if(id==="RH"){km=D.runKm;if(longMode()&&runPh(s)==="build"){var cy=ctxCyc(s);if(cy<=5)km=Math.max(km,Math.min(longCap(s),r2(km*(1+0.05*(cy-1)))));}}else if(id==="RI")km=Math.round((4+D.runI*0.8)*2)/2;else km=easyKm(s,R?6:(D.runKm<6?4:5));
-  if(runPh(s)==="hold")km=Math.max(2,r2(km*0.8));if(holdOn("run"))km=Math.max(2,r2(km*2/3));return km;}
+function runBase(id,s){s=s||TODAY;var R=D.focus==="run",km;if(id==="RH"){km=D.runKm;if(longMode()){var lc=longCap(s);if(runPh(s)==="build"){var cy=ctxCyc(s);if(cy<=5)km=Math.max(km,Math.min(lc,r2(km*(1+0.05*(cy-1)))));}
+      km=Math.max(km,Math.min(lc,easyKm(s,R?6:(D.runKm<6?4:5))+1));}else km=Math.min(km,HARDMAX);}else if(id==="RI")km=Math.round((4+D.runI*0.8)*2)/2;else km=easyKm(s,R?6:(D.runKm<6?4:5));
+  if(runPh(s)==="hold")km=Math.max(2,r2(km*0.8));else if(transWk(s))km=Math.max(2,r2(km*0.9));if(holdOn("run"))km=Math.max(2,r2(km*2/3));return km;}
 /* tempo hint from the own best times (text only): easy about 60–90 s/km slower than the best 5 km pace [Q61] */
 function bestPace(){var a=D.pr["run:t5"],b=D.pr["run:t10"];if(a&&a.min>0)return a.min/5;if(b&&b.min>0)return b.min/10-0.15;return 0;}
 function paceHint(kind){var p=bestPace();if(!p)return "";var pk=function(x){return fmtPace(x)+"/km";},r=D.pr["run:t5"]?"best 5 km "+pk(D.pr["run:t5"].min/5):"best 10 km "+pk(D.pr["run:t10"].min/10);
@@ -2335,12 +2347,12 @@ function runPlan(id,s){s=s||TODAY;var km=runBase(id,s),why="";
   return {km:km,why:why};}
 function runInfo(id){var R=D.focus==="run",rp=runPlan(id),tx=rp.why==="taper"?" Taper week: about half the distance, keep it easy and stay fresh.":(rp.why==="cap"?" Shorter today: your weekly kilometres stay within 30 % of the last weeks.":"");
   var ri=runInfo0(id,R,rp);if(tx&&!(id==="RH"&&gRun()&&D.goal.d===TODAY))ri={h:ri.h,p:ri.p+tx};
-  var ph=runPh(TODAY),sx={base:" Season: base – the easy share grows your weekly volume.",build:" Season: build – the long run grows.",tempo:" Season: tempo – the interval form changes each time.",hold:" Season: hold – about 20 % less, same effort."}[ph];
+  var ph=runPh(TODAY),sx={base:" Season: base – the easy share grows your weekly volume.",build:longMode()?" Season: build – the long run grows.":" Season: build – steady distance, more brisk minutes in the hard run.",tempo:" Season: tempo – the interval form changes each time.",hold:" Season: hold – about 20 % less, same effort."}[ph];
   if(D.focus!=="str"||gRun())ri={h:ri.h,p:ri.p+sx};return ri;}
 function runInfo0(id,R,rp){
   if(id==="RH"&&gRun()&&D.goal.d===TODAY) return {h:"Goal day: "+goalName(D.goal),p:"Your test. Warm up with 10 min easy jogging, start calmly and find your pace after the first kilometre. Drink, eat lightly 2–3 h before."};
   if(rp.why&&id!=="RI") return id==="RE"||longMode()?{h:fmtKg(rp.km)+" km "+(id==="RH"?"long, easy":"easy"),p:"Easy enough that you can speak in full sentences."}:{h:fmtKg(rp.km)+" km steady",p:"Steady, not to the limit. 5 min warm-up jog, no strength training afterwards."};
-  if(id==="RH"&&longMode()){var ph0=runPh(TODAY);return {h:fmtKg(rp.km)+" km long run",p:"Your long run: easy all the way, you can talk in full sentences. Walk briefly to drink. "+(ph0==="build"?"Rated easy, the next one is 10 % longer":ph0==="base"?"Rated easy, the next one is 0.5 km longer":"It holds its length this season")+" (up to "+fmtKg(longCap(TODAY))+" km, 35 % of your weekly average). No strength training afterwards."+paceHint("easy")};}
+  if(id==="RH"&&longMode()){var ph0=runPh(TODAY);return {h:fmtKg(rp.km)+" km long run",p:"Your long run: easy all the way, you can talk in full sentences. Walk briefly to drink. "+(ph0==="build"?"Rated easy, the next one is 10 % longer":ph0==="base"?"Rated easy, the next one is 0.5 km longer":"It holds its length this season")+" (up to "+fmtKg(longCap(TODAY))+" km, 30 % of your weekly average). No strength training afterwards."+paceHint("easy")};}
   if(id==="RE"&&D.runKm<6&&!R) return {h:"20–30 min easy",p:"Easy enough to talk. Walking breaks are completely fine: e.g. 3 min jog, 1 min walk. Strength training today as well? Then strength first, or keep 3 hours apart."};
   if(id==="RE"){var ek=rp.km;return {h:fmtKg(ek)+" km easy",p:"About "+Math.round(ek*6.5)+" min. Easy enough that you can speak in full sentences."+(R?" At the end 4–6 strides of 20 s: build speed smoothly, walk back.":"")+" Strength training today as well? Then strength first, or keep 3 hours apart."+paceHint("easy")};}
   if(id==="RI"){var fm=riForm(TODAY),n=runPh(TODAY)==="hold"?Math.max(3,Math.round(D.runI*0.8)):D.runI,end=" 10 min cool-down jog. No strength training afterwards.";
@@ -2348,7 +2360,8 @@ function runInfo0(id,R,rp){
     if(fm==="i6")return {h:(n>=6?3:2)+" × 6–8 min brisk",p:"10 min warm-up jog. Then "+(n>=6?3:2)+" × 6–8 min brisk with 2 min jogging in between. Brisk means: comfortably hard, short sentences still possible."+end+paceHint("i6")};
     if(fm==="str")return {h:fmtKg(rp.km)+" km easy + strides",p:"Easy run, then 6–8 strides of 20 s: build speed smoothly to fast, walk or jog back fully. Relaxed and tall, never sprinting to the limit."+end};
     return {h:n+" × 3 min fast",p:"10 min warm-up jog. Then "+n+" × 3 min fast with 2 min jogging in between. Fast means: only single words possible, but every rep equally quick."+end+paceHint("i3")};}
-  return {h:fmtKg(D.runKm)+" km "+(D.runKm<6?"steady":"hard"),p:(D.runKm<6?"Faster than your easy runs, but steady the whole way.":hardPace())+" 5 min warm-up jog, no strength training afterwards."};}
+  var hk=rp&&rp.km?rp.km:Math.min(D.runKm,HARDMAX);
+  return {h:fmtKg(hk)+" km "+(hk<6?"steady":"hard"),p:(hk<6?"Faster than your easy runs, but steady the whole way.":hardPace())+(D.runKm>=HARDMAX?" It stays at "+HARDMAX+" km: when it feels easy, run more of it brisk instead of further.":"")+" 5 min warm-up jog, no strength training afterwards."};}
 /* A-029 (U23): the hard-run pace follows the profile: about 45 s/km faster than the recent easy runs, else by feel. */
 function hardPace(){var r=D.logs.filter(function(l){return l.id==="RE"&&l.km>0&&l.min>0&&!l.bl;}).slice(-5);if(r.length<2)return "Comfortably hard: only short sentences possible.";
   var p=r.reduce(function(a,l){return a+l.min/l.km;},0)/r.length-0.75;p=Math.max(3,p);return "About "+Math.floor(p)+":"+pad(Math.round((p%1)*60)%60)+"/km, about 45 s per km faster than your easy runs.";}
@@ -2968,10 +2981,12 @@ function saveRun(){
   var dy=day(); if(needRpe(dy)) return; var rk0=rankOf(xpTotal()),nl=D.logs.length;
   var f=dy.fin,id=dy.run||runRec().id,km=lim(f.km,KMMAX),mn=lim(f.min,MINMAX);
   /* A-044: the long run grows in the build season (+10 %) and a little in the base season (+0.5 km), holds in tempo and
-     hold; its cap is 35 % of the 4-week mean (longCap), not a fixed number; an existing longer run is not cut */
+     hold; its cap is 30 % of the 4-week mean (longCap, A-053), not a fixed number; an existing longer run is not cut */
   var rph=holdOn("run")?"hold":runPh(TODAY),lc=longCap(TODAY);
-  if(id==="RH"&&longMode()&&!(gRun()&&gTaper(TODAY))){if(f.rpe<=4&&(rph==="build"||rph==="base")&&D.runKm<lc)D.runKm=Math.min(lc,rph==="build"?Math.max(D.runKm+0.5,Math.round(D.runKm*1.1*2)/2):D.runKm+0.5);else if(f.rpe>=10)D.runKm=Math.max(5,D.runKm-0.5);}
-  else if(id==="RH"){ if(f.rpe<=4&&rph!=="hold") D.runKm=Math.min(D.focus==="run"?16:10,D.runKm+0.5); else if(f.rpe>=10) D.runKm=Math.max(5,D.runKm-0.5); }
+  if(id==="RH"&&longMode()&&!(gRun()&&gTaper(TODAY))){if(f.rpe<=4&&(rph==="build"||rph==="base")&&D.runKm<lc)D.runKm=Math.min(lc,rph==="build"?Math.max(D.runKm+0.5,Math.round(D.runKm*1.1*2)/2):D.runKm+0.5);
+    else if(f.rpe<=7&&rph==="build"&&D.runKm<lc)D.runKm=Math.min(lc,D.runKm+0.5);/* A-053: "Fine" still grows a little in the build season */
+    else if(f.rpe>=10)D.runKm=Math.max(5,D.runKm-0.5);}
+  else if(id==="RH"){ if(f.rpe<=4&&rph!=="hold"&&D.runKm<HARDMAX) D.runKm=Math.min(HARDMAX,D.runKm+0.5); else if(f.rpe>=10) D.runKm=Math.max(5,D.runKm-0.5); }
   if(id==="RI"&&riForm(TODAY)==="i3"&&rph!=="hold"){ if(f.rpe<=6) D.runI=Math.min(8,D.runI+1); else if(f.rpe>=10) D.runI=Math.max(3,D.runI-1); }
   var prs=[];if(km&&mn){var pc=mn/km,b=D.pr["run:pace5"];if(km>=5){if(b&&pc<b.p)prs.push("Fastest 5 km+ pace: "+pace({km:km,min:mn}));if(!b||pc<b.p)D.pr["run:pace5"]={p:pc,d:TODAY};}
     runTimes(km,mn,TODAY);var bl=D.pr["run:long"];if(bl&&km>bl.km)prs.push("Longest run: "+fmtKg(Math.round(km*10)/10)+" km");if(!bl||km>bl.km)D.pr["run:long"]={km:km,d:TODAY};}
@@ -3029,7 +3044,7 @@ document.addEventListener("click",function(e){
   else if(a==="oaname"){dy.fin.oan=t.dataset.v;}
   else if(a==="per"){var pv=t.dataset.v;D._per=pv==="1y"||pv==="all"?pv:"12w";}
   else if(a==="chmore"){D._chn=(D._chn||0)+50;}
-  else if(a==="holdm"){var hk=t.dataset.k;if(["str","run","sk"].indexOf(hk)>=0){D.hold=D.hold||{str:false,run:false,sk:false};D.hold[hk]=!(D.hold[hk]===true);WK.key="";}}
+  else if(a==="holdm"){var hk=t.dataset.k;if(["str","run","sk"].indexOf(hk)>=0){D.hold=D.hold||{str:false,run:false,sk:false};D.hold[hk]=!(D.hold[hk]===true);if(hk==="run"){if(D.hold.run)delete D.holdR;else D.holdR=TODAY;}WK.key="";}}
   else if(a==="opt"){var ok=t.dataset.k;if(["rest","oa","ready"].indexOf(ok)>=0){D.opt=D.opt||{};D.opt[ok]=!D.opt[ok];WK.key="";}}
   else if(a==="easy"){if(!easyOpen()&&ctx(TODAY).cyc!==6){D.easyP=D.easy||"";D.easy=easyNext();WK.key="";D._msg="";}}
   else if(a==="ready"){var rv=+t.dataset.v;if(rv===1||rv===2||rv===3){dy.ready=dy.ready===rv?0:rv;if(!dy.ready)delete dy.ready;WK.key="";}}
@@ -3182,5 +3197,5 @@ function startHold(sec,sides){document.body.classList.add("tmr");audio();stop();
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();

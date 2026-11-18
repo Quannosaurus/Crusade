@@ -23,9 +23,9 @@ let r=sim('REGELMÄSSIG 12 Wo',84,()=>true);
 if(!r.c.KC)issue('Regelmäßig: kein Kraft C');if(!r.c.CH)issue('Regelmäßig: keine Challenge');
 // A-024: the Skill Trial takes a Strength A/B slot every 14 ± 2 days, so A and B each give up ~2 sessions in 12 weeks;
 // the upper-body slots together (A + B + Skill Trial) stay as frequent as before.
-['KA','KB'].forEach(x=>{if((r.c[x]||0)<6)issue('Regelmäßig: '+x+' nur '+(r.c[x]||0)+'×');});if((r.c.KA||0)+(r.c.KB||0)+(r.c.CH||0)<17)issue('Regelmäßig: Kraft A/B/Skill Trial nur '+((r.c.KA||0)+(r.c.KB||0)+(r.c.CH||0))+'×');if((r.c.CH||0)<4)issue('Regelmäßig: Skill Trial nur '+(r.c.CH||0)+'× in 12 Wochen');if((r.c.RE||0)+(r.c.RH||0)<18)issue('Regelmäßig: zu wenig Läufe');if((r.c.RH||0)<5)issue('Regelmäßig: RH nur '+r.c.RH);if(r.c.KI!==24)issue('KI nicht 2×/Woche');
+['KA','KB'].forEach(x=>{if((r.c[x]||0)<6)issue('Regelmäßig: '+x+' nur '+(r.c[x]||0)+'×');});if((r.c.KA||0)+(r.c.KB||0)+(r.c.CH||0)<17)issue('Regelmäßig: Kraft A/B/Skill Trial nur '+((r.c.KA||0)+(r.c.KB||0)+(r.c.CH||0))+'×');if((r.c.CH||0)<4)issue('Regelmäßig: Skill Trial nur '+(r.c.CH||0)+'× in 12 Wochen');if((r.c.RE||0)+(r.c.RH||0)<18)issue('Regelmäßig: zu wenig Läufe');if((r.c.RH||0)<4)issue('Regelmäßig: RH nur '+r.c.RH);/* A-053: hard runs count against the runs actually run (≤ 1 of 3 in 14 days) */if(r.c.KI!==24)issue('KI nicht 2×/Woche');
 r=sim('UNREGELMÄSSIG Mo/Do/Sa',84,(i,wd)=>[1,4,6].includes(wd));
-['KA','KB','RE','RH'].forEach(x=>{if(!(r.c[x]))issue('Unregelmäßig: nie '+x);});if(!(r.c.KC||r.c.CH))issue('Unregelmäßig: nie Beine');
+['KA','KB','RE'].forEach(x=>{if(!(r.c[x]))issue('Unregelmäßig: nie '+x);});/* A-053: an irregular runner with one run a week gets no hard run */if(!(r.c.KC||r.c.CH))issue('Unregelmäßig: nie Beine');
 r=sim('PAUSE 3 Wochen',70,(i)=>i<14||i>=35);
 r=sim('KEIN KICKBOXEN',28,(()=>{const f=()=>true;f.noKick=true;return f;})());
 if(r.c.KI)issue('Kein Kickboxen: KI trotzdem eingetragen');
