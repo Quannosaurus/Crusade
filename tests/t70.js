@@ -11,6 +11,9 @@
 //    tests, the flush and the cool-down; goalBlock never puts a goal anchor on TE and no emphasis, leg or favourite block
 //    rides on it. Checked for every profile × goal × gym/home/Field kit × the 3 TE versions; the mutation that puts a goal
 //    anchor on TE turns it red and shows the A-060 merge then takes over (set 1 = test).
+// d) I-49 leg reserve: the look-ahead reserve comes from the real week plan – every planned leg session k days on keeps
+//    its floor (4 sets, + 2 for a leg goal, at most what it plans of the pattern) inside the 7 days ending on it; no
+//    planned leg session in reach (pause from tomorrow) → no reserve. 60–90 min, hinge peak 20 + 2, legs + hinge ≥ 10 hold.
 // Each point has one mutation that must turn its check red.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const HTML=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
@@ -134,10 +137,49 @@ function unitC(html,log){const bad=[];let n=0,merged=0;
   return bad.slice(0,6).concat(merged&&log===null?['c: merged '+merged]:[]);}
 unitC(HTML,rep).forEach(issue);
 
+// ---------- d) I-49 ----------
+/* Partner glutes, a Strength C 3 days ago with 14 hinge sets, nothing else in the last 6 days; today Strength A */
+function caseD(html,pause){const {k,errs}=boot(html),D=setup(k,prof('Partner glutes')),T='2026-11-18';D.start='2026-08-03';
+  D.logs=[];for(let i=100;i>=7;i-=2)D.logs.push({d:addD(T,-i),id:['KA','KB','KC'][i%3],t:'x',rpe:6,min:70,vs:{pull:4,push:4,legs:4,hinge:5,core:2},vm:3});
+  D.logs.push({d:addD(T,-3),id:'KC',t:'Strength C',rpe:6,min:70,vs:{pull:0,push:0,legs:6,hinge:14,core:0},vm:3});
+  if(pause)D.pause={from:addD(T,1),to:'',why:'pause'};k.today(T);k.day().pick='KA';const c=k.ctx(T),s=k.S('KA',c),v=k.volSets(s,c,'KA');
+  return {k,errs,s,v,P:k.weekPlan(),pk:k.pkLim('hinge')};}
+function unitD(html,log){const bad=[];
+  {const r=caseD(html,1),lka=r.s._lka||[];
+   if(lka.length)bad.push('d: reserve although no leg session is planned in reach ('+JSON.stringify(lka.map(a=>a.k))+')');
+   if(14+r.v.hinge+4<=r.pk)bad.push('d: pause from tomorrow – Strength A hinge '+r.v.hinge+' cut to the fixed reserve (14 + '+r.v.hinge+' + 4 ≤ '+r.pk+')');
+   if(14+r.v.hinge>r.pk||r.s.min<60||r.s.min>90)bad.push('d: pause case outside its bounds (hinge '+r.v.hinge+', '+r.s.min+' min)');
+   if(log)log.push('d: pause from tomorrow (no leg session in reach): no reserve, Strength A keeps '+r.v.hinge+' hinge sets (7 days '+(14+r.v.hinge)+' ≤ '+r.pk+'; the fixed reserve would have cut it), '+r.s.min+' min');
+   if(r.errs.length)bad.push('d: JS '+r.errs.join('; '));}
+  {const r=caseD(html,0),lka=r.s._lka||[];
+   /* independent derivation from the week plan */
+   const exp=[];r.P.forEach((e,i)=>{if(i<1||i>6||e.pause||e.done||!(e.leg||e.id==='KC'))return;const vs=e.vs||{};if((vs.legs||0)+(vs.hinge||0)>0)exp.push(i+':'+vs.hinge);});
+   const got=lka.map(a=>a.k+':'+a.vs.hinge);if(got.join()!==exp.join())bad.push('d: look-ahead '+got.join()+' ≠ week plan '+exp.join());
+   const first=lka[0];if(!first)bad.push('d: no planned leg session found');
+   else{const res=Math.min(4,first.vs.hinge||0),uk=first.k<=3?14:0;
+     if(uk+r.v.hinge+res>r.pk)bad.push('d: the planned leg session '+first.k+' days on loses its floor ('+uk+' + '+r.v.hinge+' + '+res+' > '+r.pk+')');
+     if(log)log.push('d: plan '+r.P.map(e=>e.id+(e.leg?'·L':'')).join(' ')+' → reserves '+lka.map(a=>'day '+a.k+' min(4, '+a.vs.hinge+')').join(', ')+'; Strength A hinge '+r.v.hinge+' (window to day '+first.k+': '+uk+' + '+r.v.hinge+' + '+res+' ≤ '+r.pk+'), '+r.s.min+' min');}}
+  return bad;}
+/* course: 24 weeks Partner glutes and Partner lower + squat goal – the look-ahead always equals the week plan, 60–90 min at the gym, hot peak ≤ upper limit + 2 */
+function courseD(html){const bad=[];let n=0,res=0,none=0;[['Partner glutes',null],['Partner lower','sq']].forEach(([nm,gk])=>{const {k,errs}=boot(html),D=setup(k,prof(nm),gk);
+  for(let i=0;i<168;i++){const s=addD(START,i);k.today(s);const r=k.recAll(s,false)||{};
+    if(r.btn==='run'||r.btn==='kick'||!r.id||r.id==='RS'||r.btn==='pause'){D.logs.push({d:s,id:r.btn==='run'?r.id:(r.btn==='kick'?'KI':'RS'),t:'x',rpe:5,min:30,km:r.btn==='run'?5:undefined});continue;}
+    const P=k.weekPlan(),S=doTrain(k,r.id);if(!['KA','KB','KC','CH'].includes(r.id))continue;n++;
+    const exp=[];P.forEach((e,j)=>{if(j<1||j>6||e.pause||e.done||!(e.leg||e.id==='KC'))return;const vs=e.vs||{};if((vs.legs||0)+(vs.hinge||0)>0)exp.push(j);});
+    const got=(S._lka||[]).map(a=>a.k);if(got.join()!==exp.join()&&bad.length<4)bad.push('d: '+nm+' '+s+' '+r.id+': look-ahead '+got.join()+' ≠ plan '+exp.join());if(got.length)res++;else none++;
+    if((S.min<60||S.min>90)&&bad.length<4)bad.push('d: '+nm+' '+s+' '+r.id+': '+S.min+' min');
+['legs','hinge'].forEach(q=>{let t=0;D.logs.forEach(l=>{const x=(new Date(s)-new Date(l.d))/864e5;if(x>=0&&x<=6&&['KA','KB','KC','CH','HO'].includes(l.id)&&!l.bl){const w=k.logVs(l);if(w)t+=w[q]||0;}});
+      if(k.vBand(q)[1]>=20&&t>k.pkLim(q)&&bad.length<4)bad.push('d: '+nm+' '+s+': 7-day '+q+' '+t+' > '+k.pkLim(q));});}
+  if(errs.length)bad.push('d: JS '+errs.join('; '));});
+  return {bad,n,res,none};}
+unitD(HTML,rep).forEach(issue);
+{const r=courseD(HTML);r.bad.forEach(issue);rep.push('d: 24 weeks Partner glutes and Partner lower + sq: '+r.n+' strength sessions, look-ahead = week plan in all, with a planned leg session in reach '+r.res+', without '+r.none+'; 60–90 min and hot 7-day peaks held');}
+
 // ---------- mutations ----------
 const MUT=[['a','return t.test==="lb"&&t.lk!==','return 0&&t.test==="lb"&&t.lk!==',unitA],
   ['b','itPat(it,i)===pt&&!sesHas(s,cp(it,i),it)','itPat(it,i)===pt',unitB],
-  ['c','ok=up?({KA:1,KB:1,HO:1,CH:1}[id]','ok=up?({KA:1,KB:1,HO:1,CH:1,TE:1}[id]',unitC]];
+  ['c','ok=up?({KA:1,KB:1,HO:1,CH:1}[id]','ok=up?({KA:1,KB:1,HO:1,CH:1,TE:1}[id]',unitC],
+  ['d','var AH=s._lka||(','var AH=(legPlan()?[{k:2,vs:null}]:[])||(',unitD]];
 MUT.forEach(([tag,a,b,fn])=>{if(!HTML.includes(a)){issue('mutation '+tag+': code "'+a+'" not found');return;}const u=fn(HTML.replace(a,b),null);
   rep.push('mutation '+tag+': '+(u.length?'red ('+u[0]+')':'green'));if(!u.length)issue('mutation '+tag+' stays green');});
 

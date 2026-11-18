@@ -684,7 +684,7 @@ function postBlocks(id,bl){var sk=D.skills,out=[];
 var GYM=["KA","KB","KC","CH","SK","RS","DL","TE"], HOME=["HO","HK","RS"];
 var HARD={KA:1,KB:1,KC:1,CH:1,RH:1,RI:1,KI:1,TE:1,HO:1}, STR={KA:1,KB:1,KC:1,CH:1,DL:1,TE:1,HO:1}, HASHS={KA:1,KB:1,SK:1,KC:1,HO:1,HK:1};
 function S(id,c){
-  var s=S0(id,c),sk=D.skills;
+  var lka=!WK.sim&&BANDIDS[id]?legAhead():null,s=S0(id,c),sk=D.skills;s._lka=lka;
   if(!sk.mu&&id==="KA") s.goal="Pulling and pushing strength, explosive power"+(selSk().length?" and your skills.":".");
   if(!sk.mu&&id==="KB") s.goal="Lots of clean pulling and pushing volume in a circuit, plus shoulder health.";
   if(id==="HO"&&homeB()){s.goal="Home strength B: same muscles, different variations and legs first.";s.blocks.forEach(function(b){if(b.rounds){b.items=b.items.slice(2).concat(b.items.slice(0,2));b.items.forEach(function(it){if(!it.def&&it.opts.length>1)it.def=function(){return 1;};});}});}
@@ -1703,9 +1703,15 @@ function bandDrop(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),C=[];
    has), else they go. The time they leave is filled with work of patterns that have room (a circuit round, the full Core
    Blitz, an emphasis exercise or favourite of another pattern); 60–90 min, legs + hinge ≥ 10, the leg session and the
    floors of the other patterns (⅔ in the strength and skill blocks, bandLo) hold, else the step is undone. Legs and hinge
-   with a leg day in the plan also look ahead: the session leaves the next one its floor (KCRES 4 sets, + 2 for a leg
-   goal) inside the 7 days that will end on it (about 2 days on), and it takes at most its share (cap) + 2. */
+   also look ahead: the session leaves every leg session of the week plan its floor (KCRES 4 sets, + 2 for a leg goal,
+   at most what it plans; A-061) inside the 7 days that will end on it, and it takes at most its share (cap) + 2. */
 var KCRES=4;
+/* A-061 (I-49): the look-ahead comes from the real week plan: every planned leg session (leg flag or Strength C with
+   legs/hinge planned) in the next 6 days, with the day it falls on and its planned sets. Without one in reach: no reserve.
+   Called at the start of S() (outside the week preview: the preview itself keeps the old fixed look-ahead, legPlan()
+   and a leg day 2 days on, so it never calls itself). */
+function legAhead(){var P=weekPlan(),out=[];for(var k=1;k<P.length&&k<=6;k++){var e=P[k];if(!e||e.pause||e.done||!(e.leg||e.id==="KC"))continue;var vs=e.vs||{};
+  if((vs.legs||0)+(vs.hinge||0)>0)out.push({k:k,vs:vs});}return out;}
 function pkLim(p){var hot=vHot(p);return vBand(p)[1]-(hot&&accNow()==="vol"?2:0)+(hot?2:4);}
 function peakGuard(s,c,id,cap,est){var u=cap._u,loc=LOC(),lg0=legSets(s,c,id),ch=false,lo=D.short?0:bfLo();
   var hotP=VPAT.filter(function(p){return vHot(p);});if(!hotP.length)return false;
@@ -1741,11 +1747,15 @@ function peakGuard(s,c,id,cap,est){var u=cap._u,loc=LOC(),lg0=legSets(s,c,id),ch
         var m=b.more.splice(j,1)[0];b.items.push(m);return function(){b.items.pop();b.more.splice(j,0,m);};}];
     for(var g=0;g<6&&est()<lo;g++){var any=false;for(var j=0;j<steps.length&&est()<lo;j++){var vb=volSets(s,c,id),un=steps[j]();if(!un)continue;if(est()>DURMAX||!fits(volSets(s,c,id),vb))un();else any=true;}if(!any)break;}
     return est()>=lo;}
-  /* look ahead: in a week with a leg day, a session after which Strength C is due (none in the last 2 days) leaves Strength C
-     its floor of legs and hinge (anchor + main leg block, 4 sets) inside the 7 days that will end on it (about 2 days on) */
-  var u4=vsZero(),kcx=99;D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;var x=diff(l.d,TODAY);if(x<1||x>6)return;if(l.id==="KC")kcx=Math.min(kcx,x);var w=logVs(l);if(w&&x<=4)VPAT.forEach(function(q){u4[q]+=w[q]||0;});});
-  var ahead=legPlan(),res=function(q){return KCRES+(goalPat()===q?2:0);};
-  function over(q,v){return u[q]+v[q]>pkLim(q)||((q==="legs"||q==="hinge")&&((ahead&&u4[q]+v[q]+res(q)>pkLim(q))||v[q]>cap[q]+2));}
+  /* look ahead (A-061, I-49): every leg session of the week plan k days on (k = 1–6) keeps its floor of legs and hinge –
+     KCRES 4 sets, + 2 for a leg goal, at most what it plans of that pattern – inside the 7 days that will end on it:
+     logs 1 … 6−k days old + today + that floor. No planned leg session in reach: no reserve. The week preview keeps the
+     old fixed look-ahead (legPlan(), a leg day 2 days on). */
+  var AH=s._lka||(WK.sim&&legPlan()?[{k:2,vs:null}]:[]),ub=[];for(var x0=0;x0<6;x0++)ub.push(vsZero());
+  D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;var x=diff(l.d,TODAY);if(x<1||x>5)return;var w=logVs(l);if(w)VPAT.forEach(function(q){ub[x][q]+=w[q]||0;});});
+  var flr=function(q){return KCRES+(goalPat()===q?2:0);};
+  AH.forEach(function(a){a.u=vsZero();for(var x=1;x<=6-a.k;x++)VPAT.forEach(function(q){a.u[q]+=ub[x][q];});a.r=function(q){return a.vs?Math.min(flr(q),a.vs[q]||0):flr(q);};});
+  function over(q,v){return u[q]+v[q]>pkLim(q)||((q==="legs"||q==="hinge")&&(AH.some(function(a){return a.r(q)>0&&a.u[q]+v[q]+a.r(q)>pkLim(q);})||v[q]>cap[q]+2));}
   fits=function(v,v0){return VPAT.every(function(q){return !vHot(q)||v[q]<=v0[q]||!over(q,v);});};
   for(var g=0;g<20;g++){var v=volSets(s,c,id),p=hotP.filter(function(q){return over(q,v);})[0];if(!p)break;
     /* the companions of p, emphasis block first, then single exercises of the other blocks (circuits keep their rounds) */
@@ -2513,7 +2523,7 @@ function weekPlan(){var k=wkKey();if(WK.plan&&WK.key===k)return WK.plan;
         if(r.btn==="train"&&id!=="RS")id=recTrain(s,D.loc,i===0&&dy.noKick).id;
         else if(r.btn==="train"&&D.loc==="h")id=recTrain(s,"h",i===0&&dy.noKick).id;
         var lg=wkLog(id,s,c);addLog(lg);
-        e={id:id,why:r.why,leg:legLog(lg),min:lg._min,goal:lg._goal};delete lg._min;delete lg._goal;}
+        e={id:id,why:r.why,leg:legLog(lg),min:lg._min,goal:lg._goal,vs:lg.vs};delete lg._min;delete lg._goal;}
       e.d=s;e.name=e.pause?W("paused"):NAMES[e.id];e.kick=isKick(s);e.dl=dlWk(s,c);e.run=e.id==="RE"||e.id==="RH"||e.id==="RI";e.rest=e.id==="RS";out.push(e);}
   }finally{D=D0;TODAY=T0;WK.sim=false;if(typeof SV!=="undefined"&&SV){ODC=SV[0];CWC=SV[1];RHC=SV[2];IDI=SV[3];TDI=SV[4];}updNames();}
   WK.key=k;WK.plan=out;return out;}
