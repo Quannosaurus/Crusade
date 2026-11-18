@@ -45,7 +45,7 @@ dann Lauf (L6), dann Ansichten und Gamification (L7, L8).
 
 | Thema | Befund | Folgerung für die App |
 |---|---|---|
-| Steigerung | Mehr Wiederholungen bei gleicher Last wirken über 8 Wochen ähnlich wie mehr Last [Q52]. | Wo kein Gewicht möglich ist, sind Wiederholungen, Tempo, Pausen und einseitige Varianten gültige Wege. |
+| Steigerung | Mehr Wiederholungen bei gleicher Last wirken über 8 Wochen ähnlich wie mehr Last [Q8]. | Wo kein Gewicht möglich ist, sind Wiederholungen, Tempo, Pausen und einseitige Varianten gültige Wege. |
 | Periodisierung | Periodisierte Pläne bringen mehr Maximalkraft als nicht periodisierte, mit mittlerer Effektstärke; Variation des Reizes gilt als wesentlich [Q53]. | Blöcke mit wechselndem Akzent statt einer 12-Wochen-Schleife. |
 | Übungswechsel | Wechsel der Übungen kann Zuwachs beeinflussen; zu häufiger Wechsel kann schaden [Q54]. Variierte Auswahl hob in einer Studie die Trainingsmotivation bei gleichem Zuwachs [Q55]. | Anker bleibt fest, Nebenübungen wechseln planmäßig je Block, nicht je Einheit. |
 | Erhaltung | Ein Drittel bis ein Neuntel des Aufbau-Umfangs hielt bei Jüngeren Kraft und Masse über 32 Wochen; Ältere brauchten mehr [Q56]. | Ein Erhaltungs-Modus mit kleinem Umfang und gleicher Last ist tragfähig. |
@@ -199,7 +199,7 @@ bleiben. Migration: nein. Aufwand: mittel. Auftrag: **A-044**.
 Umsetzung (A-044): Laufsaison = `blkNo % 4` (Grundlage, Aufbau, Tempo, Erhalt), im Gleichschritt mit den Akzent-Blöcken;
 Ziele verschieben die Saison nicht.
 - Lockerer Lauf: Anteil am 4-Wochen-Mittel (Grundlage 30 %, sonst 25 %), die alte feste Strecke (4/5/6 km) bleibt Untergrenze,
-  Obergrenze 8 km (Läufer 12 km); ohne Laufhistorie gilt die alte Strecke. 80/20: der Großteil der Kilometer locker [Q44][Q59].
+  Obergrenze 8 km (Läufer 12 km); ohne Laufhistorie gilt die alte Strecke. 80/20: der Großteil der Kilometer locker [Q44][Q18].
 - Langer Lauf (nur im Langlauf-Modus): Deckel `longCap` = 35 % des 4-Wochen-Mittels (mindestens 6 km; mit Laufziel wie bisher bis
   Zielstrecke + 2, höchstens 24 km) [Q61]. Wachstum nach „Easy“: Aufbau +10 %, Grundlage +0,5 km, Tempo und Erhalt halten. Im Aufbau
   steigt der geplante lange Lauf zusätzlich um 5 % je Trainingswoche des Blocks (bis zum Deckel). Ein schon längerer gespeicherter
@@ -345,7 +345,7 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 
 [Q1]–[Q51]: siehe `docs/training-audit.md` und `docs/personalisation-concept.md`.
 
-- [Q52] Plotkin D, Coleman M, Van Every D, et al. Progressive overload without progressing load? The effects of load or repetition progression on muscular adaptations. *PeerJ* 2022;10:e14142.
+- [Q52] zusammengeführt mit [Q8] (dieselbe Quelle, siehe `docs/training-audit.md`); Verweise lauten jetzt [Q8] (A-054).
 - [Q53] Williams TD, Tolusso DV, Fedewa MV, Esco MR. Comparison of periodized and non-periodized resistance training on maximal strength: a meta-analysis. *Sports Med* 2017;47(10):2083–2100.
 - [Q54] Kassiano W, Nunes JP, Costa B, Ribeiro AS, Schoenfeld BJ, Cyrino ES. Does varying resistance exercises promote superior muscle hypertrophy and strength gains? A systematic review. *J Strength Cond Res* 2022;36(6):1753–1762.
 - [Q55] Baz-Valle E, Schoenfeld BJ, Torres-Unda J, Santos-Concejero J, Balsalobre-Fernández C. The effects of exercise variation in muscle thickness, maximal strength and motivation in resistance trained men. *PLoS One* 2019;14(12):e0226989.
@@ -353,7 +353,7 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 - [Q57] Spiering BA, Mujika I, Sharp MA, Foulis SA. Maintaining physical performance: the minimal dose of exercise needed to preserve endurance and strength over time. *J Strength Cond Res* 2021;35(5):1449–1458.
 - [Q58] Kraemer WJ, Ratamess NA. Fundamentals of resistance training: progression and exercise prescription. *Med Sci Sports Exerc* 2004;36(4):674–688 (strength gains of about 40 % untrained, 20 % moderately trained, 16 % trained, 10 % advanced, 2 % elite over 4 weeks to 2 years).
 - [Q9] Bell L et al. 2023 (Deload-Konsens): siehe `docs/training-audit.md`.
-- [Q59] Seiler S. What is best practice for training intensity and duration distribution in endurance athletes? *Int J Sports Physiol Perform* 2010;5(3):276–291.
+- [Q59] zusammengeführt mit [Q18] (dieselbe Quelle, siehe `docs/training-audit.md`); Verweise lauten jetzt [Q18] (A-054).
 - [Q60] Billat LV. Interval training for performance: a scientific and empirical practice. Part I: aerobic interval training. *Sports Med* 2001;31(1):13–31.
 - [Q61] Daniels J. *Daniels' Running Formula*. 3rd ed. Human Kinetics; 2014 (long run as a share of the weekly volume; easy pace well below 5 km race pace, threshold close to 10 km pace).
 - [Q62] Frandsen JSB, Hulme A, Parner ET, et al. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. *Br J Sports Med* 2025 (single sessions more than 10 % longer than the longest run of the last 30 days raised the injury risk).

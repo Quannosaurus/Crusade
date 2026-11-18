@@ -5,7 +5,7 @@
 // the replaced state is kept one generation (kz_app_v3_prev) with "Undo restore" for 1 day and a preview line before
 // the confirm tap; the old kickDay field migrates like load(); distance/minutes have limits (also saveRun); dates are real
 // calendar dates; the run file import has a size limit; the love key stays outside backups; old backups still load.
-const {JSDOM}=require('./domguard');const fs=require('fs');
+const {JSDOM}=require('./domguard');require('./domguard').expectRescue();/* A-054: this test draws the rescue page on purpose */const fs=require('fs');
 const html=fs.readFileSync(require('path').resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
 function boot(pre,url,extra){const dom=new JSDOM(html,{runScripts:'outside-only',url:url||'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
@@ -158,7 +158,7 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
    ex:{'p_pull#0':{r:8,d:'2026-11-31'}},pr:{'run:long':{km:5,d:'2026-02-30'}},pauseH:[{f:'2026-01-01',t:'2026-01-32'}],
    days:{'2026-11-31':{run:'RE'},'2026-11-15':{run:'RE'}}});
  if(dd.start!==TD)issue('impossible start date kept');if(dd.easy)issue('impossible easy date kept');if(dd.bkDate)issue('impossible bkDate kept');
- if(dd.logs.map(l=>l.d).join()!=='2028-02-29,2026-11-10')issue('log dates: '+dd.logs.map(l=>l.d).join());
+ if(dd.logs.map(l=>l.d).join()!=='2026-11-10,2028-02-29')/* A-054: import sorts by date */issue('log dates: '+dd.logs.map(l=>l.d).join());
  if(!dd.goal||dd.goal.s!==TD||dd.goal.d||dd.goal.h.length!==1)issue('goal dates not checked: '+JSON.stringify(dd.goal));
  if(dd.pause)issue('impossible pause kept');if(dd.pauseH.length)issue('impossible pauseH kept');if(dd.kitD.c_sq||!dd.kitD.b_pu)issue('kitD dates');
  if(dd.ex['p_pull#0'].d!==''||dd.pr['run:long'].d!=='')issue('ex/pr dates');if(dd.days['2026-11-31']||!dd.days['2026-11-15'])issue('day keys');

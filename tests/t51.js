@@ -63,5 +63,18 @@ function base(x){const D=x.k.D();Object.assign(D,{onb:true,seenFocus:true,seenFa
 {const x=boot();base(x);const old=JSON.stringify({profile:{pull:6},start:'2025-03-03',logs:logs(2000,'2026-10-30').map(l=>({d:l.d,id:l.id,t:l.t,rpe:l.rpe})),theme:'templar',ex:{'a_row#0':{r:8,w:0,d:'2026-10-28',n:'Underhand rows'}}});
  if(!x.k.restoreText(old,'mehr'))issue('old 2000-entry backup refused');if(x.k.rsp())issue('old 2000-entry backup asks without data');if(x.k.D().logs.length!==2000)issue('old backup: '+x.k.D().logs.length+' entries');
  ['start','train','verlauf','stand','mehr'].forEach(tb=>{x.k.D().tab=tb;try{x.k.render();}catch(e){issue('old backup render '+tb+': '+e.message);}});}
+// A-054 (N-7): an unsorted file (edited by hand) is sorted by date, a cut keeps the newest dates
+{const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);const k=w.__kz;
+  const mk=(n,off)=>Array.from({length:n},(_,i)=>({d:new Date(Date.UTC(2020,0,1)+(i+off)*864e5).toISOString().slice(0,10),id:'RS',t:'RS'}));
+  const logs=mk(20000,10).concat(mk(10,0)).reverse();const o=k.cleanImport({v:3,logs});const L=o.logs;
+  let sorted=true;for(let i=1;i<L.length;i++)if(L[i].d<L[i-1].d){sorted=false;break;}
+  if(!sorted)issue('import does not sort the entries by date');if(L.length!==20000||L[0].d!==mk(1,10)[0].d)issue('cut did not keep the newest dates: first '+(L[0]&&L[0].d)+', '+L.length+' entries');
+  const s2=k.cleanImport({v:3,logs:[{d:'2026-02-02',id:'RS',t:'b'},{d:'2026-01-01',id:'RS',t:'a'},{d:'2026-02-02',id:'KA',t:'c'}]}).logs.map(l=>l.t).join('');if(s2!=='abc')issue('same-day order not kept: '+s2);
+  rep.push('unsorted import of 20,010 entries: sorted, oldest kept '+L[0].d);}
+// A-054 (N-9): "Delete all data" removes the copy before the last restore; the secret theme code only after its own question
+[true,false].forEach(forget=>{const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};w.localStorage.setItem('kz_love_k','2:x:y');w.localStorage.setItem('kz_app_v3_prev','{"at":1,"s":{}}');
+  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);const k=w.__kz,d=w.document;k.D().onb=true;k.D().tab='mehr';k.render();
+  d.querySelector('[data-a=reset]').click();const q=d.querySelector('[data-a=rsk][data-k="'+(forget?1:0)+'"]');if(!q){issue('no question about the secret theme code');return;}q.click();d.querySelector('[data-a=reset]').click();
+  if(w.localStorage.getItem('kz_app_v3_prev'))issue('delete all data kept kz_app_v3_prev');if(!!w.localStorage.getItem('kz_love_k')===forget)issue('theme code '+(forget?'kept although forgotten':'removed although kept'));});
 rep.forEach(r=>console.log(r));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

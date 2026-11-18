@@ -14,8 +14,10 @@ const T0='2026-11-16';const addD=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setU
 const BASIC={pull:0,dips:0,push:5,expl:0,mu:0,hsw:0,hsf:0,pike:0,tuck:5,lsit:0,hang:15};
 function setup(k,prof,startP){const D=k.D();Object.assign(D,{onb:true,seenFocus:true,seenFav:true,favP:true,loc:'g',focus:'bal',emph:'lower',kickDays:[],logs:[],start:'2025-01-06',short:false,goal:null});
   delete D.startP;if(startP)D.startP=startP;Object.assign(D.profile,BASIC,prof||{});k.today(T0);return D;}
+/* A-054 (N-3): levels count training weeks, so a history trains every week (an entry without exercises) from its first value on */
+const fill=D=>{const ds=D.logs.map(l=>l.d).sort();if(!ds.length)return;for(let d=ds[0];d<=T0;d=addD(d,7))if(!D.logs.some(l=>l.d===d))D.logs.push({d,id:'KB',t:'KB',rpe:6,ex:{}});D.logs.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);};
 const anc=(D,wks,w0,w1,key)=>{key=key||'g_ht#0';D.logs.push({d:addD(T0,-Math.round(wks*7)),id:'KC',t:'KC',rpe:6,vs:{legs:4,hinge:6},ex:{[key]:[10,w0]}});
-  D.logs.push({d:addD(T0,-2),id:'KC',t:'KC',rpe:6,vs:{legs:4,hinge:6},ex:{[key]:[10,w1]}});};
+  D.logs.push({d:addD(T0,-2),id:'KC',t:'KC',rpe:6,vs:{legs:4,hinge:6},ex:{[key]:[10,w1]}});fill(D);};
 // 1 lower stand: ratio and weeks both count, the best stage wins, every anchor variant (hip thrust, squat)
 {const {k}=boot();
   [[1.24,20,0],[1.25,12,1],[1.3,11,0],[1.5,26,2],[1.5,25,1],[1.75,52,2],[1.75,40,2],[1.75,103,2],[1.75,104,3],[2,80,2],[2,104,3]].forEach(([r,wk,want])=>{const D=setup(k);anc(D,wk,40,40*r);
@@ -31,9 +33,9 @@ const anc=(D,wks,w0,w1,key)=>{key=key||'g_ht#0';D.logs.push({d:addD(T0,-Math.rou
   let D=setup(k,{pull:4,dips:10});if(k.lvUp()!==0)issue('4 pull-ups not Basic');
   D=setup(k,{pull:5,dips:8});if(k.lvUp()!==1)issue('5/8 not Intermediate: '+k.lvUp());
   D=setup(k,{pull:6,dips:10,mu:3});if(k.lvUp()<2)issue('3 muscle-ups not Advanced');
-  D=setup(k,{pull:9,dips:16,mu:0},'s1');D.logs.push({d:addD(T0,-740),id:'KA',t:'KA',rpe:6,vs:{pull:6},ex:{'a_row#0':[8,0]}},{d:addD(T0,-735),id:'CH',t:'CH',rpe:6,vs:{pull:4},ex:{},tv:{pull:4}});
+  D=setup(k,{pull:9,dips:16,mu:0},'s1');D.logs.push({d:addD(T0,-740),id:'KA',t:'KA',rpe:6,vs:{pull:6},ex:{'a_row#0':[8,0]}},{d:addD(T0,-735),id:'CH',t:'CH',rpe:6,vs:{pull:4},ex:{},tv:{pull:4}});fill(D);
   if(k.lvUp()!==3)issue('fourth stage without muscle-up not reached (pull 9 vs first trial 4, 105 weeks): '+k.lvUp());
-  D.logs=[Object.assign({},D.logs[0],{d:addD(T0,-200)}),Object.assign({},D.logs[1],{d:addD(T0,-190)})];if(k.lvUp()!==2)issue('pull ×1.8 after 28 weeks should be Advanced: '+k.lvUp());
+  D.logs=[Object.assign({},D.logs[0],{d:addD(T0,-200)}),Object.assign({},D.logs[1],{d:addD(T0,-190)})];fill(D);if(k.lvUp()!==2)issue('pull ×1.8 after 28 weeks should be Advanced: '+k.lvUp());
   D=setup(k,{pull:12,dips:20});D.logs.push({d:addD(T0,-400),id:'CH',t:'CH',rpe:6,vs:{pull:4},ex:{},tv:{pull:10}});if(k.lvUp()!==1)issue('start value from the first trial not used (12 vs 10): '+k.lvUp());
   D=setup(k,{pull:12,dips:20},'s1');D.logs.push({d:addD(T0,-400),id:'KA',t:'KA',rpe:6,vs:{pull:6},ex:{'a_row#0':[8,0]}});if(k.lvUp()!==1)issue('start preset taken as a measurement: '+k.lvUp());
   rep.push('upper: 5/8 → 1, mu 3 → 2, pull ×1.75 over 104 weeks → 3 ('+k.LVN[3]+')');}
@@ -60,13 +62,13 @@ const anc=(D,wks,w0,w1,key)=>{key=key||'g_ht#0';D.logs.push({d:addD(T0,-Math.rou
   if(!/Upper: next stage at \+50 % pull-ups/.test(nx))issue('upper hint: '+nx);
   rep.push('header "'+ey.replace(/\s+/g,' ').trim()+'"');}
 // 5b A-049: Veteran not before 104 weeks on the upper axis either; onboarding summary without the level
-{const {k,d}=boot();let D=setup(k,{pull:12,dips:20},'s1');D.logs.push({d:addD(T0,-560),id:'KA',t:'KA',rpe:6,vs:{pull:6},ex:{'a_row#0':[8,0]}},{d:addD(T0,-555),id:'CH',t:'CH',rpe:6,vs:{pull:4},ex:{},tv:{pull:5}});
+{const {k,d}=boot();let D=setup(k,{pull:12,dips:20},'s1');D.logs.push({d:addD(T0,-560),id:'KA',t:'KA',rpe:6,vs:{pull:6},ex:{'a_row#0':[8,0]}},{d:addD(T0,-555),id:'CH',t:'CH',rpe:6,vs:{pull:4},ex:{},tv:{pull:5}});fill(D);
   if(k.lvUp()!==2)issue('upper Veteran before 104 weeks (×2.4 after 80 weeks): '+k.lvUp());
   D=setup(k,{pull:6,dips:10});anc(D,30,40,62);D.onb=false;D.obStep=3;k.render();const sm=[...d.querySelectorAll('.sum')].map(x=>x.textContent).join(' | ');
   if(!sm)issue('onboarding summary not found');else if(/Upper:|Lower:|Basic|Intermediate|Advanced|Veteran/.test(sm))issue('onboarding summary shows the level: '+sm);
   rep.push('Veteran ≥ 104 weeks on both axes, onboarding summary "'+sm.replace(/\s+/g,' ').trim().slice(0,70)+'"');}
 // 6 a rise of the lower stand is reported in the toast (passive), no question
-{const {k,d}=boot();const D=setup(k);D.logs.push({d:addD(T0,-100),id:'KC',t:'KC',rpe:6,vs:{legs:4,hinge:6},ex:{'g_ht#0':[10,40]}});
+{const {k,d}=boot();const D=setup(k);D.logs.push({d:addD(T0,-100),id:'KC',t:'KC',rpe:6,vs:{legs:4,hinge:6},ex:{'g_ht#0':[10,40]}});fill(D);D.logs=D.logs.filter(l=>l.d<T0);
   const L0=k.lvLo();const dy=k.day();dy.pick='KC';dy.fin={rpe:6};const c=k.ctx(T0),S=k.S('KC',c);let hit=0;
   S.blocks.forEach((b,bi)=>{const bix=b.bi!=null?b.bi:bi;b.items.forEach((it,ii)=>{if(it.gone)return;const v=k.curVar(it,k.LOC());if(v<0)return;const key='KC-'+bix+'-'+ii;dy.done[key]=true;
     if(it.f||it.iso||it.test)return;const n=k.setsOf(it,b,c,'KC');const g=k.target(it,v);let w=it.opts[v].w?String(g.w||20):'';if(it.k==='g_ht'&&v===0){w='52';hit=1;}dy.inp[key]={s:Array(n).fill(String(g.r)),w};});});
@@ -78,5 +80,11 @@ const anc=(D,wks,w0,w1,key)=>{key=key||'g_ht#0';D.logs.push({d:addD(T0,-Math.rou
 {const {k}=boot();const D=setup(k);anc(D,30,40,62);const s=JSON.stringify(D);const c=k.cleanImport(JSON.parse(s));
   if(!c||c.logs.length!==D.logs.length)issue('backup does not load');['lvU','lvL','level'].forEach(f=>{if(c&&f in c)issue('new field '+f);});
   k.setD(c);k.today(T0);if(k.lvLo()!==2)issue('stand after restore: '+k.lvLo());}
+// A-054 (N-3): start value = best weight of the first 4 training weeks, time = training weeks
+{const {k}=boot();let D=setup(k);const L=(d,w)=>({d,id:'KC',t:'KC',rpe:6,vs:{legs:4,hinge:6},ex:{'g_ht#0':[10,w]}});
+  D.logs.push(L(addD(T0,-182),20),L(addD(T0,-175),60));if(k.lvLo()!==0)issue('a light first set and no training since lifts the lower stand: '+k.lvLo());
+  D=setup(k);D.logs.push(L(addD(T0,-182),20),L(addD(T0,-168),60),L(addD(T0,-2),66));fill(D);const s1=k.lvLo();if(s1!==0)issue('60 kg in week 3 is the start value: 66 kg after 26 weeks should stay Basic, got '+s1);
+  D=setup(k);D.logs.push(L(addD(T0,-182),60),L(addD(T0,-2),76));fill(D);const s2=k.lvLo();if(s2!==1)issue('honest start 60 → 76 kg over 26 training weeks: '+s2);
+  rep.push('N-3: light first set without training → 0, start of the first 4 weeks 60 → 66 kg → '+s1+', 60 → 76 kg over 26 training weeks → '+s2);}
 rep.forEach(r=>console.log(' · '+r));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(x=>console.log(' - '+x));

@@ -1,6 +1,7 @@
 // @name build-repro
 // A-048: the build is reproducible – every file list in tools/build.py is sorted (FILES in sw.js incl. the fonts),
-// so macOS and Linux give byte-identical output, and a second build run changes nothing.
+// so macOS and Linux give byte-identical output, and a second build run changes nothing. A-054: the build equals the
+// checked-in generated files of HEAD whenever src/, tools/ and the fonts are unchanged against HEAD (else reported as skipped).
 const fs=require('fs');const path=require('path');const cp=require('child_process');const crypto=require('crypto');
 const R=path.join(__dirname,'..');const P=[];const issue=m=>P.push(m);
 const OUT=['index.html','app.js','app.css','sw.js','manifest.webmanifest','.build/index.html','icon.svg','icon-192.png','icon-512.png','icon-maskable-512.png'];
@@ -27,5 +28,13 @@ if(!m)issue('sw.js has no FILES list');else{
 const src=fs.readFileSync(path.join(R,'tools/build.py'),'utf8');
 (src.match(/[^\n]*glob\.glob\([^\n]*/g)||[]).forEach(l=>{if(!/sorted\(/.test(l))issue('unsorted glob in build.py: '+l.trim().slice(0,80));});
 if(/os\.listdir|os\.walk|os\.scandir/.test(src)&&!/sorted\(os\./.test(src))issue('directory listing in build.py without sorted()');
+// A-054: build vs the checked-in state (HEAD)
+let headTxt='';{const git=a=>cp.execFileSync('git',a,{cwd:R,stdio:['ignore','pipe','ignore']});
+  try{git(['rev-parse','HEAD']);let clean=true;try{git(['diff','--quiet','HEAD','--','src','tools','fonts']);}catch(e){clean=false;}
+    if(!clean)headTxt='checked-in comparison skipped: src/tools changed against HEAD';
+    else{let n=0;OUT.filter(f=>!f.startsWith('.build/')).concat(fontFiles()).forEach(f=>{let h;try{h=crypto.createHash('sha256').update(git(['show','HEAD:'+f])).digest('hex');}catch(e){issue('generated file not checked in: '+f);return;}n++;
+      if(h!==s2[f])issue('checked-in '+f+' differs from the build (stale build or edited by hand)');});headTxt='build = checked-in state for '+n+' files';}}
+  catch(e){headTxt='checked-in comparison skipped: no git repository';}}
+console.log(headTxt);
 console.log('build',v1,'files',Object.keys(s1).length);
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(p=>console.log(' - '+p));process.exit(0);

@@ -74,5 +74,12 @@ const sess=(k,wk,id,o)=>{setup(k,wk,o);const c=k.ctx(k.today());return {S:k.S(id
   setup(k,8);k.D().kit=[];k.day().kit=true;const S=k.S('KC',k.ctx(k.today()));S.blocks.forEach(b=>b.items.forEach(it=>{if(it.gone||!it.k||it.f||b.warm||b.cool)return;const v=k.curVar(it,k.LOC());if(v<0)issue('Field kit (nothing): '+it.k+' without a fitting variant');}));}
 // 7 old backup: no new field
 {const {k}=boot();const D=setup(k,9);const c=k.cleanImport(JSON.parse(JSON.stringify(D)));if(!c)issue('backup does not load');else['rot','rset','rotSet'].forEach(f=>{if(f in c)issue('new field '+f);});}
+// A-054 (N-11): Skill session and Home skills in 3 versions in turn, the skill ladder anchors stay
+{const {k}=boot();const D=k.D();Object.assign(D,{onb:true,loc:'g',logs:[],start:'2026-01-05'});k.today('2026-03-02');
+  ['SK','HK'].forEach(id=>{const nm=[],anc=[];for(let i=0;i<4;i++){const S=k.S(id,k.ctx(k.today()));const names=S.blocks.flatMap(b=>b.items.map(it=>it.opts[0]&&it.opts[0].n)).join('|');nm.push(names);
+      anc.push(S.blocks.flatMap(b=>b.items.filter(it=>it.iso||(it.k&&!it.f)).map(it=>it.k||it.iso)).join(','));D.logs.push({d:addD(k.today(),-20+i),id,t:id,rpe:5,ex:{}});}
+    if(new Set(nm.slice(0,3)).size!==3)issue(id+': not 3 different versions in 3 sessions'+(process.env.DBG?nm.join(' // '):''));if(nm[3]!==nm[0])issue(id+': version 4 is not version 1 again');
+    if(new Set(anc).size!==1)issue(id+': skill anchors changed between versions: '+[...new Set(anc)].join(' / '));
+    rep.push(id+': 3 versions in turn, anchors '+anc[0]);});}
 rep.forEach(r=>console.log(' · '+r));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(x=>console.log(' - '+x));
