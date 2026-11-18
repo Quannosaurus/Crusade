@@ -8,6 +8,7 @@
 // exercise. Units: cut order and floors (2 sets/rounds, anchor last, emphasis
 // exercise swapped for one with room), goal anchor, additions, warm-up and skill blocks never cut, a logged session does
 // not shrink afterwards, Limited time, Level 0 vs Level 1 in rounds(), the cut sets reach the target text and l.vs.
+// A-059: session checks (60–90 min, anchor, swaps, functions, floors, leg day) and the 7-day peaks run over 48 weeks too.
 // A-057 c: the band is measured per accent block over 48 weeks (≤ upper limit; ≥ lower limit, or ⅔ of it for a pattern
 // outside emphasis and goal in the strength and skill blocks, A-056 c / N-6) instead of the 12-week average.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
@@ -24,6 +25,12 @@ function setup(k,p,start){const D=k.D();Object.assign(D.profile,p.prof);D.focus=
 const V=['pull','push','legs','hinge','core'];
 const vlog=(d,id,vs)=>({d,id,t:id,rpe:6,vs:Object.assign({pull:0,push:0,legs:0,hinge:0,core:0},vs)});
 const lowb=s=>s.blocks.find(b=>b.lowb);
+/* A-059: a Strength C is full when no leg or hinge set fits any more inside 90 min (one more set of an emphasis exercise
+   or one more round of the leg block, whichever is shorter); the 90 min ceiling ranks above the leg-day floor (D1) */
+function kcFull(k,s,c){let best=Infinity;s.blocks.forEach(b=>{if(b.warm||b.cool)return;const lh=b.items.some(it=>['legs','hinge'].includes(k.itPat(it))&&!it.gone&&k.curVar(it,k.LOC())>=0);if(!lh)return;
+  if(b.rounds&&!b.lowb){const r0=b.rounds,t0=b.tr,r=k.rounds(b,c,'KC')+1;b.rounds=[r,r];delete b.tr;best=Math.min(best,k.estMin(s,c,'KC'));b.rounds=r0;if(t0!=null)b.tr=t0;else delete b.tr;return;}
+  b.items.forEach(it=>{if(!['legs','hinge'].includes(k.itPat(it))||it.gone||k.curVar(it,k.LOC())<0)return;const t0=it.ts,n=k.setsOf(it,b,c,'KC'),r0=b.rounds;it.ts=n+1;if(b.rounds&&b.rounds[1]<n+1)b.rounds=[n+1,n+1];
+    best=Math.min(best,k.estMin(s,c,'KC'));b.rounds=r0;if(t0==null)delete it.ts;else it.ts=t0;});});return best>90;}
 
 // 1 twelve-week simulations: the tolerance rule of the control station (A-026). The floors (60 min, 2 working sets,
 // legs + hinge ≥ 10) rank above the band upper limit; the training-week average of every pattern lies in its band
@@ -41,15 +48,15 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
   const hotP=(({lower:['legs','hinge'],glutes:['hinge'],upper:['pull','push'],core:['core']})[p.emph]||[]).concat(gk&&!((({lower:['legs','hinge'],glutes:['hinge']})[p.emph]||[]).includes(GP[gk]))?[GP[gk]]:[]);
   const lhs={};let nsw=0,maxsw=0;p={...p,n:pn};
   /* A-057 c: 48 weeks, so every accent block (base, strength, volume, skill) is measured twice and a single light week (two
-     strength sessions) does not decide a block; the session and peak checks keep their 12-week window */
-  sim(k,336,START,(r,s)=>{if(!r.s||Date.parse(s)-Date.parse(START)>=84*864e5)return;if(['KA','KB','KC','CH','HO'].includes(r.id)&&!D.short&&(r.min<60||r.min>90))issue(p.n+' '+s+' '+r.id+': '+r.min+' min');
+     strength sessions) does not decide a block; A-059: the session and peak checks run over the same 48 weeks */
+  sim(k,336,START,(r,s)=>{if(!r.s||Date.parse(s)-Date.parse(START)>=336*864e5)return;if(['KA','KB','KC','CH','HO'].includes(r.id)&&!D.short&&(r.min<60||r.min>90))issue(p.n+' '+s+' '+r.id+': '+r.min+' min');
     const lb=lowb(r.s),gxp=r.s.blocks.some(b=>b.gx&&b.items.some(it=>it.gx&&k.curVar(it,k.LOC())>=0&&hotP.includes(k.itPat(it))));
     if(hotP.length&&['lower','glutes'].includes(p.emph)&&['KA','KB','KC','CH'].includes(r.id)&&(!lb||!lb.items.some(it=>it.anc))&&!gxp)issue(p.n+' '+s+' '+r.id+': emphasis block without its anchor (and no goal anchor of its pattern)');
     let sw=0;const fun={};r.s.blocks.forEach((b,bi)=>{if(b.warm||b.cool)return;b.items.forEach((it,ii)=>{const v=k.curVar(it,k.LOC());if(v<0)return;const n=it.opts[v].n;
       FUN.forEach((f,fi)=>{if(f.test(n)){if(fun[fi]&&(it.bx||fun[fi].bx))issue(p.n+' '+s+' '+r.id+': band swap brings a function twice ('+fun[fi].n+' / '+n+')');fun[fi]={n,bx:it.bx};}});
       if(!it.bx)return;sw++;if(BASE.test(it.bxk||''))issue(p.n+' '+s+' '+r.id+': basic exercise swapped ('+it.bx+')');if(it.bxf&&!b.acc&&!b.sh&&!b.fav)issue(p.n+' '+s+' '+r.id+': first exercise of '+b.name+' swapped');});});
     nsw+=sw;maxsw=Math.max(maxsw,sw);if(sw>1)issue(p.n+' '+s+' '+r.id+': '+sw+' band swaps (max 1)');
-    const w=Math.floor((Date.parse(s)-Date.parse(START))/864e5/7),cx=k.ctx(s);(lhs[w]=lhs[w]||[]).push({d:s,id:r.id,n:k.legSets(r.s,cx,r.id),m:r.s.min});
+    const w=Math.floor((Date.parse(s)-Date.parse(START))/864e5/7),cx=k.ctx(s);(lhs[w]=lhs[w]||[]).push({d:s,id:r.id,n:k.legSets(r.s,cx,r.id),m:r.s.min,full:r.id==='KC'&&kcFull(k,r.s,cx)});
     const c=k.ctx(s);r.s.blocks.forEach(b=>{if(D.short&&b.p>1)return;b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,k.LOC())<0)return;const n=k.setsOf(it,b,c,r.id);if(n<2)issue(p.n+' '+s+' '+r.id+' '+it.k+': '+n+' working set(s), floor is 2');});});});
   const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5);
   const wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={pull:0,push:0,legs:0,hinge:0,core:0,dl:false,lg:0});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.vs)V.forEach(q=>x[q]+=l.vs[q]);if(l.lg)x.lg++;});
@@ -60,7 +67,7 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
   V.forEach(q=>{const hot=hotP.includes(q),[lo,hi]=hot?BAND.hot:[BAND.cold[0],BAND.cold[1]+(p.focus==='str'?2:0)],tol=hot?2:4;let peak=0;
     /* A-053: a peak over the tolerance by 1 set whose newest leg session sits at the floor (legs + hinge 10, tolerance rule:
        the floors rank above the upper limit) is noted, not failed */
-    let flo=0;for(let i=6;i<84;i++){let h=0,last=null;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl){h+=l.vs[q];if(l.vs[q])last=l;}});
+    let flo=0;for(let i=6;i<336;i++){let h=0,last=null;D.logs.forEach(l=>{const x=day(l.d);if(x>i-7&&x<=i&&l.vs&&!l.bl){h+=l.vs[q];if(l.vs[q])last=l;}});
       if(h===hi+tol+1&&(q==='legs'||q==='hinge')&&last&&last.vs.legs+last.vs.hinge<=10){flo=Math.max(flo,h);continue;}peak=Math.max(peak,h);}
     if(flo)rep.push('  note: '+p.n+' '+q+' '+flo+' sets in 7 days, the newest leg session at the floor legs + hinge 10');
     const avg=tw.reduce((a,w)=>a+wk[w][q],0)/(tw.length||1);sum.push(q+' peak '+peak+' avg '+avg.toFixed(1)+' ('+lo+'–'+hi+(hot?', emphasis':'')+')');
@@ -79,7 +86,7 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
   Object.keys(lhs).forEach(w=>{const a=lhs[w],kc=a.filter(x=>x.id==='KC');if(!kc.length||wk[w]&&wk[w].dl)return;const top=kc.reduce((m,x)=>x.n>m.n?x:m,kc[0]);
     a.filter(x=>x.id!=='KC').forEach(x=>{if(x.n<=top.n)return;const i=day(top.d);const at=['legs','hinge'].some(q=>{let h=0;D.logs.forEach(l=>{const y=day(l.d);if(y>i-7&&y<=i&&l.vs&&!l.bl)h+=l.vs[q];});return h>=tolOf(q)-1;});
       /* A-053: the 90 min ceiling ranks above the leg-day floor (D1): a Strength C at 90 min that cannot take more is noted */
-      if(at||top.m>=90){held++;rep.push('  note: week '+(+w+1)+' Strength C '+top.n+' < '+x.id+' '+x.n+' leg sets, held by '+(at?'the band tolerance':'the 90 min ceiling'));}else issue(p.n+' week '+(+w+1)+': Strength C '+top.n+' leg sets < '+x.id+' '+x.n);});});
+      if(at||top.m>=90||top.full){held++;rep.push('  note: week '+(+w+1)+' Strength C '+top.n+' < '+x.id+' '+x.n+' leg sets, held by '+(at?'the band tolerance':'the 90 min ceiling'+(top.m<90?' (no leg set fits, '+top.m+' min)':'')));}else issue(p.n+' week '+(+w+1)+': Strength C '+top.n+' leg sets < '+x.id+' '+x.n);});});
   rep.push('  band swaps '+nsw+' (max '+maxsw+' per session)'+(held?' · Strength C held by the tolerance in '+held+' week(s)':''));
   tw.forEach(w=>{const x=wk[w];if(x.legs+x.hinge<10)issue(p.n+' week '+(+w+1)+': legs + hinge '+(x.legs+x.hinge)+' (< 10)');
     if(p.focus!=='run'&&x.lg<2)issue(p.n+' week '+(+w+1)+': only '+x.lg+' leg session(s)');});
@@ -168,6 +175,6 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
  rep.push('Pull over the band, KA: pull '+v2.pull+', swaps '+sw.map(([b,it])=>it.bx+' → '+it.opts[it.fx].n).join(', '));
  if(errs.length||z.errs.length)issue('JS errors '+errs.concat(z.errs).join('; '));}
 
-console.log('--- 12 weeks per profile (peak = most sets in 7 days, avg = per training week; H hinge / L legs / P pull / D push / C core) ---');rep.forEach(r=>console.log(r));
+console.log('--- 48 weeks per profile (peak = most sets in 7 days, avg = per training week; H hinge / L legs / P pull / D push / C core) ---');rep.forEach(r=>console.log(r));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(m=>console.log(' - '+m));
 process.exit(P.length?1:0);

@@ -863,7 +863,7 @@ function design0(s,id,c){s.ab=absFor(id);
   /* The goal anchor then is the session's anchor: the emphasis anchor of the same pattern becomes a companion. */
   if(gpx&&lbg&&(EMPAT[emph()]||[]).indexOf(gpx)>=0){var rep1=false,lgb=legSets(s,c,id),snap=lbg.items.map(function(it){return [it,it.ts,it.anc];}),more0=lbg.more&&lbg.more.slice();lbg.items=lbg.items.map(function(it){if(itPat(it)!==gpx||curVar(it,LOC())<0)return it;if(it.anc){it.gan=1;delete it.anc;}
       /* one exercise of the goal pattern makes way for a pattern-free emphasis exercise (e.g. abduction), the others give a set */
-      if(!it.gan&&!rep1&&lbg.more){var j=-1;lbg.more.some(function(m,q){if(!itPat(m)&&curVar(m,LOC())>=0){j=q;return true;}});if(j>=0){var m=lbg.more.splice(j,1)[0];lbg.more.push(it);m.ts=setsOf(it,lbg,c,id);m.gsw=1;rep1=true;return m;}}
+      if(!it.gan&&!rep1&&lbg.more){var j=-1;lbg.more.some(function(m,q){if(!itPat(m)&&curVar(m,LOC())>=0&&!sesHas(s,m,it)){j=q;return true;}});if(j>=0){var m=lbg.more.splice(j,1)[0];lbg.more.push(it);m.ts=setsOf(it,lbg,c,id);m.gsw=1;rep1=true;return m;}}
       var n=setsOf(it,lbg,c,id);if(n>2){it.ts=n-1;it.gcut=1;}return it;});
     /* a session that has to stay a leg session (A-009) keeps what the emphasis would have given */
     if(legKeep(id,lgb)&&legSets(s,c,id)<6){lbg.items=snap.map(function(x){var it=x[0];if(x[1]==null)delete it.ts;else it.ts=x[1];if(x[2])it.anc=x[2];delete it.gan;delete it.gcut;return it;});lbg.more=more0;}
@@ -882,14 +882,14 @@ function design0(s,id,c){s.ab=absFor(id);
   if(rdDay()===3&&s.min>=DURMIN)return s;
   /* Under 60 min: sensible extras only, each kept only if the session stays within 90 min. */
   var fill=[
-    function(){var b=blk(function(x){return x.fav;});if(b&&b.more&&b.more.length&&b.items.length<6){b.items.push(b.more.shift());return true;}},
-    function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<3){b.items.push(nextMore(b));return true;}},
+    function(){var b=blk(function(x){return x.fav;});if(b&&b.more&&b.more.length&&b.items.length<6){var j=-1;b.more.some(function(m,q){if(!sesHas(s,m)){j=q;return true;}});if(j<0)return false;b.items.push(b.more.splice(j,1)[0]);return true;}},
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<3){var m=nextMore(b);if(!m)return false;b.items.push(m);return true;}},
     function(){if(s.ab&&s.ab.mini&&(id!=="CH"||!D.skills.mu)){s.ab.rounds=8;s.ab.mini=false;return true;}},
     function(){var b=blk(function(x){return x.lowb;});if(b&&b.rounds&&b.rounds[0]<4){b.rounds=[4,4];return true;}},
-    function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<4){b.items.push(nextMore(b));return true;}}];
+    function(){var b=blk(function(x){return x.lowb;});if(b&&b.more&&b.more.length&&b.items.length<4){var m=nextMore(b);if(!m)return false;b.items.push(m);return true;}}];
   /* A-025: an emphasis extra takes the first exercise whose pattern still has room in the band (e.g. a split squat when
      hinge is full), else the one that goes over it least. */
-  function nextMore(b){var j=0;if(cap){var v=volSets(s,c,id),r=rounds(b,c,id),bx=Infinity;for(var q=0;q<b.more.length;q++){var p=itPat(b.more[q]),x=p?v[p]+r-cap[p]:-99;if(x<=0){j=q;break;}if(x<bx){bx=x;j=q;}}}return b.more.splice(j,1)[0];}
+  function nextMore(b){var j=-1;if(cap){var v=volSets(s,c,id),r=rounds(b,c,id),bx=Infinity;for(var q=0;q<b.more.length;q++){if(sesHas(s,b.more[q]))continue;var p=itPat(b.more[q]),x=p?v[p]+r-cap[p]:-99;if(x<=0){j=q;break;}if(x<bx){bx=x;j=q;}}}else b.more.some(function(m,q){if(!sesHas(s,m)){j=q;return true;}});return j<0?null:b.more.splice(j,1)[0];}
   for(var k=0;k<4;k++)fill.push(fill[0]);
   /* A-027: on a pain day the filter may leave a session short; then a main circuit gets one round back (up to 3), so the 60 min floor holds. */
   if(painAny())for(var k2=0;k2<2;k2++)fill.push(function(){var b=blk(function(x){return x.rounds&&!x.lowb&&!x.warm&&!x.cool&&!x.acc&&x.tr==null&&rounds(x,c,id)<3&&x.items.some(function(it){return curVar(it,LOC())>=0;});});if(!b)return false;var r=rounds(b,c,id)+1;b.rounds=[r,r];return true;});
@@ -908,8 +908,9 @@ function design0(s,id,c){s.ab=absFor(id);
      emphasis pattern still under its band lower limit (7 days with today, and under its share per session) gets one more
      emphasis exercise of that pattern when it fits the caps and 90 min. */
   if(cap&&rdDay()!==3){var lbx=blk(function(x){return x.lowb&&x.more&&x.more.length;});if(lbx){var vv=volSets(s,c,id);(EMPAT[emph()]||[]).some(function(p){var lo=vBand(p)[0];
-      if(cap._u[p]+vv[p]>=lo||vv[p]>=Math.round(lo/cap._n[p]))return false;var j=-1;lbx.more.some(function(m,q){if(itPat(m)===p&&curVar(m,LOC())>=0){j=q;return true;}});if(j<0)return false;
+      if(cap._u[p]+vv[p]>=lo||vv[p]>=Math.round(lo/cap._n[p]))return false;var j=-1;lbx.more.some(function(m,q){if(itPat(m)===p&&curVar(m,LOC())>=0&&!sesHas(s,m)){j=q;return true;}});if(j<0)return false;
       var m0=lbx.more[j];lbx.items.push(m0);lbx.more.splice(j,1);var m1=est(),v1=volSets(s,c,id);if(m1>DURMAX||v1[p]>cap[p]){lbx.items.pop();lbx.more.splice(j,0,m0);return false;}s.min=m1;return true;});}}
+  if(cap&&peakGuard(s,c,id,cap,est))s.min=est();
   return s;}
 /* Skill Trial (P-3): test items for the goal and the active skills (values go into the profile and the log's tv), with a
    lower/glute emphasis also a lower-body test: max clean reps of the anchor exercise at its working weight (tv.lb). */
@@ -1571,7 +1572,7 @@ function bandFit(s,c,id,cap,est){var u=cap._u,U=[],ch=false,lb=null,lg0=legSets(
     /* Before dropping: an emphasis exercise of a full pattern swaps for one whose pattern has room (same time, fewer sets
        of the full pattern), e.g. a split squat for a kickback once hinge is full. */
     var sw=lb?lb.items.filter(function(it){var p=itPat(it);return !(it.anc&&!it.gan)&&!isFavIt(it)&&!it.sw&&p&&over.indexOf(p)>=0&&!grpLast(s,it);}).pop():null;
-    if(sw&&lb.more){var r3=setsOf(sw,lb,c,id),nx=null;/* A-027: an exercise of a pattern with room goes before a pattern-free one. */[1,0].some(function(pp){return lb.more.some(function(m){var p=itPat(m);if(curVar(m,LOC())>=0&&(pp?(p&&over.indexOf(p)<0&&v[p]+r3<=cap[p]):!p)){nx=m;return true;}});});
+    if(sw&&lb.more){var r3=setsOf(sw,lb,c,id),nx=null;/* A-027: an exercise of a pattern with room goes before a pattern-free one. */[1,0].some(function(pp){return lb.more.some(function(m){var p=itPat(m);if(curVar(m,LOC())>=0&&!sesHas(s,m,sw)&&(pp?(p&&over.indexOf(p)<0&&v[p]+r3<=cap[p]):!p)){nx=m;return true;}});});
       var lh3=nx&&(itPat(sw)==="legs"||itPat(sw)==="hinge")&&!(itPat(nx)==="legs"||itPat(nx)==="hinge")?r3:0;
       if(nx&&bandLoOK(cap,v,itPat(sw),r3)&&(!lh3||u.legs+u.hinge+v.legs+v.hinge-lh3>=10)){
         var its0=lb.items,more0=lb.more,tsS=sw.ts,tsN=nx.ts,e0=est();nx.ts=sw.ts;delete sw.ts;
@@ -1595,6 +1596,12 @@ var BSWAP={pull:["Reverse fly machine","Cable face pulls","Bent-over dumbbell re
 var BASEK=/^(fav_|mx_)?(mu_neg|a_expu|a2_wpu|b2_sw|c_pu|c_dip|c_sq|c_rdl|g_ht|g_rdl|b_gl|a_sbd|a2_dtp|b2_dl|h_pull|h_pu|h_sq)$/;
 var FUNX=[["abd",/abduct|band walks?|fire hydrants?|side-lying leg raises|clamshells?/i],["add",/adduct|copenhagen/i],["rear",/reverse fl|pull-aparts?|t-raises?|reverse butterfly/i],["fp",/face pulls?/i],["lat",/lateral raises?/i],["tib",/tibialis|shin/i],["sa",/serratus|scapula push-ups plus/i]];
 function funOf(n){for(var i=0;i<FUNX.length;i++)if(FUNX[i][1].test(n))return FUNX[i][0];return "";}
+/* A-059: no exercise and no function twice in a session (outside warm-up/cool-down): every step that brings an exercise in
+   (band swap, emphasis swap, the under-60 fill, the emphasis extra, the goal swap) asks sesHas first; skip = the item it
+   replaces. Without a valid replacement the step does not happen. */
+function sesHas(s,m,skip){var loc=LOC(),q=curVar(m,loc);if(q<0)return false;var n=m.opts[q].n,f=funOf(n),pk=m.k?patKey(m.k):"";
+  return s.blocks.some(function(b){if(b.warm||b.cool)return false;return b.items.some(function(it){if(it===m||it===skip||it.gone)return false;var v=curVar(it,loc);if(v<0)return false;var nn=it.opts[v].n;
+    return nn===n||(f&&funOf(nn)===f)||(pk&&it.k&&patKey(it.k)===pk);});});}
 function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},fun={},C=[],cat=null,nsw=0;
   s.blocks.forEach(function(b){b.items.forEach(function(it){var q=curVar(it,loc);if(q>=0){used[it.opts[q].n]=1;if(!b.warm&&!b.cool){var f=funOf(it.opts[q].n);if(f)fun[f]=1;}}if(it.k)keys[patKey(it.k)]=1;if(it.bx)nsw++;});});
   if(nsw>=1)return false;
@@ -1631,6 +1638,78 @@ function bandDrop(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),C=[];
     if((!D.short&&est()<bfLo()-(rdDay()===3?0:4))||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){delete x.it.gone;continue;}
     x.it.bd=nm;return true;}
   return false;}
+/* A-059 (control station): the 7-day peak of an emphasis/goal pattern stays at the band upper limit + 2 (tolerance rule
+   A-026) also in the volume block, whose +2 raises the weekly band, not the peak. Design, not trimming: the goal anchor
+   and the emphasis anchor stay; the companions of the pattern give way – one set at a time down to 2, then they swap for
+   an emphasis exercise of a pattern with room or a pattern-free one (never an exercise or function the session already
+   has), else they go. The time they leave is filled with work of patterns that have room (a circuit round, the full Core
+   Blitz, an emphasis exercise or favourite of another pattern); 60–90 min, legs + hinge ≥ 10, the leg session and the
+   floors of the other patterns (⅔ in the strength and skill blocks, bandLo) hold, else the step is undone. Legs and hinge
+   with a leg day in the plan also look ahead: the session leaves the next one its floor (KCRES 4 sets, + 2 for a leg
+   goal) inside the 7 days that will end on it (about 2 days on), and it takes at most its share (cap) + 2. */
+var KCRES=4;
+function pkLim(p){var hot=vHot(p);return vBand(p)[1]-(hot&&accNow()==="vol"?2:0)+(hot?2:4);}
+function peakGuard(s,c,id,cap,est){var u=cap._u,loc=LOC(),lg0=legSets(s,c,id),ch=false,lo=D.short?0:bfLo();
+  var hotP=VPAT.filter(function(p){return vHot(p);});if(!hotP.length)return false;
+  var vis=function(it){return !it.gone&&curVar(it,loc)>=0;};
+  var lb=s.blocks.filter(function(b){return b.lowb;})[0];
+  function okFl0(v,v0){if(VPAT.some(function(q){return v[q]<v0[q]&&u[q]+v[q]<bandLo(q,accNow())&&v[q]<Math.round(bandLo(q,accNow())/cap._n[q]);}))return false;
+    if(u.legs+u.hinge+v.legs+v.hinge<10&&v.legs+v.hinge<v0.legs+v0.hinge)return false;return true;}
+  /* a session that has to stay a leg session keeps it with a leg exercise of the emphasis list (legs with room) instead of the hinge work */
+  var legAdd=null;
+  function okFloors(v,v0){legAdd=null;if(!okFl0(v,v0))return false;if(!legKeep(id,lg0)||legSets(s,c,id)>=6)return true;
+    if(!lb||!lb.more)return false;var need=6-legSets(s,c,id),r=rounds(lb,c,id),j=-1;if(need>Math.min(r,4))return false;var n=Math.max(2,need);
+    lb.more.some(function(m,q){if(itPat(m)==="legs"&&curVar(m,loc)>=0&&!sesHas(s,m)&&u.legs+v.legs+n<=(vHot("legs")?pkLim("legs"):vBand("legs")[1])){j=q;return true;}});if(j<0)return false;
+    var m=lb.more.splice(j,1)[0],t0=m.ts;m.ts=Math.min(r,n);lb.items.push(m);legAdd=function(){lb.items.pop();if(t0==null)delete m.ts;else m.ts=t0;lb.more.splice(j,0,m);};
+    if(legSets(s,c,id)<6||!okFl0(volSets(s,c,id),v0)){legAdd();legAdd=null;return false;}return true;}
+  function fits(v,v0){return VPAT.every(function(q){return !vHot(q)||v[q]<=v0[q]||u[q]+v[q]<=pkLim(q);});}
+  /* fill the time with work of patterns that have room; each step kept only if it stays ≤ 90 min and inside the peak */
+  function refill(){var steps=[
+      function(){if(s.ab&&s.ab.mini&&(id!=="CH"||!D.skills.mu)){var a={r:s.ab.rounds,m:s.ab.mini};s.ab.rounds=8;s.ab.mini=false;return function(){s.ab.rounds=a.r;s.ab.mini=a.m;};}},
+      function(){var b=s.blocks.filter(function(x){if(!x.rounds||x.lowb||x.warm||x.cool||x.acc||x.gx||x.skill||x.trial||x.mu||x.hsb||x.lng||x.add)return false;var r=rounds(x,c,id);if(r>=3)return false;var v=volSets(s,c,id);
+        return x.items.filter(vis).every(function(it){var p=itPat(it);return !p||v[p]+1<=Math.max(cap[p],0)||(!vHot(p)&&u[p]+v[p]+1<=vBand(p)[1]);});})[0];if(!b)return;var r0=b.rounds,t0=b.tr,r=rounds(b,c,id)+1;b.rounds=[r,r];delete b.tr;return function(){b.rounds=r0;if(t0!=null)b.tr=t0;};},
+      function(){if(!lb||!lb.more||lb.items.filter(vis).length>=4)return;var v=volSets(s,c,id),j=-1;lb.more.some(function(m,q){var p=itPat(m);if(curVar(m,loc)>=0&&!sesHas(s,m)&&(!p||(!vHot(p)&&u[p]+v[p]+2<=vBand(p)[1])||(vHot(p)&&u[p]+v[p]+2<=pkLim(p)))){j=q;return true;}});if(j<0)return;
+        var m=lb.more.splice(j,1)[0];m.ts=2;lb.items.push(m);return function(){lb.items.pop();delete m.ts;lb.more.splice(j,0,m);};},
+      /* one set more for an emphasis companion of a pattern with room (or none), up to the block's rounds and 4 */
+      function(){if(!lb)return;var r=rounds(lb,c,id),v=volSets(s,c,id),x=lb.items.filter(function(it){var p=itPat(it);if(!vis(it)||it.anc||it.gx||setsOf(it,lb,c,id)>=Math.min(r,4))return false;return !p||(!vHot(p)&&(id==="KC"||(p!=="legs"&&p!=="hinge"))&&u[p]+v[p]+1<=vBand(p)[1]);})[0];
+        if(!x)return;var t0=x.ts;x.ts=setsOf(x,lb,c,id)+1;return function(){if(t0==null)delete x.ts;else x.ts=t0;};},
+      /* one round more for a pure accessory or shoulder block (no pattern), up to 3 */
+      /* one set more for a pure accessory or shoulder exercise (no pattern), up to 3 */
+      function(){var x=null;s.blocks.some(function(b){if(!(b.acc||b.sh)||b.rounds)return false;return b.items.some(function(it){if(vis(it)&&!itPat(it)&&setsOf(it,b,c,id)<3){x={b:b,it:it};return true;}});});if(!x)return;
+        var t0=x.it.ts;x.it.ts=setsOf(x.it,x.b,c,id)+1;return function(){if(t0==null)delete x.it.ts;else x.it.ts=t0;};},
+      function(){var b=s.blocks.filter(function(x){return (x.acc||x.sh)&&x.rounds&&rounds(x,c,id)<3&&x.items.filter(vis).length&&x.items.filter(vis).every(function(it){return !itPat(it);});})[0];if(!b)return;
+        var r0=b.rounds,t0=b.tr,r=rounds(b,c,id)+1;b.rounds=[r,r];delete b.tr;return function(){b.rounds=r0;if(t0!=null)b.tr=t0;};},
+      function(){var b=s.blocks.filter(function(x){return x.fav&&x.more&&x.more.length&&x.items.length<6;})[0];if(!b)return;var v=volSets(s,c,id),j=-1;b.more.some(function(m,q){var p=itPat(m);if(!sesHas(s,m)&&(!p||u[p]+v[p]+3<=(vHot(p)?pkLim(p):vBand(p)[1]))){j=q;return true;}});if(j<0)return;
+        var m=b.more.splice(j,1)[0];b.items.push(m);return function(){b.items.pop();b.more.splice(j,0,m);};}];
+    for(var g=0;g<6&&est()<lo;g++){var any=false;for(var j=0;j<steps.length&&est()<lo;j++){var vb=volSets(s,c,id),un=steps[j]();if(!un)continue;if(est()>DURMAX||!fits(volSets(s,c,id),vb))un();else any=true;}if(!any)break;}
+    return est()>=lo;}
+  /* look ahead: in a week with a leg day, a session after which Strength C is due (none in the last 2 days) leaves Strength C
+     its floor of legs and hinge (anchor + main leg block, 4 sets) inside the 7 days that will end on it (about 2 days on) */
+  var u4=vsZero(),kcx=99;D.logs.forEach(function(l){if(!STR[l.id]||l.bl)return;var x=diff(l.d,TODAY);if(x<1||x>6)return;if(l.id==="KC")kcx=Math.min(kcx,x);var w=logVs(l);if(w&&x<=4)VPAT.forEach(function(q){u4[q]+=w[q]||0;});});
+  var ahead=legPlan(),res=function(q){return KCRES+(goalPat()===q?2:0);};
+  function over(q,v){return u[q]+v[q]>pkLim(q)||((q==="legs"||q==="hinge")&&((ahead&&u4[q]+v[q]+res(q)>pkLim(q))||v[q]>cap[q]+2));}
+  fits=function(v,v0){return VPAT.every(function(q){return !vHot(q)||v[q]<=v0[q]||!over(q,v);});};
+  for(var g=0;g<20;g++){var v=volSets(s,c,id),p=hotP.filter(function(q){return over(q,v);})[0];if(!p)break;
+    /* the companions of p, emphasis block first, then single exercises of the other blocks (circuits keep their rounds) */
+    var C=[];s.blocks.forEach(function(b,bi){if(b.warm||b.cool||b.add||b.trial||b.gx||b.skill||b.mu||b.hsb||b.lng||(D.short&&b.p>1))return;var cir=b.rounds&&!b.lowb,fv=-1;b.items.forEach(function(x,q){if(fv<0&&vis(x))fv=q;});
+      b.items.forEach(function(it,ii){if(!vis(it)||itPat(it)!==p||(it.anc&&!it.gan)||it.gx||it.add||it.f||it.iso||it.test||isFavIt(it))return;if(cir&&(ii===fv||BASEK.test(it.k||"")||b.items.filter(vis).length<3))return;C.push({b:b,it:it,pr:b.lowb?0:(cir?2:1),i:bi,cir:cir});});});
+    C.sort(function(a,b){return a.pr-b.pr||setsOf(b.it,b.b,c,id)-setsOf(a.it,a.b,c,id)||b.i-a.i;});
+    var done=false;
+    for(var j=0;j<C.length&&!done;j++){var x=C[j],n0=setsOf(x.it,x.b,c,id),t0=x.it.ts,snap=JSON.stringify([s.ab]);
+      var tryIt=function(apply,undo){var v0=volSets(s,c,id),e0=est();apply();var v1=volSets(s,c,id);if(!okFloors(v1,v0)){undo();return false;}var la=legAdd;if(est()>DURMAX||((est()<lo&&est()<e0)&&!refill())){if(la)la();undo();return false;}return true;};
+      /* 1 one set less (floor 2) */
+      if(!x.cir&&n0>2&&tryIt(function(){x.it.ts=n0-1;},function(){if(t0==null)delete x.it.ts;else x.it.ts=t0;})){done=true;break;}
+      /* 2 swap for an emphasis exercise of a pattern with room, else a pattern-free one */
+      if(x.b.lowb&&x.b.more){var nx=null;[1,0].some(function(pp){return x.b.more.some(function(m){var q=itPat(m);if(curVar(m,loc)>=0&&!sesHas(s,m,x.it)&&(pp?(q&&q!==p&&u[q]+v[q]+n0<=(vHot(q)?pkLim(q):vBand(q)[1])):!q)){nx=m;return true;}});});
+        if(nx){var its0=x.b.items,more0=x.b.more,tn=nx.ts;if(tryIt(function(){nx.ts=n0;x.b.items=its0.map(function(it){return it===x.it?nx:it;});x.b.more=more0.filter(function(m){return m!==nx;}).concat([x.it]);nx.sw=1;},
+          function(){x.b.items=its0;x.b.more=more0;if(tn==null)delete nx.ts;else nx.ts=tn;delete nx.sw;})){done=true;break;}}}
+      /* 3 it goes (the block keeps another exercise) */
+      if(x.b.items.filter(vis).length>=2&&!grpLast(s,x.it)&&tryIt(function(){x.it.gone=1;x.it.pkd=1;},function(){delete x.it.gone;delete x.it.pkd;})){done=true;break;}}
+    /* last: the emphasis anchor stays, but gives an extra set back (never under 3; the goal anchor is never cut) */
+    if(!done&&lb){var an=lb.items.filter(function(it){return vis(it)&&it.anc&&!it.gan&&!it.gx&&itPat(it)===p&&setsOf(it,lb,c,id)>3;})[0];
+      if(an){var x={it:an},a0=an.ts,na=setsOf(an,lb,c,id),v0=volSets(s,c,id),e0=est();an.ts=na-1;var okA=okFloors(volSets(s,c,id),v0),la=legAdd;if(!okA||((est()<lo&&est()<e0)&&!refill())){if(okA&&la)la();if(a0==null)delete an.ts;else an.ts=a0;}else done=true;}}
+    if(!done)break;ch=true;}
+  return ch;}
 function legLog(l){return l.lg!=null?!!l.lg:(l.id==="KC"||l.id==="HO");}
 function ago(n){return n===Infinity?"still to do":(n===1?"was yesterday":"last done "+n+" days ago");}
 function cap(n){return n===Infinity?21:Math.min(n,21);}
@@ -3377,7 +3456,7 @@ document.getElementById("tstop").addEventListener("click",function(){stop();cloc
 render();
 /* A-054 (N-12): the test hook only outside the live site (file:, localhost, *.test) */
 var TESTENV=(function(){try{var h=location.hostname||"";return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||/\.test$/.test(h);}catch(e){return false;}})();
-if(TESTENV)window.__kz={bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+if(TESTENV)window.__kz={sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
