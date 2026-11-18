@@ -311,7 +311,17 @@ function isoP(m){m=Math.round(m||0);
   if(m<11)return {n:5,h:Math.max(3,Math.round(m*0.6)),lev:-1};
   if(m<15)return {n:10,h:6,lev:0}; if(m<19)return {n:6,h:10,lev:0}; if(m<23)return {n:5,h:12,lev:0}; if(m<29)return {n:4,h:15,lev:0}; if(m<32)return {n:3,h:20,lev:0}; if(m<34)return {n:4,h:16,lev:0};
   return {n:3,h:20,lev:1};}
-function hsStage(){var p=D.profile;return p.hsf>=5?3:(p.hsw>=45?2:1);}
+/* A-056 a (N-11): the handstand ladder goes on past stage 3. Stage 4 from a 10 s free hold – the line between less skilled
+   (4–6 s) and more skilled (> 10 s) handstands [Q65]; stage 5 once the free hold reaches the iso top of 3 × 20 s (profile
+   34 s, isoP, A-039 [Q8]). Stage 4 adds kick-up practice, wrist balance drills [Q66][Q67] and a wall line hold; stage 5
+   adds shape changes. Past the top there is no freeze and no harder form: the free hold keeps open targets (isoQ). */
+function hsStage(){var p=D.profile;return p.hsf>=34?5:(p.hsf>=10?4:(p.hsf>=5?3:(p.hsw>=45?2:1)));}
+/* Hold target per iso key: isoP for every hold; the free handstand from 3 × 20 s on gets an open target instead of
+   "harder form" – about 60 % of the max per set (the isoP ratio), so every logged max raises it, plus the next goal
+   (max + 10 %, at least 2 s [Q3]). From 10 s it never points to an easier form. */
+function isoQ(k,m){var q=isoP(m);if(k!=="hsf")return q;m=Math.round(m||0);
+  if(m>=34)return {n:3,h:Math.max(20,Math.round(m*0.6)),lev:0,open:Math.max(2,Math.round(m*0.1))};
+  if(m>=10&&q.lev<0)return {n:5,h:6,lev:0};return q;}
 function lsKey(){return D.profile.lsit>=11?"lsit":"tuck";}
 
 function WARM(){return {name:"Warm-up",info:"approx. 8 min",p:1,rest:0,warm:1,min:8,items:[
@@ -326,8 +336,14 @@ function HSB(longer,p){var pr=D.profile,st=hsStage(),it=[
   F("3 × 3","Hands as close to the wall as you can do cleanly",pr.hsw<10?["Pike Walk-Ins","Wall Walks|w"]:["Wall Walks|w","Pike Walk-Ins"])];
   if(st===1) it.push(I("hsw","Shoulders to ears, ribs in, glutes tight",pr.hsw<10?["Pike handstand, feet on a box|s","Wall plank, feet on the wall|w","Pike handstand, feet on the floor"]:["Chest-to-wall hold|w","Back-to-wall hold (easier)|w","Pike handstand, feet on a chair|s","Pike handstand, feet on the floor"]));
   if(st===1)it.push(F("3 × 8","Only the shoulders move up and down",pr.hsw<10?["Pike shrugs","Overhead barbell shrugs|g"]:["Wall handstand shrugs|w","Pike shrugs","Overhead barbell shrugs|g"]));
-  if(st>=2)it.push(F("3 × 6–10","Shift your weight, hips stay still",["Wall shoulder taps|w","Pike shoulder taps"]),F("3 × 5 per leg","Pull one heel off the wall, balance with the fingers",["Heel Pulls|w"]),
+  if(st>=2&&st<=3)it.push(F("3 × 6–10","Shift your weight, hips stay still",["Wall shoulder taps|w","Pike shoulder taps"]),F("3 × 5 per leg","Pull one heel off the wall, balance with the fingers",["Heel Pulls|w"]),
     I("hsf","Kick up, then hold free as long as you can",["Freestanding handstand: attempts","Frog stand hold (substitute)"]));
+  if(st>=4)it.push(F("5 attempts","Kick up to a free hold; count the ones that stand 5 s or more",["Kick-ups to a free hold"]),
+    F("3 × 5 per leg","Pull one heel off the wall, balance with the fingers",["Heel Pulls|w"]),
+    F("3 × 5 per leg","Back to the wall: lift the toes off, catch the balance with the heels of the hands",["Toe Pulls, back to the wall|w"]),
+    I("hsf","Free hold: one straight line, push the floor away",["Freestanding handstand: hold"]));
+  if(st>=4&&longer)it.push(F("3 × 20 s","Chest to the wall, ribs in, shoulders fully open: the line you want free",["Chest-to-wall line hold|w"]));
+  if(st>=5)it.push(F("3 × 3","From straddle to a straight line and back, hips stay over the shoulders",["Straddle-to-straight shape changes"]));
   if(st===1&&longer)it.push(F("3 × 20 s","Learn to balance on your hands",["Frogstand / Crow"]));
   if(pr.hsw>=20) it.push(F("3 each side","Required before you kick up freely",["Bail practice (cartwheel out)|w"]));
   return {name:"Handstand",info:(longer?"20 min":"10 min")+" · stage "+st,p:p||1,rest:60,items:it,hsb:1,lg:!!longer};}
@@ -513,8 +529,8 @@ var REHAB={
 var PAINN={w:"Wrist",s:"Shoulder",e:"Elbow",k:"Knee",b:"Lower back",a:"Ankle",h:"Hip"};
 /* A-027 (N-2): word boundaries, so a name only hits its own region: Woodchopper is no hop, external rotation and
    march in place are no loaded back rotation/swing, Frogstand/Crow no hip opener, side plank dips no dips. */
-var PAINRX={w:/\b(?:handstands?|(?:chest|back)-to-wall|push-ups?|shoulder taps|bail|frog ?stand|wall walks?|pike|crow|planche|dips|l-sit|heel pulls|victorian|wrist (?:prep|curls?|flexor)|hspu)\b/i,
-  s:/\b(?:german hang|(?:chest|back)-to-wall|shoulder press|overhead|shoulder taps|bail|dips|handstands?|wall walks?|skin the cat|dislocates|muscle-ups?|transitions?|pike|landmine press|hspu|heel pulls)\b/i,
+var PAINRX={w:/\b(?:handstands?|(?:chest|back)-to-wall|push-ups?|shoulder taps|bail|frog ?stand|wall walks?|pike|crow|planche|dips|l-sit|heel pulls|toe pulls|kick-ups?|shape changes|line hold|victorian|wrist (?:prep|curls?|flexor|rocks)|hspu)\b/i,
+  s:/\b(?:german hang|(?:chest|back)-to-wall|shoulder press|overhead|shoulder taps|bail|dips|handstands?|wall walks?|skin the cat|dislocates|muscle-ups?|transitions?|pike|landmine press|hspu|heel pulls|toe pulls|kick-ups?|shape changes|line hold)\b/i,
   k:/\b(?:hops?|hopping|squats?|lunges?|step-ups?|pistol|leg press|box jumps?|jumping|jump rope|skipping|cossack|leg curls?|nordic|wall sit|horse stance|leg extensions?|sumo)\b/i,
   b:/\b(?:deadlifts?|good mornings?|kettlebell swings?|back extensions?|hyperextensions?|superman|pull-through|bent-over|t-bar|woodchoppers?|chops?|hip extension off a bed|(?:hip|reaching) hinge|windshield wipers?|toe touches|rotational|landmine rotation|leg raises|knee raises|barbell back squat|rowing machine|jefferson)\b/i,
   a:/\b(?:jumps?|jumping|skipping|hops?|hopping|calf raises?|pistol|lunges?|step-ups?|sprints?|tibialis|cossack)\b/i,
@@ -703,7 +719,7 @@ function blockSec(b,c,id){if(b.warm)return (b.min||8)*60;if(b.cool)return 300;
   /* A-035: anchor set by set with full rest, the companions after it back to back (rest after each round). */
   if(b.ser){var ts=0,cp=0,cr=0;its.forEach(function(it){var n=setsOf(it,b,c,id);if(it.anc){ts+=n*(40+(b.ancR||ANCREST));return;}cp+=n*45;cr=Math.max(cr,n);});return ts+cp+cr*(b.rest||0)+wu;}
   if(b.rounds){var R=rounds(b,c,id);return R*its.length*45+R*(b.rest||0)+wu;}
-  var t=0;its.forEach(function(it){if(it.iso){var q=isoP(D.profile[it.iso]);t+=q.n*(q.h+(b.rest||60));return;}if(it.test){t+=180;return;}
+  var t=0;its.forEach(function(it){if(it.iso){var q=isoQ(it.iso,D.profile[it.iso]);t+=q.n*(q.h+(b.rest||60));return;}if(it.test){t+=180;return;}
     var n=it.f?fSets(it.f):setsOf(it,b,c,id);t+=n*(40+(b.rest||0));});
   return t+wu;}
 function estMin(s,c,id){var t=0;s.blocks.forEach(function(b){if(D.short&&b.p>1)return;t+=blockSec(b,c,id);});if(s.ab)t+=(s.ab.rounds/2+1)*60;return Math.round(t/60);}
@@ -1328,6 +1344,11 @@ function vs7(s){var n=D.logs.length,key=s+"|"+n+"|"+(n?D.logs[n-1].d+D.logs[n-1]
 function goalPat(){var g=D.goal;return g&&GOALS[g.k]?(GPAT[g.k]||""):"";}
 function pzAge(g){return diff(g.pz,TODAY)-pausedIn(g.pz,TODAY);}
 function plBoost(){var g=D.goal;if(!(g&&g.pz&&goalPat()))return false;var a=pzAge(g);return a<21||(!!g.pk&&a<42);}
+/* A-056 c (N-6, doctrine): in the strength and skill accent blocks a pattern outside the emphasis and goal may sit at ⅔ of
+   its lower band limit (8 → 6 sets a week) while its intensity stays: a third of the building volume keeps strength and size
+   [Q56][Q57], and an accent block shifts the weight on purpose [Q53]. The design is unchanged; t42 measures each block
+   against this floor. */
+function bandLo(p,acc){var lo=vBand(p)[0];return !vHot(p)&&(acc==="str"||acc==="skill")?Math.ceil(lo*2/3):lo;}
 function vHot(p){return goalPat()===p||(EMPAT[emph()]||[]).indexOf(p)>=0;}
 /* A-032/A-035: the band of the other patterns follows the strength sessions per week of the focus (strength & skills: up to
    4), so the floors of 4 sessions (2 sets, 2 circuit rounds) do not push it over by design: + 2 per session over 3. */
@@ -1726,6 +1747,11 @@ var COOLK={KA:"up",KB:"up",SK:"up",HO:"up",HK:"up",CH:"legs",TE:"up",DL:"legs",K
 
 /* Short technique notes: first matching pattern wins. Families share one note. */
 var HOWTO=[
+ /* A-056 a: handstand stages 4 and 5 */
+ [/kick-ups to a free hold/i,"Kick up with a straight push leg, bring the second leg to it, then balance from the fingers and the heels of the hands. Come down calmly, count only the holds of 5 s or more."],
+ [/toe pulls/i,"Back to the wall, toes touching it. Lift the toes off by pressing the heels of the hands into the floor, hold the balance, touch back down."],
+ [/line hold/i,"Chest to the wall, hands close to it. Ribs in, glutes tight, shoulders pushed up to the ears: one straight line from hands to toes."],
+ [/shape changes/i,"In a free handstand open the legs to a straddle and close them again slowly. The hips stay over the shoulders, the fingers keep the balance."],
  /* A-043: how-to for the rotation sets (first match wins, so the specific forms come first) */
  [/calf raises|pogo hops/i,"Full range on the balls of the feet: deep stretch, short pause at the top. Pogo hops: short, springy contacts, knees almost straight."],
  [/clamshell|abduction/i,"Hips level, slow and controlled. Feel the side of the hip, not the lower back."],
@@ -1796,10 +1822,10 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   var o=it.opts[v], a=avail(it,loc), on=!!dy.done[id], sk=!!dy.skip[id], inp=dy.inp[id]||{}, rest=b&&b.ser&&it.anc?(b.ancR||ANCREST):(b&&b.rest||0), tg, g=null, n=1, isS=false, extra="", pain=!(b&&b.rehab)&&painHit(o.n);
   if(pain) sk=true;
   if(it.f) tg=it.f;
-  else if(it.iso){var m=D.profile[it.iso],q=isoP(m);n=q.n;isS=true;tg=q.n+" × "+q.h+" s";g={r:q.h};
+  else if(it.iso){var m=D.profile[it.iso],q=isoQ(it.iso,m);n=q.n;isS=true;tg=q.n+" × "+q.h+" s";g={r:q.h};
     if(q.lev<0) extra='<div class="c gold">Max under 11 s: pick an easier variation via “Swap”.</div>';
     if(q.lev>0) extra='<div class="c gold">3 × 20 s reached: the harder form is the next step, not more seconds'+(it.iso==="hsw"?'. Hands closer to the wall, only the toes touch':(it.iso==="lsit"?'. Lift the legs higher, toward a V':(it.iso==="hsf"?'. Hold longer only once the line is clean':'')))+'.</div>'+(it.iso==="tuck"?'<div class="c"><button type="button" class="lnk nxv isoup" data-a="isoup" data-k="tuck">→ Harder form: L-Sit, legs straight</button></div>':'');
-    extra+='<div class="c">Your max: '+Math.round(m)+' s.'+(q.lev>0?'':' Complete all sets and it goes up automatically.')+'</div>';}
+    extra+='<div class="c">Your max: '+Math.round(m)+' s.'+(q.lev>0?'':' Complete all sets and it goes up automatically.')+'</div>'+(q.open?'<div class="c gold hsopen">Open goal: a free hold of '+(Math.round(m)+q.open)+' s.</div>':'');}
   else if(it.test&&it.tvo){n=1;isS=it.unit==="s";var lt=lastTv(it.test);tg="Max "+(isS?"s":"reps")+(it.lw?" · "+fmtKg(it.lw)+" kg":"")+(lt!=null?" · last trial "+lt+(isS?" s":""):" · first trial");g={r:""};}
   else if(it.test){n=1;isS=it.unit==="s";tg=(D.profile[it.test]||0)>0?"Max · so far "+D.profile[it.test]+" "+it.unit:"Max "+it.unit+" · first trial";g={r:""};}
   else {g=target(it,v);n=setsOf(it,b,c,sid);isS=it.unit.indexOf("s")===0;tg=n+" × "+g.r+" "+it.unit+(wOn(it,v)&&g.w?" · "+fmtKg(g.w)+" kg":"");}
@@ -2012,7 +2038,11 @@ function setGoal(k){D._gmsg="";D.goalNext=[];if(k==="none"||!k){D.goal=null;retu
    line on the Today page. */
 function goalBest(g){var v=(g.h||[]).map(function(x){return x[1];}).concat([g.b||0]);
   if(goalLow(g.k)){v=v.filter(function(x){return x>0;});return v.length?Math.min.apply(null,v):Infinity;}return Math.max.apply(null,v);}
-function goalIsCheck(g,lg){if(!lg||lg.bl||lg.sim||lg.cb)return false;var t=GOALS[g.k].g;if("srk".indexOf(t)<0)return isRun(lg);
+/* A-056 b: a run goal is checked only where its value is measurable: the long run for a distance goal, a run at least as
+   long as the goal distance for a time goal. Hold running (no check at all) and the hold season (distance lowered on
+   purpose, A-044) are no checks, like a planned lower target (A-051). */
+function runCheck(g,lg){if(!isRun(lg)||runPh(lg.d||TODAY)==="hold")return false;var G=GOALS[g.k];return G.g==="d"?lg.id==="RH":(+lg.km||0)>=G.km;}
+function goalIsCheck(g,lg){if(!lg||lg.bl||lg.sim||lg.cb)return false;var t=GOALS[g.k].g;if("srk".indexOf(t)<0)return runCheck(g,lg);
   if(t!=="k"&&(lg.id==="CH"||lg.id==="TE"))return true;if(t==="s"||!GANCH[g.k])return false;
   var a=GANCH[g.k](),hit=false;Object.keys(lg.ex||{}).forEach(function(q){var e=lg.ex[q];if(patKey(q.split("#")[0])===a.k&&Array.isArray(e)&&+e[0]>=a.hi)hit=true;});return hit;}
 /* Plateau age: days since the goal was set or last moved forward, paused days not counted. */
@@ -2037,7 +2067,7 @@ function platHTML(){var g=D.goal;if(g?holdOn(goalArea()):holdOn("str"))return ""
     var tn=ng.pm==="e"?"Take an easy week first: More → "+W("easy")+".":(ng.pm==="s"?"Its movement gets 2 extra sets a week for the next 3 weeks.":"Swap the variation of "+ng.n+" for a while.");
     return '<p class="gplat" role="status"><b>'+esc(W("plat"))+'</b> · '+esc(ng.n)+': '+ng.np+' checks without progress. '+esc(tn)+'</p>';}
   if(!GOALS[g.k]||!(g.np>=3)||!g.pm)return "";
-  var t=g.pm==="e"?"Take an easy week first: More → "+W("easy")+".":(g.pm==="s"?(goalPat()?"Your goal exercise gets 2 extra sets a week for 3 weeks.":"Add one more easy run a week for the next 3 weeks."):"Swap the variation of your goal exercise for a while.");
+  var t=g.pm==="e"?"Take an easy week first: More → "+W("easy")+".":(g.pm==="s"?(goalPat()?"Your goal exercise gets 2 extra sets a week for 3 weeks.":(gRun()?"Your easy runs grow by about 10 % for the next 3 weeks, within your weekly limit.":"Add one more easy run a week for the next 3 weeks.")):(gRun()?"Change of form: your interval runs switch between short fast reps and longer brisk efforts for a while.":"Swap the variation of your goal exercise for a while."));
   return '<p class="gplat" role="status"><b>'+esc(W("plat"))+'</b> · '+g.np+' checks without progress. '+esc(t)+'</p>';}
 function goalCheck(lg){var g=D.goal;if(!g||!GOALS[g.k])return "";var c=goalCur(g.k),h=g.h||(g.h=[]),m="",best=goalBest(g);
   /* A-035 (N-11): a kg goal set without any history takes its start value from the first logs, so the first log can never
@@ -2371,11 +2401,19 @@ function longCap(s){var st=kmStat(s),c=Math.max(6,r2(LONGQ*(st.n>=2?st.avg:0)));
    Balanced: the hard run stays ≤ 8 km and grows through brisk parts. */
 var LONGQ=0.3,HARDMAX=8;
 function transWk(s){if(holdOn("run"))return false;if(D.holdR&&D.holdR<=s&&diff(D.holdR,s)<7)return true;return runPh(s)==="base"&&blkNo(s)>0&&ctxCyc(s)===1;}
-function riForm(s){var ph=runPh(s),n=0;for(var i=0;i<D.logs.length;i++){var l=D.logs[i];if(l.id==="RI"&&l.d<s)n++;}
+/* A-056 b: plateau answers for a run goal, like a strength goal (3 checks in ≥ 21 days: easy week [Q9] when the load is high,
+   else a run measure for 21 days; 6 checks in ≥ 42 days: another form). Run measure: the easy runs about 10 % longer – more
+   volume at low intensity [Q18][Q44] – still capped by the 130 % guard (kmRoom [Q16][Q17]) and the 30 % long-run cap.
+   Another form: the interval run switches between short fast reps and longer brisk efforts [Q60]; the hard-run limit
+   (at most 1 of 3) is untouched because only the form changes. */
+function runPm(){var g=D.goal;if(!gRun()||!g||!g.pm||holdOn("run"))return "";if(g.pm==="s")return g.pz&&pzAge(g)<21?"s":"";return g.pm;}
+function riForm0(s){var ph=runPh(s),n=0;for(var i=0;i<D.logs.length;i++){var l=D.logs[i];if(l.id==="RI"&&l.d<s)n++;}
   return ph==="tempo"?["i3","i1","i6","str"][n%4]:ph==="build"?(n%2?"i6":"i3"):"i3";}
+function riForm(s){var f=riForm0(s);if(runPm()==="v"&&runPh(s)!=="hold")return f==="i6"?"i3":"i6";return f;}
 /* build season: the planned long run rises 5 % per training week of the block (up to the cap), on top of the stored length */
 function runBase(id,s){s=s||TODAY;var R=D.focus==="run",km;if(id==="RH"){km=D.runKm;if(longMode()){var lc=longCap(s);if(runPh(s)==="build"){var cy=ctxCyc(s);if(cy<=5)km=Math.max(km,Math.min(lc,r2(km*(1+0.05*(cy-1)))));}
       km=Math.max(km,Math.min(lc,easyKm(s,R?6:(D.runKm<6?4:5))+1));}else km=Math.min(km,HARDMAX);}else if(id==="RI")km=Math.round((4+D.runI*0.8)*2)/2;else km=easyKm(s,R?6:(D.runKm<6?4:5));
+  if(id==="RE"&&runPm()==="s"&&runPh(s)!=="hold")km=r2(km*1.1);
   if(runPh(s)==="hold")km=Math.max(2,r2(km*0.8));else if(transWk(s))km=Math.max(2,r2(km*0.9));if(holdOn("run"))km=Math.max(2,r2(km*2/3));return km;}
 /* tempo hint from the own best times (text only): easy about 60–90 s/km slower than the best 5 km pace [Q61] */
 function bestPace(){var a=D.pr["run:t5"],b=D.pr["run:t10"];if(a&&a.min>0)return a.min/5;if(b&&b.min>0)return b.min/10-0.15;return 0;}
@@ -2823,7 +2861,7 @@ function vStand(){
   var hq=isoP(p.hsw),lq=isoP(p[lsKey()]);
   var tv=D._tvEdit;
   var h='<div class="card">'+(D.logs.length?'<div class="sec"><h2>Your status</h2></div>'+rankHTML()+yearHTML():'<div class="sec"><h2>Your status</h2></div>')+goalLadder();
-  h+='<div class="sec"><h3>Where you stand</h3>'+'<div class="tally"><div class="t"><b>'+LVN[lvUp()]+'</b>Upper body</div><div class="t"><b>'+LVN[lvLo()]+'</b>Lower body</div><div class="t"><b>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+'</b>Focus</div>'+(D.skills.mu?'<div class="t"><b>'+mu+'</b>Muscle-Up</div>':'')+(D.skills.hs?'<div class="t"><b>Stage '+hsStage()+' · '+hq.n+' × '+hq.h+' s</b>Handstand</div>':'')+(D.skills.ls?'<div class="t"><b>'+(lsKey()==="lsit"?"L-Sit ":"Tuck ")+lq.n+' × '+lq.h+' s</b>L-Sit</div>':'')+(D.skills.fl?'<div class="t"><b>'+FLN[D.profile.flSt||0]+'</b>Front Lever</div>':'')+(D.skills.pl?'<div class="t"><b>'+PLN[D.profile.plSt||0]+'</b>Planche</div>':'')+'<div class="t"><b>Week '+c.week+(dlWk(TODAY,c)?' · Deload':'')+'</b>Block '+c.blk+' · '+accWord(c.acc)+'</div>'+(D.focus!=="str"?hardTile():'')+''+'</div>'+lvHint()+'</div>';
+  h+='<div class="sec"><h3>Where you stand</h3>'+'<div class="tally"><div class="t"><b>'+LVN[lvUp()]+'</b>Upper body</div><div class="t"><b>'+LVN[lvLo()]+'</b>Lower body</div><div class="t"><b>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+'</b>Focus</div>'+(D.skills.mu?'<div class="t"><b>'+mu+'</b>Muscle-Up</div>':'')+(D.skills.hs?'<div class="t"><b>Stage '+hsStage()+' · '+(hsStage()>=3?(function(q){return q.n+' × '+q.h+' s free';})(isoQ('hsf',p.hsf)):hq.n+' × '+hq.h+' s')+'</b>Handstand</div>':'')+(D.skills.ls?'<div class="t"><b>'+(lsKey()==="lsit"?"L-Sit ":"Tuck ")+lq.n+' × '+lq.h+' s</b>L-Sit</div>':'')+(D.skills.fl?'<div class="t"><b>'+FLN[D.profile.flSt||0]+'</b>Front Lever</div>':'')+(D.skills.pl?'<div class="t"><b>'+PLN[D.profile.plSt||0]+'</b>Planche</div>':'')+'<div class="t"><b>Week '+c.week+(dlWk(TODAY,c)?' · Deload':'')+'</b>Block '+c.blk+' · '+accWord(c.acc)+'</div>'+(D.focus!=="str"?hardTile():'')+''+'</div>'+lvHint()+'</div>';
   if(D.logs.length<3)h+='<div class="sec"><p class="muted empty">Your charts, balance and honours fill in after your first 3 entries'+(D.logs.length?' ('+D.logs.length+' so far)':'')+'. Log a session and come back.</p></div>';
   else h+=weekTally()+statsHTML()+latestHTML();
   h+='<div class="sec"><div class="tvh"><h3>Test values</h3><button type="button" class="b sm" data-a="tvedit" aria-expanded="'+!!tv+'">'+(tv?'Done':'Edit')+'</button></div>'+
@@ -2959,9 +2997,9 @@ function saveTrain(){
     if(it.add&&(dy.done[iid]||((dy.inp[iid]||{}).s||[]).some(function(x){return num(x)!==null;})))addN.push(it.opts[v].n);
     var inp=dy.inp[iid]||{}, sets=(inp.s||[]).map(num).filter(function(x){return x!==null&&x>=0;});
     if(!it.f)nSets+=sets.length||(dy.done[iid]&&!it.iso&&!it.test?setsOf(it,b,c,id):0);
-    if(it.iso){ if(isoDone[it.iso]) return; var cur=D.profile[it.iso],q=isoP(cur);
+    if(it.iso){ if(isoDone[it.iso]) return; var cur=D.profile[it.iso],q=isoQ(it.iso,cur);
       if(sets.length){ isoDone[it.iso]=1; exs["iso:"+it.iso]=setsArr(sets); var mn=Math.min.apply(null,sets),mx=Math.max.apply(null,sets);
-        if(sets.length>=q.n&&mn>=q.h) D.profile[it.iso]=Math.min(120,Math.max(cur,mx)+2);
+        if(sets.length>=q.n&&mn>=q.h) D.profile[it.iso]=Math.min(it.iso==="hsf"?300:120,Math.max(cur,mx)+2);
         else if(mn<q.h*0.75) D.profile[it.iso]=Math.max(Math.round(mx),Math.max(3,cur-2));
         if(mx>D.profile[it.iso]) D.profile[it.iso]=mx; rec("iso:"+it.iso,mx,0,it.opts[v].n+" (s)"); }
       else if(dy.done[iid]&&!hold){ isoDone[it.iso]=1; D.profile[it.iso]=cur+1; }
@@ -3257,5 +3295,5 @@ document.getElementById("tstop").addEventListener("click",function(){stop();cloc
 render();
 /* A-054 (N-12): the test hook only outside the live site (file:, localhost, *.test) */
 var TESTENV=(function(){try{var h=location.hostname||"";return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||/\.test$/.test(h);}catch(e){return false;}})();
-if(TESTENV)window.__kz={hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+if(TESTENV)window.__kz={bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();

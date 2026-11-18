@@ -303,6 +303,38 @@ Umsetzung (A-046):
 - **Level-Startwert (A-054).** Bester Wert der ersten 4 Trainingswochen; gezählt werden Trainingswochen, nicht
   Kalenderwochen.
 
+## Abrundung A-055 … A-058 (Session 17)
+
+- **Handstand-Leiter über Stufe 3 hinaus (A-056 a, N-11).** Stufen nach `hsStage()`: 1 Wand (Brust zur Wand < 45 s),
+  2 ab 45 s an der Wand, 3 ab 5 s frei, **4 ab 10 s frei**, **5 ab 3 × 20 s frei** (Profilwert 34 s). Begründung der Grenzen:
+  weniger geübte Turnerinnen halten den Handstand 4–6 s, geübtere über 10 s, und die Geübten unterscheiden sich durch die
+  Art der Gleichgewichtskontrolle [Q65] – die 10 s sind damit die erste belegte Könnerschwelle. Stufe 5 nutzt die
+  bestehende Iso-Doktrin (3 × 20 s, A-039 [Q8]). Inhalte: Stufe 4 bringt Kick-up-Übung zum freien Stand (5 Versuche,
+  gezählt werden Stände ≥ 5 s – die Grenze der weniger Geübten [Q65]), Heel und Toe Pulls an der Wand (Balance über die
+  Handgelenke: gute Handstände werden über Handgelenk- und Schulter-, kaum über Hüftmomente gehalten [Q66]; explizites
+  Üben der Handgelenkstrategie verlängert bei Anfängern die Haltezeit [Q67]) und im langen Block die Linie an der Wand
+  (3 × 20 s, gerade Linie mit fixierter Hüfte [Q66]); Stufe 5 zusätzlich Formwechsel Grätsche ↔ gerade. Halte-Zielwerte:
+  bis 3 × 20 s wie jede Iso-Halte (`isoP`), danach **offen**: 3 Sätze zu etwa 60 % des Maximums (das Verhältnis von `isoP`),
+  jeder volle Log hebt das Maximum um 2 s (Obergrenze 300 s statt 120 s), dazu das offene Ziel „Maximum + 10 %, mindestens
+  2 s“ (Steigerung 2–10 % [Q3]). Kein Einfrieren, kein „harder form“, ab 10 s nie ein Hinweis auf eine leichtere Form; die
+  freie Halte ab Stufe 4 bietet keine Ersatzform mehr an. Handgelenk- und Schulterschmerz filtern die neuen Formen. t66.
+- **Plateau für Laufziele (A-056 b).** Gleiche Antwort wie bei Kraftzielen, nur über messbare Prüfungen: ein Distanzziel
+  prüft nur der lange Lauf, ein Zeitziel nur ein Lauf mindestens über die Zieldistanz; höchstens 1 Prüfung je
+  Trainingswoche. Hold-Lauf und Hold-Saison sind keine Prüfungen (planmäßig weniger, wie A-051) und zeigen keine
+  Plateau-Zeile. Nach 3 Prüfungen in ≥ 21 Tagen: leichte Woche, wenn die Last hoch ist [Q9], sonst für 21 Tage lockere
+  Läufe um etwa 10 % länger – mehr Umfang bei niedriger Intensität [Q18][Q44], weiter begrenzt durch die 130-%-Grenze
+  [Q16][Q17] und den 30-%-Deckel des langen Laufs [Q61]. Nach 6 Prüfungen in ≥ 42 Tagen: andere Trainingsform – der
+  Intervalllauf wechselt zwischen kurzen schnellen Wiederholungen und längeren zügigen Abschnitten [Q60]. Die Grenze
+  „harte Läufe höchstens 1 von 3“ bleibt unberührt, weil sich nur die Form ändert. t66.
+- **Satzband im Akzent-Block (A-056 c, N-6, Doktrin).** Im Kraft- und im Fertigkeits-Block liegt das Hüftbeuge-Muster
+  (hinge) bei Captain und Runner bei etwa 7–8 Sätzen pro Woche, unter dem Band 8–14. Entscheidung: **keine Gestaltung
+  nach oben, sondern Doktrin**: In den Akzent-Blöcken Kraft und Fertigkeit darf ein Muster außerhalb von Schwerpunkt und
+  Ziel bis auf ⅔ seiner Untergrenze sinken (8 → 6 Sätze), solange die Intensität bleibt. Begründung: ein Drittel des
+  Aufbau-Umfangs hält Kraft und Muskelmasse [Q56], Umfang darf bei gehaltener Intensität sinken [Q57], und ein
+  Akzent-Block verschiebt das Gewicht gezielt [Q53]. Mehr Hinge-Sätze in diesen Blöcken hätten die 60–90 min oder die
+  Kappen der anderen Muster gedrückt, ohne belegten Nutzen. Volumen- und Basis-Block messen weiter gegen die volle
+  Untergrenze. `bandLo(p, acc)`; t42 prüft das Band je Akzent-Block.
+
 ## Datenmodell und Migration im Überblick
 
 | Baustein | Neue Felder | Migration | Alte Backups |
@@ -359,3 +391,6 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 - [Q62] Frandsen JSB, Hulme A, Parner ET, et al. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. *Br J Sports Med* 2025 (single sessions more than 10 % longer than the longest run of the last 30 days raised the injury risk).
 - [Q63] Bosquet L, Berryman N, Dupuy O, et al. Effect of training cessation on muscular performance: a meta-analysis. *Scand J Med Sci Sports* 2013;23(3):e140–e149 (strength holds for about 3 weeks without training, losses grow after that).
 - [Q64] Mujika I, Padilla S. Detraining: loss of training-induced physiological and performance adaptations. Part I: short term insufficient training stimulus. *Sports Med* 2000;30(2):79–87 (detraining follows an insufficient stimulus of the trained system).
+- [Q65] Wyatt HE, Vicinanza D, Newell KM, Irwin G, Williams GKR. Bidirectional causal control in the dynamics of handstand balance. *Sci Rep* 2021;11(1). doi:10.1038/s41598-020-79730-z (less skilled gymnasts held the handstand 4–6 s, more skilled over 10 s).
+- [Q66] Kerwin DG, Trewartha G. Strategies for maintaining a handstand in the anterior-posterior direction. *Med Sci Sports Exerc* 2001;33(7):1182–1188 (superior balances rely on wrist and shoulder torques with little hip involvement).
+- [Q67] Rohleder J, Vogt T. Efficacy of wrist strategy coaching on handstand performances in novices. *Science of Gymnastics Journal* 2019;11(2):209–222 (explicit wrist-strategy practice raised balance times in less skilled novices).
