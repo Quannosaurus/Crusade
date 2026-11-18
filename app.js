@@ -2368,6 +2368,9 @@ var GANCH={
   ht:function(){return P("gl_ht",6,10,"reps","Chin tucked, squeeze the glutes 2 s at the top",["Barbell hip thrust|g|w","Single-leg hip thrust, shoulders on a chair|s","Single-leg glute bridge"],"more weight","4");},
   rdl:function(){return P("gl_rdl",6,10,"reps","Hips back, back long, bar close to the legs",["Romanian deadlift|g|w","Single-leg Romanian deadlift|d|w","Good mornings, hands behind head"],"more weight","4");}};
 var GUP={pull:1,dips:1,push:1};
+/* A-061 (I-52): the test session (TE) never carries a goal anchor – upper-body goals ride on KA/KB/HO/CH (KC), leg goals on
+   KC/HO/CH and sessions with a leg or emphasis block, and TE has none (warm-up, tests, flush, cool-down only). So goal
+   anchor and test cannot meet there; should they ever, planDedup merges them like in the Skill Trial (t70 c). */
 /* Upper-body sessions so far in this training week (weeks from D.start, like hist().legW). A-024: the Skill Trial no longer
    stands in for Strength C, so an upper-body goal also rides on Strength C while the week has fewer than 2 of them. */
 function upWeek(s){var w0=addD(D.start,7*Math.floor(Math.max(0,diff(D.start,s))/7));return D.logs.filter(function(l){return l.d>=w0&&l.d<s&&{KA:1,KB:1,HO:1,CH:1}[l.id];}).length;}

@@ -7,6 +7,10 @@
 //    same level values as the build before A-061.
 // b) I-51 replaced slots: where planDedup or a sesHas step replaced an exercise the session says "Instead of <name>"; Swap
 //    is back and offers only forms that bring nothing in twice (sesHas); with no valid alternative the button stays away.
+// c) I-52 Test session: goal anchor and test exercise cannot meet in the test session (TE) – TE holds only warm-up, the
+//    tests, the flush and the cool-down; goalBlock never puts a goal anchor on TE and no emphasis, leg or favourite block
+//    rides on it. Checked for every profile × goal × gym/home/Field kit × the 3 TE versions; the mutation that puts a goal
+//    anchor on TE turns it red and shows the A-060 merge then takes over (set 1 = test).
 // Each point has one mutation that must turn its check red.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const HTML=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
@@ -116,9 +120,24 @@ function courseB(html){const bad=[],cnt={ddv:0,ddx:0,bx:0,sx:0,swa:0};[['Partner
 unitB(HTML,rep).forEach(issue);
 {const r=courseB(HTML);r.bad.forEach(issue);rep.push('b: 24 weeks Partner glutes + ht, Captain, Partner lower + sq: replaced slots ddv '+r.cnt.ddv+', ddx '+r.cnt.ddx+', bx '+r.cnt.bx+', sx '+r.cnt.sx+'; items with Swap '+r.cnt.swa+', every offer duplicate-free');}
 
+// ---------- c) I-52 ----------
+const GOALS_C=[null,'pull','dips','push','sq','ht','rdl','mu','hs'];
+function unitC(html,log){const bad=[];let n=0,merged=0;
+  PROF.concat([{n:'Beginner',prof:null,startP:'s0',focus:'bal',emph:'glutes',skills:{},kick:[]}]).forEach(p=>{const {k,errs}=boot(html);GOALS_C.forEach(gk=>['g','h','m'].forEach(loc=>[1,2,3].forEach(blk=>{
+    if(log===null&&bad.length)return;k.D().goal=null;const D=setup(k,p,gk,{loc:loc==='m'?'g':loc});k.day().kit=loc==='m';if(loc==='m')D.kit=['b','d'];
+    const c=k.ctx(START);c.blk=blk;k.day().pick='TE';const s=k.S('TE',c);n++;
+    s.blocks.forEach(b=>{if(b.warm||b.cool)return;b.items.forEach(it=>{if(it.gone||k.curVar(it,k.LOC())<0)return;
+      if(it.tsv)merged++;
+      if(it.gx||(it.k&&!it.f&&!it.iso&&!it.test))bad.push('c: '+p.n+(gk?' + '+gk:'')+' '+loc+' TE v'+blk+': training slot in the test session – '+it.opts[k.curVar(it,k.LOC())].n+' ['+b.name+']'+(it.tsv?' (test merged)':''));});});
+}))); if(errs.length)bad.push('c: JS '+errs.join('; '));});
+  if(log)log.push('c: '+n+' test sessions (6 profiles × '+GOALS_C.length+' goal states × gym/home/Field kit × 3 versions): only tests, flush, warm-up and cool-down – no slot a test could merge into');
+  return bad.slice(0,6).concat(merged&&log===null?['c: merged '+merged]:[]);}
+unitC(HTML,rep).forEach(issue);
+
 // ---------- mutations ----------
 const MUT=[['a','return t.test==="lb"&&t.lk!==','return 0&&t.test==="lb"&&t.lk!==',unitA],
-  ['b','itPat(it,i)===pt&&!sesHas(s,cp(it,i),it)','itPat(it,i)===pt',unitB]];
+  ['b','itPat(it,i)===pt&&!sesHas(s,cp(it,i),it)','itPat(it,i)===pt',unitB],
+  ['c','ok=up?({KA:1,KB:1,HO:1,CH:1}[id]','ok=up?({KA:1,KB:1,HO:1,CH:1,TE:1}[id]',unitC]];
 MUT.forEach(([tag,a,b,fn])=>{if(!HTML.includes(a)){issue('mutation '+tag+': code "'+a+'" not found');return;}const u=fn(HTML.replace(a,b),null);
   rep.push('mutation '+tag+': '+(u.length?'red ('+u[0]+')':'green'));if(!u.length)issue('mutation '+tag+' stays green');});
 
