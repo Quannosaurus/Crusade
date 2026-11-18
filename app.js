@@ -701,6 +701,7 @@ function S(id,c){
   planDedup(s);
   design(s,id,c);
   if(planDedup(s))s.min=estMin(s,c,id);
+  if(!WK.sim&&swapOpts(s))s.min=estMin(s,c,id);
   var adb=ADDIDS[id]&&ADDB();
   if(adb){var ci=-1;s.blocks.forEach(function(b,i){if(b.cool&&ci<0)ci=i;});if(ci<0)s.blocks.push(adb);else s.blocks.splice(ci,0,adb);s.min=estMin(s,c,id);s.addMin=1;}
   return s;
@@ -865,10 +866,10 @@ function design0(s,id,c){s.ab=absFor(id);
   /* The goal anchor then is the session's anchor: the emphasis anchor of the same pattern becomes a companion. */
   if(gpx&&lbg&&(EMPAT[emph()]||[]).indexOf(gpx)>=0){var rep1=false,lgb=legSets(s,c,id),snap=lbg.items.map(function(it){return [it,it.ts,it.anc];}),more0=lbg.more&&lbg.more.slice();lbg.items=lbg.items.map(function(it){if(itPat(it)!==gpx||curVar(it,LOC())<0)return it;if(it.anc){it.gan=1;delete it.anc;}
       /* one exercise of the goal pattern makes way for a pattern-free emphasis exercise (e.g. abduction), the others give a set */
-      if(!it.gan&&!rep1&&lbg.more){var j=-1;lbg.more.some(function(m,q){if(!itPat(m)&&curVar(m,LOC())>=0&&!sesHas(s,m,it)){j=q;return true;}});if(j>=0){var m=lbg.more.splice(j,1)[0];lbg.more.push(it);m.ts=setsOf(it,lbg,c,id);m.gsw=1;rep1=true;return m;}}
+      if(!it.gan&&!rep1&&lbg.more){var j=-1;lbg.more.some(function(m,q){if(!itPat(m)&&curVar(m,LOC())>=0&&!sesHas(s,m,it)){j=q;return true;}});if(j>=0){var m=lbg.more.splice(j,1)[0];lbg.more.push(it);m.ts=setsOf(it,lbg,c,id);m.gsw=1;m.sx=it.opts[curVar(it,LOC())].n;m.sxr="v";rep1=true;return m;}}
       var n=setsOf(it,lbg,c,id);if(n>2){it.ts=n-1;it.gcut=1;}return it;});
     /* a session that has to stay a leg session (A-009) keeps what the emphasis would have given */
-    if(legKeep(id,lgb)&&legSets(s,c,id)<6){lbg.items=snap.map(function(x){var it=x[0];if(x[1]==null)delete it.ts;else it.ts=x[1];if(x[2])it.anc=x[2];delete it.gan;delete it.gcut;return it;});lbg.more=more0;}
+    if(legKeep(id,lgb)&&legSets(s,c,id)<6){(more0||[]).forEach(function(x){delete x.sx;delete x.sxr;});lbg.items=snap.map(function(x){var it=x[0];if(x[1]==null)delete it.ts;else it.ts=x[1];if(x[2])it.anc=x[2];delete it.gan;delete it.gcut;return it;});lbg.more=more0;}
     s.min=est();}
   var cap=BANDIDS[id]?bandCaps(id):null;if(cap&&bandFit(s,c,id,cap,est))s.min=est();
   /* Taper week before a goal date (P-2): same exercises and loads, about half the working sets (taken evenly, from the end
@@ -1581,7 +1582,7 @@ function bandFit(s,c,id,cap,est){var u=cap._u,U=[],ch=false,lb=null,lg0=legSets(
         var its0=lb.items,more0=lb.more,tsS=sw.ts,tsN=nx.ts,e0=est();nx.ts=sw.ts;delete sw.ts;
         lb.items=lb.items.map(function(it){return it===sw?nx:it;});lb.more=lb.more.filter(function(m){return m!==nx;}).concat([sw]);
         /* a swap of the same sets only fails the time floor when it makes the session shorter */
-        if((!D.short&&est()<bfLo()&&est()<e0)||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){lb.items=its0;lb.more=more0;sw.ts=tsS;nx.ts=tsN;}else{nx.sw=1;ch=true;}
+        if((!D.short&&est()<bfLo()&&est()<e0)||(legKeep(id,lg0)&&legSets(s,c,id)<6)||kcLow(s,c,id,v)){lb.items=its0;lb.more=more0;sw.ts=tsS;nx.ts=tsN;}else{nx.sw=1;nx.sx=sw.opts[curVar(sw,LOC())].n;nx.sxr="w";ch=true;}
         sw.sw=1;continue;}}
     var drop=lb?lb.items.filter(function(it){var p=itPat(it);return !(it.anc&&!it.gan)&&!isFavIt(it)&&p&&over.indexOf(p)>=0;}).pop():null;
     if(drop&&lb.items.length>1){var r2=rounds(lb,c,id),lh2=(itPat(drop)==="legs"||itPat(drop)==="hinge")?r2:0;if((lh2&&u.legs+u.hinge+v.legs+v.hinge-lh2<10)||!bandLoOK(cap,v,itPat(drop),r2))break;
@@ -1645,6 +1646,20 @@ function planDedup(s){var loc=LOC(),L=[],cat=null,n0=0;
         m.tsv={t:tk,tvo:t0.tvo?1:0,n:t0.opts[0].n};m.c="Set 1 is your trial: max clean reps, it counts for trial and goal"+(lt!=null?" (last trial "+lt+")":"")+"."+(m.c?" · "+m.c:"");swapIn(oth,m);drop(tst,"tsg");continue;}
       var lose=ddFix(x.it,x.b)?(ddFix(y.it,y.b)?null:y):x;if(lose)yieldIt(lose);}}
   return n0;}
+/* A-061 (I-51): where planDedup (it.ddv, it.ddx) or a sesHas step (band swap it.bx, emphasis/goal swaps it.sx) replaced
+   an exercise, the item says "Instead of <name>" and Swap is back: it.swa = the forms Swap may offer – available, the
+   same pattern as the shown form and none that would bring an exercise, function or form in twice (sesHas). A Swap
+   choice (D.vr) of a replaced item counts when it is in that list. Every other item's Swap skips doubling forms too;
+   with no other valid form the button stays away. Not in the week preview (WK.sim). */
+function swapOpts(s){var loc=LOC(),ch=false;
+  function cp(it,f){var t={};Object.keys(it).forEach(function(k){t[k]=it[k];});if(f===undefined)delete t.fx;else t.fx=f;return t;}
+  s.blocks.forEach(function(b){if(b.warm||b.cool||b.add||b.rehab||(D.short&&b.p>1))return;b.items.forEach(function(it){if(it.gone||it.test||it.kx)return;var cur=curVar(it,loc);if(cur<0)return;
+    if(it.sx&&s.blocks.some(function(x){return x.items.some(function(y){return y!==it&&!y.gone&&curVar(y,loc)>=0&&y.opts[curVar(y,loc)].n===it.sx;});})){delete it.sx;delete it.sxr;}
+    var rp=it.ddv||it.ddx||it.bx,base=it.fx==null?avail(it,loc):(rp?avail(cp(it),loc):null);if(!base)return;
+    var pt=itPat(it,cur),ok=base.filter(function(i){return i===cur||(itPat(it,i)===pt&&!sesHas(s,cp(it,i),it));});
+    if(it.fx!=null){var pf=D.vr[loc+"|"+vkey(it)];if(pf!==cur&&ok.indexOf(pf)>=0){it.fx=pf;ch=true;}}
+    it.swa=ok;});});
+  return ch;}
 function bandSwap(s,c,id,cap,v,over,est,lg0){var u=cap._u,loc=LOC(),used={},keys={},fun={},C=[],cat=null,nsw=0;
   s.blocks.forEach(function(b){b.items.forEach(function(it){var q=curVar(it,loc);if(q>=0){used[it.opts[q].n]=1;if(!b.warm&&!b.cool){var f=funOf(it.opts[q].n);if(f)fun[f]=1;}}if(it.k)keys[patKey(it.k)]=1;if(it.bx)nsw++;});});
   if(nsw>=1)return false;
@@ -1744,8 +1759,8 @@ function peakGuard(s,c,id,cap,est){var u=cap._u,loc=LOC(),lg0=legSets(s,c,id),ch
       if(!x.cir&&n0>2&&tryIt(function(){x.it.ts=n0-1;},function(){if(t0==null)delete x.it.ts;else x.it.ts=t0;})){done=true;break;}
       /* 2 swap for an emphasis exercise of a pattern with room, else a pattern-free one */
       if(x.b.lowb&&x.b.more){var nx=null;[1,0].some(function(pp){return x.b.more.some(function(m){var q=itPat(m);if(curVar(m,loc)>=0&&!sesHas(s,m,x.it)&&(pp?(q&&q!==p&&u[q]+v[q]+n0<=(vHot(q)?pkLim(q):vBand(q)[1])):!q)){nx=m;return true;}});});
-        if(nx){var its0=x.b.items,more0=x.b.more,tn=nx.ts;if(tryIt(function(){nx.ts=n0;x.b.items=its0.map(function(it){return it===x.it?nx:it;});x.b.more=more0.filter(function(m){return m!==nx;}).concat([x.it]);nx.sw=1;},
-          function(){x.b.items=its0;x.b.more=more0;if(tn==null)delete nx.ts;else nx.ts=tn;delete nx.sw;})){done=true;break;}}}
+        if(nx){var its0=x.b.items,more0=x.b.more,tn=nx.ts;if(tryIt(function(){nx.ts=n0;x.b.items=its0.map(function(it){return it===x.it?nx:it;});x.b.more=more0.filter(function(m){return m!==nx;}).concat([x.it]);nx.sw=1;nx.sx=x.it.opts[curVar(x.it,loc)].n;nx.sxr="w";},
+          function(){x.b.items=its0;x.b.more=more0;if(tn==null)delete nx.ts;else nx.ts=tn;delete nx.sw;delete nx.sx;delete nx.sxr;})){done=true;break;}}}
       /* 3 it goes (the block keeps another exercise) */
       if(x.b.items.filter(vis).length>=2&&!grpLast(s,x.it)&&tryIt(function(){x.it.gone=1;x.it.pkd=1;},function(){delete x.it.gone;delete x.it.pkd;})){done=true;break;}}
     /* last: the emphasis anchor stays, but gives an extra set back (never under 3; the goal anchor is never cut) */
@@ -2040,6 +2055,8 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(it.nx) h+='<div class="c muted nxn">Instead of '+esc(it.nx)+' · '+esc(W("never")).toLowerCase()+'</div>';
   if(it.bx) h+='<div class="c muted nxn">Instead of '+esc(it.bx)+' · enough of these sets this week</div>';
   if(it.px) h+='<div class="c muted nxn">Instead of '+esc(it.px)+' · pain-free choice</div>';
+  if(it.ddv||it.ddx) h+='<div class="c muted nxn ddn">Instead of '+esc(it.ddv||it.ddx)+' · already in this session</div>';
+  if(it.sx&&!it.bx) h+='<div class="c muted nxn ddn">Instead of '+esc(it.sx)+' · '+(it.sxr==="v"?"your vow takes these sets":"enough of these sets this week")+'</div>';
   if(sk) return h+'<div class="c">'+(pain?(it.add?"Hidden today: your pain filter is on.":"Skipped because of pain."):"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
   h+='<div class="tg">'+esc(tg)+'</div>';
   var wu=wuSets(it,v); if(wu&&typeof wu[0][0]==="string"&&wu[0][0]) h+='<div class="c gold kgfirst">Pick a weight you could lift about 12 times. Warm up with 2 lighter sets first.</div>';
@@ -2060,7 +2077,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   var isFav=(D.fav||[]).indexOf(o.n)>=0,pl=!it.f&&!it.test&&!it.iso;
   var mn=(pl&&!it.kx?'<button type="button" class="lnk fv'+(isFav?" on":"")+'" data-a="fav" data-n="'+esc(o.n)+'" aria-pressed="'+isFav+'">'+(isFav?"★ Favourite":"☆ Favourite")+'</button>':'')+
     (it.add?'<button type="button" class="lnk" data-a="addrm" data-id="'+id+'">✕ Remove</button>':'<button type="button" class="lnk" data-a="skip" data-id="'+id+'">Skip</button>'+((pl&&!(b&&(b.rehab||b.warm||b.cool)))||(b&&b.warm&&warmNv(it,v,loc))?'<button type="button" class="lnk nv" data-a="never" data-n="'+esc(o.n)+'">⊘ Never suggest</button>':''));
-  h+='<div class="acts">'+(it.f?holdBtn(tg):'')+(a.length>1?'<button type="button" class="lnk" data-a="chg" data-id="'+id+'">⇄ Swap</button>':'')+'<details class="mnu"><summary aria-label="More actions for '+esc(o.n)+'">⋯</summary><div class="mnub">'+mn+'</div></details></div>';
+  h+='<div class="acts">'+(it.f?holdBtn(tg):'')+((it.swa||a).length>1?'<button type="button" class="lnk" data-a="chg" data-id="'+id+'">⇄ Swap</button>':'')+'<details class="mnu"><summary aria-label="More actions for '+esc(o.n)+'">⋯</summary><div class="mnub">'+mn+'</div></details></div>';
   return h+'</div></div>';
 }
 function blockHTML(b,bi,id,dy,loc,c,first){
@@ -3134,7 +3151,7 @@ function rescue(err){try{app.setAttribute("data-rescue","1");window.dispatchEven
   try{h+=rsHTML()+bkHTML();}catch(x){h+='<div class="sec"><h3>Backup</h3><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"></div>';}
   app.innerHTML=h+resetHTML()+'</div>';}
 function vMehr(){
-  var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before Strength A.","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","Targets step back only after a real break of the movement: while other exercises keep training the same muscles (pull-ups go on while the lat pulldown rests), nothing steps back. After a real break the usual rhythm decides: one step after 14 days off or more and 1.5 × its usual gap, two steps after more than 4 weeks and twice its usual gap. Never twice in a row without reaching the target in between, never below the range. Paused days and the easy week do not count. An exercise that comes back after a rest starts with one rep less at the same weight.","Blocks: every 6 training weeks the accent changes – base, strength (heavier, fewer reps, longer rests), volume (more reps, shorter rests), skill and tempo. Some secondary exercises rotate with the block and come back two blocks later.","Running follows seasons with the blocks: base (more easy distance), build (the long run grows), tempo (the interval form changes), hold (about 20 % less). The week after hold runs at about 90 %. The long run stays at up to 30 % of your weekly distance; at most one in three runs is hard.","Hold (under Extras): keeps strength, running or skills with about a third less work, same effort. Level: upper and lower body each rise by your own progress over training weeks, measured from your best value of the first 4 weeks.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first. The free handstand has no last stage: past 3 × 20 s the hold target keeps growing with your best time.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: 10 % lighter or 2 reps fewer (never below the range), then build back up. A goal that stands still for 3 checks over 3 weeks gets one measure: an easy week or 2 more sets for 3 weeks; after 6 checks and 6 weeks, swap the variation. A run goal counts only runs that measure it (the long run, or a run as long as the goal distance): its measure is longer easy runs for 3 weeks, later another interval form. Three times at the limit in a week: a recovery day.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
+  var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before Strength A.","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","Targets step back only after a real break of the movement: while other exercises keep training the same muscles (pull-ups go on while the lat pulldown rests), nothing steps back. After a real break the usual rhythm decides: one step after 14 days off or more and 1.5 × its usual gap, two steps after more than 4 weeks and twice its usual gap. Never twice in a row without reaching the target in between, never below the range. Paused days and the easy week do not count. An exercise that comes back after a rest starts with one rep less at the same weight.","Blocks: every 6 training weeks the accent changes – base, strength (heavier, fewer reps, longer rests), volume (more reps, shorter rests), skill and tempo. Some secondary exercises rotate with the block and come back two blocks later.","Running follows seasons with the blocks: base (more easy distance), build (the long run grows), tempo (the interval form changes), hold (about 20 % less). The week after hold runs at about 90 %. The long run stays at up to 30 % of your weekly distance; at most one in three runs is hard.","Hold (under Extras): keeps strength, running or skills with about a third less work, same effort. Level: upper and lower body each rise by your own progress over training weeks, measured from your best value of the first 4 weeks.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first. The free handstand has no last stage: past 3 × 20 s the hold target keeps growing with your best time.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: 10 % lighter or 2 reps fewer (never below the range), then build back up. A goal that stands still for 3 checks over 3 weeks gets one measure: an easy week or 2 more sets for 3 weeks; after 6 checks and 6 weeks, swap the variation. A run goal counts only runs that measure it (the long run, or a run as long as the goal distance): its measure is longer easy runs for 3 weeks, later another interval form. Three times at the limit in a week: a recovery day.","No exercise, movement or form twice in one session. Where one gives way you see “Instead of …”, and Swap offers only forms the session does not have yet.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
   if(!D.seenFocus){D.seenFocus=true;save();}
   var grp=function(t){return '<h2 class="grp">'+t+'</h2>';};
   return '<div class="card mgrp">'+grp("Training")+goalMore()+
@@ -3334,7 +3351,7 @@ document.addEventListener("click",function(e){
   else if(a==="lad"){var ix=findItem(t.dataset.id);if(ix&&ladTake(ix,+t.dataset.v))delete dy.inp[t.dataset.id];}
   else if(a==="isoup"){if(t.dataset.k==="tuck"&&D.profile.lsit<11){D.profile.lsit=11;}}
   else if(a==="nxv"){var lx=D.tab==="kick"?"h":LOC(),ix=findItem(t.dataset.id),nv=+t.dataset.v;if(ix&&avail(ix,lx).indexOf(nv)>=0){D.vr[lx+"|"+vkey(ix)]=nv;delete dy.inp[t.dataset.id];}}
-  else if(a==="chg"){var lc=D.tab==="kick"?"h":LOC(),it=findItem(t.dataset.id),av=avail(it,lc),cur=curVar(it,lc);D.vr[lc+"|"+vkey(it)]=av[(av.indexOf(cur)+1)%av.length];delete dy.inp[t.dataset.id];}
+  else if(a==="chg"){var lc=D.tab==="kick"?"h":LOC(),it=findItem(t.dataset.id),av=it.swa||avail(it,lc),cur=curVar(it,lc);D.vr[lc+"|"+vkey(it)]=av[(av.indexOf(cur)+1)%av.length];delete dy.inp[t.dataset.id];}
   else if(a==="runtype"){dy.run=t.dataset.v;}
   else if(a==="tbgo"){var A2=ABS[+t.dataset.i],lc2=LOC();audio();TB={start:Date.now(),rounds:+t.dataset.r,names:A2.items.map(function(it){return it.opts[curVar(it,lc2)].n;}),last:""};if(!tbIv)tbIv=setInterval(tbTick,200);}
   else if(a==="tbstop"){TB=null;}

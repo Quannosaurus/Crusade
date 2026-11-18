@@ -5,10 +5,12 @@
 //    and its last-trial line stay like with like. Set 1 is the test; progression, best set, record and goal check of the
 //    anchor use the working sets (the set log keeps every set). An old backup with the old lb series loads and gives the
 //    same level values as the build before A-061.
+// b) I-51 replaced slots: where planDedup or a sesHas step replaced an exercise the session says "Instead of <name>"; Swap
+//    is back and offers only forms that bring nothing in twice (sesHas); with no valid alternative the button stays away.
 // Each point has one mutation that must turn its check red.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const HTML=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
-const PROF=require('./fixtures/profiles.json');
+const PROF=require('./fixtures/profiles.json');const {doTrain}=require('./fixtures/sim.js');
 const P=[];const issue=m=>P.push(m);const rep=[];const START='2026-09-21';
 const addD=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
 function boot(html){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
@@ -68,8 +70,55 @@ function unitA(html,log){const bad=[];
 
 unitA(HTML,rep).forEach(issue);
 
+// ---------- b) I-51 ----------
+/* the duplicates check of t69 (name, function, patKey outside warm-up/cool-down, additions and hidden blocks) */
+function dups(k,s){const D=k.D(),loc=k.LOC(),L=[],out=[];
+  s.blocks.forEach(b=>{if(b.warm||b.cool||b.add||(D.short&&b.p>1))return;b.items.forEach(it=>{if(it.gone)return;const v=k.curVar(it,loc);if(v<0)return;L.push({it,n:it.opts[v].n});});});
+  for(let i=0;i<L.length;i++)for(let j=0;j<i;j++){const a=L[j],c=L[i],f=k.funOf(a.n);if(a.n===c.n||(f&&f===k.funOf(c.n))||(a.it.k&&c.it.k&&k.patKey(a.it.k)===k.patKey(c.it.k)))out.push(a.n+' / '+c.n);}
+  return out;}
+/* every form Swap offers, put in place, leaves the session without a duplicate */
+function swapClean(k,s){const bad=[],loc=k.LOC();s.blocks.forEach(b=>b.items.forEach((it,ii)=>{if(!it.swa||it.gone)return;const cur=k.curVar(it,loc);
+  it.swa.forEach(i=>{if(i===cur)return;const t=Object.assign({},it,{fx:i});b.items[ii]=t;const d=dups(k,s);b.items[ii]=it;if(d.length)bad.push(it.opts[i].n+' → '+d[0]);});}));return bad;}
+/* Partner lower until the first Strength A that forces a2_wpu and a2_com onto "Band-assisted pull-ups" */
+function caseB(html,never){const {k,w,errs}=boot(html),D=setup(k,prof('Partner lower'));D.never=never||[];
+  for(let i=0;i<84;i++){const s=addD(START,i);k.today(s);const r=k.recAll(s,false)||{};
+    if(r.btn==='run'||r.btn==='kick'||!r.id||r.id==='RS'||r.btn==='pause'){D.logs.push({d:s,id:r.btn==='run'?r.id:(r.btn==='kick'?'KI':'RS'),t:'x',rpe:5,min:30,km:r.btn==='run'?5:undefined});continue;}
+    if(r.id==='KA'){D.vr['g|a2_wpu']=3;D.vr['g|a2_com']=3;const S=k.S('KA',k.ctx(s));const x=items(S).find(y=>y.it.k==='a2_com');if(x&&(x.it.ddv||x.it.ddx))return {k,w,errs,D,s,S,x};}
+    doTrain(k,r.id);}
+  return {k,w,errs,none:1};}
+function unitB(html,log){const bad=[];
+  {const r=caseB(html);if(r.none){bad.push('b: no Strength A with the forced duplicate in 12 weeks');return bad;}const {k,w,D,s,x}=r,id='KA-'+x.key;
+   const sh=()=>x.it.opts[k.curVar(x.it,'g')].n,names=x.it.swa.map(i=>x.it.opts[i].n);
+   if(names.includes('Band-assisted pull-ups'))bad.push('b: Swap offers the doubling form ('+names.join(', ')+')');
+   if(names.length<2)bad.push('b: Swap not back on the replaced slot ('+names.join(', ')+')');
+   D.tab='train';const dy=k.day();dy.pick='KA';k.render();const html0=w.document.getElementById('app').innerHTML;
+   if(!html0.includes('Instead of '+(x.it.ddv||x.it.ddx)+' · already in this session'))bad.push('b: no "Instead of" hint on the replaced slot');
+   const seen=[sh()];
+   for(let t=0;t<names.length;t++){const btn=w.document.querySelector('[data-a="chg"][data-id="'+id+'"]');if(!btn){bad.push('b: Swap button missing after '+t+' taps');break;}btn.click();
+     const S2=k.S('KA',k.ctx(s)),y=items(S2).find(q=>q.it.k==='a2_com'),n=y.it.opts[k.curVar(y.it,'g')].n,d=dups(k,S2);seen.push(n);
+     if(n==='Band-assisted pull-ups'||d.length)bad.push('b: Swap tap '+(t+1)+' brings a duplicate ('+n+(d.length?'; '+d[0]:'')+')');}
+   if(log)log.push('b: Strength A '+s+': '+(x.it.ddv||x.it.ddx)+' twice → slot shows '+seen[0]+' with "Instead of", Swap offers '+names.join(' / ')+'; taps: '+seen.slice(1).join(' → '));
+   if(r.errs.length)bad.push('b: JS '+r.errs.join('; '));}
+  /* no valid alternative: every other form on the never list → no Swap button */
+  {const r=caseB(html,['Commando Pull-Ups','Archer Pull-Ups']);if(r.none)bad.push('b: never case: no forced duplicate');else{const {k,w,D,x}=r;
+     D.tab='train';k.day().pick='KA';k.render();const btn=w.document.querySelector('[data-a="chg"][data-id="KA-'+x.key+'"]');
+     if(btn||(x.it.swa&&x.it.swa.length>1))bad.push('b: Swap offered without a valid alternative ('+(x.it.swa||[]).map(i=>x.it.opts[i].n).join(', ')+')');
+     if(log)log.push('b: other forms on the never list → '+x.it.opts[k.curVar(x.it,'g')].n+', no Swap button');}}
+  return bad;}
+/* course: 24 weeks Partner glutes + Hip thrust goal and Captain: every Swap offer stays duplicate-free; replaced items carry their hint */
+function courseB(html){const bad=[],cnt={ddv:0,ddx:0,bx:0,sx:0,swa:0};[['Partner glutes','ht'],['Captain',null],['Partner lower','sq']].forEach(([n,gk])=>{const {k,errs}=boot(html),D=setup(k,prof(n),gk);
+  for(let i=0;i<168;i++){const s=addD(START,i);k.today(s);const r=k.recAll(s,false)||{};
+    if(r.btn==='run'||r.btn==='kick'||!r.id||r.id==='RS'||r.btn==='pause'){D.logs.push({d:s,id:r.btn==='run'?r.id:(r.btn==='kick'?'KI':'RS'),t:'x',rpe:5,min:30,km:r.btn==='run'?5:undefined});continue;}
+    const S=k.S(r.id,k.ctx(s));items(S).forEach(x=>{['ddv','ddx','bx','sx'].forEach(q=>{if(x.it[q]&&!x.it.gone)cnt[q]++;});if(x.it.swa&&x.it.swa.length>1)cnt.swa++;});
+    swapClean(k,S).forEach(m=>{if(bad.length<4)bad.push('b: '+n+' '+s+' '+r.id+': Swap offers '+m);});doTrain(k,r.id);}
+  if(errs.length)bad.push('b: JS '+errs.join('; '));});
+  return {bad,cnt};}
+unitB(HTML,rep).forEach(issue);
+{const r=courseB(HTML);r.bad.forEach(issue);rep.push('b: 24 weeks Partner glutes + ht, Captain, Partner lower + sq: replaced slots ddv '+r.cnt.ddv+', ddx '+r.cnt.ddx+', bx '+r.cnt.bx+', sx '+r.cnt.sx+'; items with Swap '+r.cnt.swa+', every offer duplicate-free');}
+
 // ---------- mutations ----------
-const MUT=[['a','return t.test==="lb"&&t.lk!==','return 0&&t.test==="lb"&&t.lk!==',unitA]];
+const MUT=[['a','return t.test==="lb"&&t.lk!==','return 0&&t.test==="lb"&&t.lk!==',unitA],
+  ['b','itPat(it,i)===pt&&!sesHas(s,cp(it,i),it)','itPat(it,i)===pt',unitB]];
 MUT.forEach(([tag,a,b,fn])=>{if(!HTML.includes(a)){issue('mutation '+tag+': code "'+a+'" not found');return;}const u=fn(HTML.replace(a,b),null);
   rep.push('mutation '+tag+': '+(u.length?'red ('+u[0]+')':'green'));if(!u.length)issue('mutation '+tag+' stays green');});
 
