@@ -5,6 +5,9 @@
 # Output and exit code like tests/run.sh: one line per test, then "<n> passed, <m> failed (<m>)".
 cd "$(dirname "$0")/.." || exit 2
 python3 tools/build.py >/dev/null || { echo "FAIL build – tools/build.py failed"; echo "0 passed, 1 failed (1)"; exit 1; }
+# I-44: one fixed Chromium (pinned by the exact Playwright version), else the installed Chrome with a clear note
+export NODE_OPTIONS="--require $(pwd)/tests/browser.js${NODE_OPTIONS:+ $NODE_OPTIONS}"
+node -e "require('./tests/browser.js').report()"
 pass=0; fail=0
 for f in $(grep -l '^// @longrun' tests/t*.js | sort -V); do
   id=$(basename "$f" .js | sed 's/^t\([0-9]*\)$/\1/' | xargs printf 't%02d')

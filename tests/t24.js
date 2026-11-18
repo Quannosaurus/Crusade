@@ -5,12 +5,22 @@ const {JSDOM}=require('./domguard');const fs=require('fs');const path=require('p
 const R=p=>path.resolve(__dirname,'..',p);
 const P=[];const issue=m=>P.push(m);
 // Forbidden display terms (case-insensitive). Extend this list when the Captain bans another name.
-const BAN=['venus','tabata','garmin','body battery'];
+// A-057 d: programme, brand and author names from fitness and running (whole words, case-insensitive). Research authors cited
+// in source comments are citations, not display names, and are not listed.
+const BAN=['venus','tabata','garmin','body battery',
+  // programmes and protocols
+  'crossfit','wod','starting strength','stronglifts','5/3/1','couch to 5k','c25k','p90x','insanity workout','les mills','bodypump','orangetheory','f45','freeletics','hyrox','spartan race','tough mudder','parkrun','convict conditioning','overcoming gravity','gymnastic bodies','recommended routine','madcow','gzclp','phul','phat','german volume training','maffetone','yasso','hansons',
+  // brands, devices and apps
+  'strava','zwift','fitbit','polar','suunto','coros','whoop','oura','peloton','apple watch','apple health','google fit','nike','adidas','asics','hoka','under armour','reebok','rogue','technogym','concept2','theragun','myfitnesspal','runna',
+  // programme authors and coaches
+  'wendler','rippetoe','galloway','higdon','pfitzinger','daniels','lydiard','athlean','nippard','israetel','renaissance periodization','thenx','barstarzz','calisthenicmovement','sommer'];
+const BANRX=BAN.map(b=>[b,new RegExp('(^|[^a-z0-9])'+b.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&')+'(?![a-z0-9])','i')]);
 // The encrypted love notes are ciphertext and not display text: cut them out before scanning.
 let enc='';try{enc=JSON.stringify(JSON.parse(fs.readFileSync(R('src/love.enc.json'),'utf8')));}catch(e){}
 const files=['src/app.js','src/head.html','src/pics.js','index.html','app.js','app.css','sw.js','manifest.webmanifest','.build/index.html'];
 files.forEach(f=>{if(!fs.existsSync(R(f))){issue('missing '+f);return;}let t=fs.readFileSync(R(f),'utf8');if(enc)t=t.split(enc).join('');
-  BAN.forEach(b=>{const m=t.toLowerCase().indexOf(b);if(m>=0)issue(f+': forbidden term "'+b+'" near "'+t.slice(Math.max(0,m-30),m+30).replace(/\s+/g,' ')+'"');});});
+  BANRX.forEach(([b,rx])=>{const x=rx.exec(t);if(x){const m=x.index;issue(f+': forbidden term "'+b+'" near "'+t.slice(Math.max(0,m-30),m+30).replace(/\s+/g,' ')+'"');}});});
+if(BAN.length<60)issue('ban list too short: '+BAN.length);
 // CLAUDE.md carries the naming glossary and the rule
 const cm=fs.readFileSync(R('CLAUDE.md'),'utf8');if(!/## Naming/.test(cm))issue('CLAUDE.md: Naming glossary missing');
 // Old backup: abs sessions, CH sessions, templar theme. Must load unchanged and keep counting.
@@ -38,6 +48,12 @@ if(b.k.NAMES.CH!=='Skill Trial')issue('NAMES.CH: '+b.k.NAMES.CH);
 D.tab='mehr';b.k.render();t=b.d.getElementById('app').textContent;D.tab='stand';b.k.render();t+=b.d.getElementById('app').textContent;if(!/Blocks of 6 training weeks/.test(t))issue("settings: cycle text (A-042: blocks with four accents)");if(!/Watch import/.test(t))issue('settings: watch import section');
 // Plain theme: no Warhammer word in the honour name
 D.theme='plain';z=b.k.honours().find(h=>h.k==='zealot');if(!z||/zealot/i.test(z.n))issue('plain zealot name: '+(z&&z.n));
+// A-057 d: Plain keeps free of Warhammer words on every page (the theme chooser lists the other themes by name and is left out)
+{const WH=/\b(emperor|imperator|imperium|crusade\w*|templars?|xenos|heretic\w*|heresy|astartes|chapter|sanguin\w*|slaanesh|nurgle|warp|battle-brothers?|litany|zealots?|purge|relics?|reliquary|throne|chaos|daemons?|servitors?|warhammer|vows?|oaths?|holy|sacred|blessed)\b/gi;
+  const c=boot(),E=c.k.D();Object.assign(E,{onb:true,theme:'plain',seenFocus:true,favP:true,start:'2026-09-01'});for(let i=0;i<30;i++)E.logs.push({d:addD('2026-10-01',i),id:['KA','KB','KC','RE'][i%4],t:'x',rpe:6,km:5,min:60});c.k.today('2026-11-02');
+  const hits=new Set();['start','train','run','stand','verlauf','mehr','favs','morgen','kick','other'].forEach(tab=>{E.tab=tab;if(tab==='train')c.k.day().pick='KA';c.k.render();
+    const root=c.d.body.cloneNode(true);root.querySelectorAll('script,style,[data-a=theme]').forEach(e=>e.remove());(root.textContent.match(WH)||[]).forEach(x=>hits.add(tab+': '+x));});
+  if(hits.size)issue('Plain shows Warhammer words: '+[...hits].slice(0,8).join(', '));if(c.errs.length)issue('JS errors (Plain scan): '+c.errs.join('; '));}
 // Training: the ab block shows the own name and explains the rhythm
 D.theme='templar';let blk=null;for(let i=0;i<14&&!blk;i++){b.k.today(addD('2026-11-16',i));D.tab='train';D.days={};b.k.render();blk=b.d.querySelector('[data-blk=abs]');}
 if(!blk)issue('no ab block found in 14 days');else{const s=blk.textContent;if(!/Core Blitz/.test(s))issue('ab block name: '+s.slice(0,80));if(!/20 s work, 10 s rest/.test(s))issue('ab block lacks rhythm explanation');}

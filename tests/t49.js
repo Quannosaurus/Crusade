@@ -20,11 +20,15 @@
 // "mixed" (Tired, Hold weeks, Limited time, a 2-week illness pause) for the Captain and a Home profile · start = in the progress course every weighted exercise ends at or above its start weight unless only
 // stall resets (3 × no progress) or a logged value under the range ("weight down", P-5) took it under (printed apart); under
 // also counts a weighted target under the start weight of its variant that is no planned lighter weight (A-051).
+// A-057: the Home week preview is a hard stone (wkh: unchanged plan – one entry per older training week keeps the cycle week,
+// the Home A/B parity is kept – ratio of the medians of 5 ≤ 2, A-038); the mixed course carries hard stones (mix): Tired and
+// Hold (strength, running, skills) ⅔ of the sets ± 1 and ≥ 45 min, hold running ⅔ km, no step back through hold or the
+// declared 14-day pause, an easier re-entry after it.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {longSim,addD}=require('./fixtures/longsim.js');const PROF=require('./fixtures/profiles.json');
-const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042','A-043','A-044','A-051'];
-const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',blk:'A-042',names:'A-043',run:'A-044',start:'A-051'};
+const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042','A-043','A-044','A-051','A-057'];
+const STONE={mix:'A-057',wkh:'A-057',dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',blk:'A-042',names:'A-043',run:'A-044',start:'A-051'};
 const sharp=x=>ACTIVE.includes(STONE[x]);
 const ONLY=process.argv.slice(2).filter(a=>!a.startsWith('-'));const WEEKS=+(process.argv.find(a=>/^--weeks=/.test(a))||'--weeks=104').split('=')[1];
 const DAYS=WEEKS*7,START='2026-11-16',STR=['KA','KB','KC','CH','HO'];
@@ -39,14 +43,38 @@ function setup(k,p){const D=k.D();if(p.startP)D.startP=p.startP;
 /* A-054 mixed course: Tired on some days, Hold weeks 40–45 (strength and running, then switched off), Limited time on some
    days, a 2-week illness pause in weeks 60–61 */
 function mixDay(k,i,s){const D=k.D();D.opt.ready=true;const dy=k.day();if(i%9===4)dy.ready=3;else delete dy.ready;D.short=i%11===3;
-  const wk=Math.floor(i/7);D.hold.str=D.hold.run=wk>=40&&wk<46;if(wk===46&&i%7===0)D.holdR=s;if(i===420)D.pause={from:s,to:addD(s,13),why:'ill'};if(i===434)D.pause=null;}
+  const wk=Math.floor(i/7);D.hold.str=D.hold.run=D.hold.sk=wk>=40&&wk<46;if(wk===46&&i%7===0)D.holdR=s;if(i===420)D.pause={from:s,to:addD(s,13),why:'ill'};if(i===434&&D.pause)k.pauseEnd(s);}/* A-057 b: the pause ends like in the app (pauseEnd records it in pauseH) */
+/* A-057 b: hard check stones of the mixed course. Tired and Hold: about ⅔ of the working sets of the normal session of the
+   same day (T = round(⅔ · normal), ± 1; above T + 1 only where the 45 min floor stopped the cut), never under 45 min (not
+   with Limited time; the normal session keeps skill hold, as the app designs it); hold running about ⅔ of the planned km; skill blocks marked hold; no step back and no lower weight
+   through Hold or the pause; after the 14-day pause an easier re-entry (comeback: fewer sets than before, no trial/test
+   for 7 days, no hard run for 3 days). */
+const PZ0=420,PZ1=434,TRN=l=>l.id!=='MO'&&l.id!=='OA';
+function wset(k,S,c,id){const D=k.D();let n=0;S.blocks.forEach(b=>{if(b.warm||b.cool||(D.short&&b.p>1))return;b.items.forEach(it=>{if(!it.k||it.f||it.iso||it.test||k.curVar(it,k.LOC())<0)return;n+=k.setsOf(it,b,c,id);});});return n;}
+function mixChk(k,ev,m){const D=k.D(),X=m.mx;if(ev.type==='session'&&STR.includes(ev.id)){const c=k.ctx(ev.d),dy=k.day(),td=dy.ready===3,hd=D.hold.str,w1=wset(k,ev.s,c,ev.id);
+    if(ev.i<PZ0&&!td&&!hd&&!D.short&&!k.dlWk(ev.d,c)){const a=X.pre[ev.id]=X.pre[ev.id]||[];a.push(w1);if(a.length>4)a.shift();}/* the last 4 normal sessions of each unit before the pause */
+    if(ev.i>=PZ1){X.reN++;if(!X.re){let hi=0;ev.s.blocks.forEach(b=>{if(b.warm||b.cool||!b.rounds)return;if(k.rounds(b,c,ev.id)>b.rounds[0]+(b.accP?1:0))hi++;});X.re={d:ev.d,id:ev.id,w:w1,low:!!(k.cbInfo(ev.d)||{}).low,hi};}}
+    if(ev.i>=PZ1&&ev.i<PZ1+7&&(ev.id==='CH'||ev.id==='TE'))X.bad.push(ev.d+' '+ev.id+' within 7 days after the pause');
+    if((td||hd)&&!k.dlWk(ev.d,c)&&!k.gTaper(ev.d)){const r0=dy.ready,h0=Object.assign({},D.hold);delete dy.ready;D.hold.str=false;let w0;try{w0=wset(k,k.S(ev.id,k.ctx(ev.d)),k.ctx(ev.d),ev.id);}finally{if(r0!=null)dy.ready=r0;Object.assign(D.hold,h0);}
+      const T=Math.round(w0*2/3);X.n++;X.ratio.push(w0?w1/w0:1);
+      if(w1<T-1||(w1>T+1&&ev.s.min>47))X.bad.push(ev.d+' '+ev.id+(td?' tired':' hold')+': '+w1+' of '+w0+' sets (target '+T+' ± 1, '+ev.s.min+' min)');
+      if(!D.short&&ev.s.min<45)X.bad.push(ev.d+' '+ev.id+(td?' tired':' hold')+': '+ev.s.min+' min < 45');}
+  }
+  if(ev.type==='session'&&D.hold.sk)ev.s.blocks.forEach(b=>{if((b.skill||b.hsb)&&!b.hold)X.bad.push(ev.d+' '+ev.id+': skill block "'+b.name+'" not on hold');else if(b.skill||b.hsb)X.sk++;});
+  if(ev.type==='target'&&ev.i>=PZ1&&X.reN>=1&&X.reN<=2&&ev.st&&!ev.g.rng){const {g,st}=ev;if((g.w||0)>(st.w||0)||(g.r||0)>(st.r||0)&&!(st.w>0&&(g.w||0)<st.w))X.bad.push(ev.d+' '+ev.name+': re-entry session '+X.reN+' raises the target ('+st.r+'×'+(st.w||0)+' → '+g.r+'×'+(g.w||0)+')');}
+  if(ev.type==='target'&&(D.hold.str||(ev.i>=PZ0&&ev.i<PZ1+21))){const {g,st}=ev;
+    if(g.back)X.bad.push(ev.d+' '+ev.name+': step back '+(D.hold.str?'in hold':'after the pause')+' ('+g.note+')');
+    else if(st&&st.w>0&&g.w!=null&&g.w<st.w&&!g.reset)X.bad.push(ev.d+' '+ev.name+': '+g.w+' kg < '+st.w+' kg '+(D.hold.str?'in hold':'after the pause'));}
+  if(ev.type==='run'){if(ev.i>=PZ1&&ev.i<PZ1+3&&(ev.id==='RH'&&!k.longMode()||ev.id==='RI'))X.bad.push(ev.d+' hard run '+ev.id+' within 3 days after the pause');
+    /* hold running: the planned distance before the weekly cap is ⅔ of the one without hold (floor 2 km), and the run is not longer */
+    if(D.hold.run){const on=k.runBase(ev.id,ev.d);D.hold.run=false;const full=k.runBase(ev.id,ev.d);D.hold.run=true;X.run.push(on/full);X.rs.push(ev.id+' '+on+'/'+full);if((full>3&&(on>full*0.75||on<full*0.55))||ev.km>on+0.01)X.bad.push(ev.d+' '+ev.id+' hold running '+on+' of '+full+' km (run '+ev.km+')');}}}
 const W0=key=>/^(g_ht|gl_ht|c_sq|gl_sq)#/.test(key)?40:20;
 function wkTime(k){const t=[];for(let j=0;j<15;j++){k.WK.plan=null;k.WK.key='';const a=process.hrtime.bigint();k.weekPlan();t.push(Number(process.hrtime.bigint()-a)/1e6);}
   return t.sort((a,b)=>a-b)[7];}
 function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math.floor(i/91);
   const m={under:0,underEx:'',dur:0,durEx:'',top:{},topMax:0,topEx:'',names:[],km:[],long:[],sets:[],wk12:0,wkEnd:0,wkA:[],wkB:[],rankWk:null};
-  m.acc={};m.blkN={};m.ri={};m.lastUse={};m.w0={};m.dn={};m.rs={};m.rph={};m.phd={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
-  longSim(k,DAYS,START,course==='mix'?'prog':course,7+p.n.length,ev=>{const Q=q(ev.i);
+  m.mx={reN:0,pre:{},re:null,bad:[],n:0,ratio:[],run:[],rs:[],sk:0};m.acc={};m.blkN={};m.ri={};m.lastUse={};m.w0={};m.dn={};m.rs={};m.rph={};m.phd={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
+  longSim(k,DAYS,START,course==='mix'?'prog':course,7+p.n.length,ev=>{const Q=q(ev.i);if(course==='mix'&&DAYS>PZ1+21)mixChk(k,ev,m);
     if(ev.type==='target'){const {it,g,st,v}=ev;
       if(st&&st.r>=it.lo&&g.r<it.lo){m.under++;if(!m.underEx)m.underEx=ev.d+' '+ev.name+' '+g.r+' < '+it.lo;}
       const kk=it.k+'#'+v,w0=m.w0[kk];if(g.w>0&&w0==null)m.w0[kk]=g.w;else if(!st&&(it.opts[v].w||g.wl)&&w0==null)m.w0[kk]=20;
@@ -70,7 +98,12 @@ if(!it.opts[v].w&&!g.wl&&g.top&&ev.nv<0&&!g.lad){const t=m.top[kk]||(m.top[kk]={
   const mean=a=>a.reduce((x,y)=>x+y,0)/(a.length||1);m.wkW12=mean(m.wkA);m.wkW104=mean(m.wkB);
   /* the stone: the same final state with 2 years of history against only its last 12 weeks (same day, same plan),
      alternating, the median of 5 rounds each (each round a median of 15 runs) */
-  const full=JSON.stringify(D),td=k.today(),lim=addD(td,-84),one=tr=>{const S=JSON.parse(full);if(tr)S.logs=S.logs.filter(l=>l.d>=lim);k.setD(S);k.today(td);k.hist(td);return wkTime(k);};
+  /* A-057 a: the plan of the day stays the same – Home strength A/B alternates by the number of home sessions, so the cut keeps
+     its parity; the plan (unit and estimate per day) of both states is recorded and must match */
+  const full=JSON.stringify(D),td=k.today(),lim=addD(td,-84),sig=()=>k.weekPlan().map(e=>e.id+(e.leg?'L':'')+(e.dl?'D':'')+(e.rest?'R':'')).join(' '),one=tr=>{const S=JSON.parse(full);if(tr){const cut=S.logs.filter(l=>l.d<lim),ho=cut.filter(l=>l.id==='HO'),wk={},keep=[];cut.forEach(l=>{if(!TRN(l))return;const w=Math.floor((Date.parse(l.d)-Date.parse(S.start))/6048e5);if(!wk[w]){wk[w]=1;keep.push(l);}});
+      /* one training entry per older training week keeps the cycle week (accent, deload); the number of home sessions keeps its parity (Home A/B) */
+      if(keep.filter(l=>l.id==='HO').length%2!==ho.length%2){const x=ho.find(l=>!keep.includes(l));if(x)keep.push(x);else keep.splice(keep.indexOf(ho[0]),1);}
+      S.logs=keep.sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0).concat(S.logs.filter(l=>l.d>=lim));}k.setD(S);k.today(td);k.hist(td);const t=wkTime(k);m[tr?'sigA':'sigB']=sig();return t;};
   const A=[],B=[],med=a=>a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)];for(let r=0;r<5;r++){A.push(one(true));B.push(one(false));}m.wk12=med(A);m.wkEnd=med(B);k.setD(JSON.parse(full));k.today(td);
   D.logs.forEach(l=>{if(!l.vs||l.bl)return;const Q=q(Math.round((Date.parse(l.d)-Date.parse(START))/864e5));m.sets[Q]=(m.sets[Q]||0)+Object.values(l.vs).reduce((a,b)=>a+b,0);});
   const fin=k.D().ex;const und=Object.keys(m.w0).filter(q=>fin[q]&&fin[q].w>0&&fin[q].w<m.w0[q]);m.wRs=und.filter(q=>!m.dn[q]).length;m.wUnder=und.filter(q=>m.dn[q]).map(q=>(fin[q].n||q)+' '+fin[q].w+' < '+m.w0[q]+', first lower target '+m.dn[q]);m.wN=Object.keys(m.w0).filter(q=>fin[q]&&fin[q].w>0).length;
@@ -102,7 +135,9 @@ PROF.concat([BEG,HOME]).filter(p=>!ONLY.length||ONLY.some(o=>p.n.toLowerCase().i
       runner?stone('run',runOk,phTxt+' · without hold: km '+(sp5(nkm)?'≥':'<')+' 5 %, long '+(sp5(nlg)?'≥':'<')+' 5 %, interval forms in tempo '+riT+' · per quarter km/week '+fmtQ(kmw,x=>x.toFixed(1))+' · long run '+fmtQ(m.long,x=>x)):'run n/a (no runs)',
       course==='prog'?stone('start',!m.wUnder.length,m.wUnder.length+' of '+m.wN+' weighted exercises under their start weight by a lower target that was no reaction to the logged values · '+m.wRs+' under start only through stall resets or a value under the range (P-5)'+(m.wUnder.length?', e.g. '+m.wUnder.slice(0,3).join('; '):'')):'start info ('+m.wUnder.length+' of '+m.wN+' under start)',
       lvNeed?stone('lvl',lvOk,lvTxt):'lvl info ('+lvTxt+')',stone('blk',blkOk,blkTxt),
-      p.loc==='h'?'wk info (× '+rat.toFixed(2)+'; the 12-week state plans other home sessions than the full history)':stone('wk',wkOk,'week preview of the final day '+m.wk12.toFixed(1)+' ms with the last 12 weeks → '+m.wkEnd.toFixed(1)+' ms with '+WEEKS+' weeks of history, × '+rat.toFixed(2)+' · info: weeks 12–15 '+m.wkW12.toFixed(1)+' ms, weeks '+(WEEKS-3)+'–'+WEEKS+' '+m.wkW104.toFixed(1)+' ms')];
+      p.loc==='h'?stone('wkh',wkOk&&m.sigA===m.sigB,'home week preview with an unchanged plan (same unit and day type every day) '+m.wk12.toFixed(1)+' ms → '+m.wkEnd.toFixed(1)+' ms, × '+rat.toFixed(2)+' (≤ 2, median of 5)'+(m.sigA===m.sigB?'':' · plans differ: '+m.sigA+' | '+m.sigB)):stone('wk',wkOk,'week preview of the final day '+m.wk12.toFixed(1)+' ms with the last 12 weeks → '+m.wkEnd.toFixed(1)+' ms with '+WEEKS+' weeks of history, × '+rat.toFixed(2)+' · info: weeks 12–15 '+m.wkW12.toFixed(1)+' ms, weeks '+(WEEKS-3)+'–'+WEEKS+' '+m.wkW104.toFixed(1)+' ms')];
+    if(course==='mix'&&DAYS>PZ1+21){const X=m.mx,med=a=>a&&a.length?a.slice().sort((x,y)=>x-y)[Math.floor(a.length/2)]:0,pre=X.re?(med(X.pre[X.re.id])||med([].concat(...Object.values(X.pre)))):0,reOk=!!X.re&&X.re.low&&!X.re.hi,mr=a=>a.length?(a.reduce((x,y)=>x+y,0)/a.length).toFixed(2):'–';
+      res.push(stone('mix',!X.bad.length&&reOk&&X.n>=10&&X.run.length>0&&X.sk>0,X.n+' tired/hold sessions, sets ratio mean '+mr(X.ratio)+' · hold running ratio '+mr(X.run)+' ('+X.run.length+' runs: '+X.rs.slice(0,6).join(', ')+') · skill blocks on hold '+X.sk+' · re-entry '+(X.re?X.re.d+' '+X.re.id+' '+X.re.w+' sets ('+pre+' before), comeback '+X.re.low+', circuits over the low count '+X.re.hi:'none')+(X.bad.length?' · '+X.bad.length+' issues, e.g. '+X.bad.slice(0,process.env.KZ_ALL?99:3).join('; '):'')));}
     res.forEach(r=>{if(/ FAIL /.test(r))issue(tag+': '+r);});
     out.push('### '+tag+' ('+((Date.now()-a)/1000).toFixed(0)+' s, '+m.logs+' entries)');res.forEach(r=>out.push('  '+r));
     out.push('  sets/week per quarter '+fmtQ(m.sets,x=>Math.round(x/13))+' · level '+m.lvl+' · highest rank week '+(m.rankWk||'–')+' · runKm '+m.runKm+' · intervals '+m.runI);});});

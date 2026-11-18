@@ -14,6 +14,9 @@
 # A test passes when it exits 0 and every result line ("... (n)") shows (0).
 cd "$(dirname "$0")/.." || exit 2
 python3 tools/build.py >/dev/null || { echo "FAIL build – tools/build.py failed"; echo "0 passed, 1 failed (1)"; exit 1; }
+# I-44: one fixed Chromium (pinned by the exact Playwright version), else the installed Chrome with a clear note
+export NODE_OPTIONS="--require $(pwd)/tests/browser.js${NODE_OPTIONS:+ $NODE_OPTIONS}"
+node -e "require('./tests/browser.js').report()"
 
 pass=0; fail=0
 for t in $(ls tests/t*.js | sed 's/^tests\/t\([0-9]*\)\.js$/\1/' | sort -n); do

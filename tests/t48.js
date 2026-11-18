@@ -2,6 +2,7 @@
 // A-028 / A-029 / A-047: vow card and 2-step goal choice under More, goal card on Today, numbered step ladder on Status;
 // UX polish (see tests/README.md). JSDOM checks plus Playwright 390×844 screenshots in Templar and Plain;
 // runtime errors from click handlers are collected (0 expected).
+var RKL=[];/* A-057 f: rank line report */
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');const R=path.resolve(__dirname,'..');
 const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g,'');
 const P=[];const issue=m=>P.push(m);
@@ -189,7 +190,25 @@ for(const th of ['templar','plain']){
  for(const t of ['verlauf','stand']){await p.click('.nav [data-tab='+t+']');await p.waitForTimeout(80);await p.screenshot({path:R+'/.build/t48-'+th+'-'+t+'.png'});}
  await p.evaluate(()=>{const k=window.__kz,D=k.D();D.onb=false;D.obStep=1;k.render();});await p.waitForTimeout(80);await p.screenshot({path:R+'/.build/t48-'+th+'-onboarding2.png'});
  await p.close();}
+// A-057 f: the rank line in the extreme case (rank far beyond the top, 400-day streak) stays inside 390 px in every theme
+{const p=await b.newPage({viewport:{width:390,height:844}});p.on('pageerror',e=>errs.push('rank line: '+e.message));await guard(p,errs);
+ await p.goto('file://'+R+'/.build/index.html');
+ const ths=await p.evaluate(()=>Object.keys(window.__kz.THEMES));let shot=0;
+ for(const th of ths){
+  const r=await p.evaluate(th=>{const k=window.__kz,D=k.D(),T=k.today(),ad=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
+    Object.assign(D,{onb:true,seenFocus:true,seenFav:true,favP:true,tab:'start',theme:th,bkTs:Date.now(),loc:'g'});D.logs=[];
+    for(let i=1200;i>400;i--)D.logs.push({d:ad(T,-i),id:'KC',t:'KC',rpe:10,min:90,vs:{legs:10,hinge:10}},{d:ad(T,-i),id:'RH',t:'RH',rpe:10,km:42,min:240});
+    for(let i=399;i>=0;i--)D.logs.push({d:ad(T,-i),id:'KA',t:'KA',rpe:10,min:90,vs:{pull:10,push:10}});
+    k.render();const st=k.streaks().day.now,xp=k.xpTotal(),el=document.querySelector('.rkline');if(!el)return {st,xp,miss:1};
+    const over=[el,...el.querySelectorAll('*')].filter(e=>e.getBoundingClientRect().right>390.5).length;
+    return {st,xp,over,doc:document.documentElement.scrollWidth,lab:el.textContent};},th);
+  if(r.miss){issue('A-057 f '+th+': no rank line');continue;}
+  if(r.st<400)issue('A-057 f '+th+': streak '+r.st+' (< 400, scenario)');
+  if(r.over||r.doc>390)issue('A-057 f '+th+': rank line overflows at 390 px ('+r.over+' elements, page '+r.doc+' px): '+r.lab);
+  if(!shot||th==='plain'||th==='templar'){await p.evaluate(()=>{const e=document.querySelector('.rkline');if(e)e.scrollIntoView({block:'center'});});await p.screenshot({path:R+'/.build/t48-'+th+'-rankline.png'});shot=1;}
+  RKL.push(th+' '+r.xp+' XP · '+r.st+' days: '+r.lab);}
+ await p.close();}
 await b.close();
 ERR.push(...errs);if(ERR.length)issue('runtime errors: '+ERR.join('; '));
 done();})().catch(e=>{issue('crash: '+e.stack);done();process.exit(1);});
-function done(){console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.slice(0,40).forEach(m=>console.log(' - '+m));}
+function done(){RKL.forEach(x=>console.log('  rank line '+x));console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.slice(0,40).forEach(m=>console.log(' - '+m));}

@@ -8,6 +8,8 @@
 // exercise. Units: cut order and floors (2 sets/rounds, anchor last, emphasis
 // exercise swapped for one with room), goal anchor, additions, warm-up and skill blocks never cut, a logged session does
 // not shrink afterwards, Limited time, Level 0 vs Level 1 in rounds(), the cut sets reach the target text and l.vs.
+// A-057 c: the band is measured per accent block over 48 weeks (≤ upper limit; ≥ lower limit, or ⅔ of it for a pattern
+// outside emphasis and goal in the strength and skill blocks, A-056 c / N-6) instead of the 12-week average.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/profiles.json');
@@ -38,7 +40,9 @@ const GP={ht:'hinge',sq:'legs'};
 PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower'),'sq']]).forEach(([p,gk])=>{const {k,errs}=boot(),D=setup(k,p,START),pn=p.n+(gk?' + goal '+gk:'');if(gk){k.setGoal(gk);D.goal.v=999;}
   const hotP=(({lower:['legs','hinge'],glutes:['hinge'],upper:['pull','push'],core:['core']})[p.emph]||[]).concat(gk&&!((({lower:['legs','hinge'],glutes:['hinge']})[p.emph]||[]).includes(GP[gk]))?[GP[gk]]:[]);
   const lhs={};let nsw=0,maxsw=0;p={...p,n:pn};
-  sim(k,84,START,(r,s)=>{if(!r.s)return;if(['KA','KB','KC','CH','HO'].includes(r.id)&&!D.short&&(r.min<60||r.min>90))issue(p.n+' '+s+' '+r.id+': '+r.min+' min');
+  /* A-057 c: 48 weeks, so every accent block (base, strength, volume, skill) is measured twice and a single light week (two
+     strength sessions) does not decide a block; the session and peak checks keep their 12-week window */
+  sim(k,336,START,(r,s)=>{if(!r.s||Date.parse(s)-Date.parse(START)>=84*864e5)return;if(['KA','KB','KC','CH','HO'].includes(r.id)&&!D.short&&(r.min<60||r.min>90))issue(p.n+' '+s+' '+r.id+': '+r.min+' min');
     const lb=lowb(r.s),gxp=r.s.blocks.some(b=>b.gx&&b.items.some(it=>it.gx&&k.curVar(it,k.LOC())>=0&&hotP.includes(k.itPat(it))));
     if(hotP.length&&['lower','glutes'].includes(p.emph)&&['KA','KB','KC','CH'].includes(r.id)&&(!lb||!lb.items.some(it=>it.anc))&&!gxp)issue(p.n+' '+s+' '+r.id+': emphasis block without its anchor (and no goal anchor of its pattern)');
     let sw=0;const fun={};r.s.blocks.forEach((b,bi)=>{if(b.warm||b.cool)return;b.items.forEach((it,ii)=>{const v=k.curVar(it,k.LOC());if(v<0)return;const n=it.opts[v].n;
@@ -49,7 +53,9 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
     const c=k.ctx(s);r.s.blocks.forEach(b=>{if(D.short&&b.p>1)return;b.items.forEach(it=>{if(!k.itPat(it)||k.curVar(it,k.LOC())<0)return;const n=k.setsOf(it,b,c,r.id);if(n<2)issue(p.n+' '+s+' '+r.id+' '+it.k+': '+n+' working set(s), floor is 2');});});});
   const day=d=>Math.round((Date.parse(d)-Date.parse(START))/864e5);
   const wk={};D.logs.forEach(l=>{const w=Math.floor(day(l.d)/7),x=wk[w]||(wk[w]={pull:0,push:0,legs:0,hinge:0,core:0,dl:false,lg:0});if(l.id==='DL'||l.id==='TE')x.dl=true;if(l.vs)V.forEach(q=>x[q]+=l.vs[q]);if(l.lg)x.lg++;});
-  const tw=Object.keys(wk).filter(w=>!wk[w].dl&&+w<11),sum=[];
+  const tw=Object.keys(wk).filter(w=>!wk[w].dl&&+w<11),tw24=Object.keys(wk).filter(w=>!wk[w].dl&&+w<47),sum=[],blk={};
+  /* A-057 c: the training weeks per accent block (accOf of the week's middle) */
+  tw24.forEach(w=>{const a=k.accOf(addD(START,+w*7+3));(blk[a]=blk[a]||[]).push(w);});
   /* A-035/A-032: the band of the other patterns follows the strength sessions per week of the focus (+2 per session over 3). */
   V.forEach(q=>{const hot=hotP.includes(q),[lo,hi]=hot?BAND.hot:[BAND.cold[0],BAND.cold[1]+(p.focus==='str'?2:0)],tol=hot?2:4;let peak=0;
     /* A-053: a peak over the tolerance by 1 set whose newest leg session sits at the floor (legs + hinge 10, tolerance rule:
@@ -59,8 +65,13 @@ PROF.map(p=>[p,null]).concat([[prof('Partner glutes'),'ht'],[prof('Partner lower
     if(flo)rep.push('  note: '+p.n+' '+q+' '+flo+' sets in 7 days, the newest leg session at the floor legs + hinge 10');
     const avg=tw.reduce((a,w)=>a+wk[w][q],0)/(tw.length||1);sum.push(q+' peak '+peak+' avg '+avg.toFixed(1)+' ('+lo+'–'+hi+(hot?', emphasis':'')+')');
     if(peak>hi+tol)issue(p.n+': '+q+' '+peak+' sets in 7 days (> '+hi+' + '+tol+')');
-    if(avg>hi)issue(p.n+': '+q+' average '+avg.toFixed(1)+' per training week over the band ('+hi+')');
-    if(avg<lo&&q!=='core')issue(p.n+': '+q+' average '+avg.toFixed(1)+' per training week under the band ('+lo+')');});
+    /* A-057 c (replaces the 12-week average): the band per accent block – average per training week ≤ the upper limit and
+       ≥ the floor of the block: the lower limit, or ⅔ of it for a pattern outside emphasis and goal in the strength and skill
+       blocks (A-056 c, N-6 doctrine, bandLo) */
+    const bt=[];Object.keys(blk).forEach(a=>{const ws=blk[a];if(ws.length<3)return;const ba=ws.reduce((x,w)=>x+wk[w][q],0)/ws.length,fl=!hot&&(a==='str'||a==='skill')?Math.ceil(lo*2/3):lo;bt.push(a+' '+ba.toFixed(1));
+      if(ba>hi)issue(p.n+': '+q+' average '+ba.toFixed(1)+' per training week in the '+a+' block over the band ('+hi+')');
+      if(ba<fl&&q!=='core')issue(p.n+': '+q+' average '+ba.toFixed(1)+' per training week in the '+a+' block under its floor ('+fl+(fl<lo?', ⅔ of '+lo:'')+')');});
+    sum.push('  blocks '+bt.join('/'));});
   rep.push(p.n+': '+sum.join(' | '));
   rep.push('  '+Object.keys(wk).map(w=>{const x=wk[w];return 'W'+(+w+1)+' H'+x.hinge+'/L'+x.legs+'/P'+x.pull+'/D'+x.push+'/C'+x.core+(x.dl?'(deload)':'');}).join(' '));
   /* the leg day is not the thinnest leg dose of its week */
