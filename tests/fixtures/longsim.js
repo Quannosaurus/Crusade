@@ -2,13 +2,14 @@
 // saveRun with the planned distance (runPlan), kickboxing/rest as plain logs, morning routine on 5 days a week.
 // Course "prog" (progress): the app's target is hit with a rate falling from 90 % to 45 % (else the last value is
 // repeated), an offered next variation is taken every second time, test values rise fast at first, then rarely, easy
-// runs are often rated "Easy"; an offered ladder rung (A-039) is taken every second time, the load rung logs a weight. Course "still" (standstill): always the last value, runs always "Fine".
+// runs are often rated "Easy"; the Core Blitz is done with the session (A-051: it counts for the core pattern); an offered ladder rung (A-039) is taken every second time, the load rung logs a weight. Course "still" (standstill): always the last value, runs always "Fine".
 // cb(ev) receives {type:'target'|'session'|'run'|'day', …} for the measurements of t49.
 const addD=(s,n)=>{const d=new Date(s+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+n);return d.toISOString().slice(0,10);};
 function rng(seed){let x=seed>>>0||1;return()=>{x^=x<<13;x>>>=0;x^=x>>17;x^=x<<5;x>>>=0;return (x%100000)/100000;};}
 function train(k,id,s,i,days,course,rnd,cb){const D=k.D(),dy=k.day(),loc=k.LOC();dy.pick=id;dy.fin={rpe:6};const c=k.ctx(s),S=k.S(id,c);
   const hit=0.9-0.45*(i/days),pTest=i<84?0.8:0.1,swaps=[],lads=[];
   if(cb)cb({type:'session',d:s,id,s:S,i});
+  if(S.ab)dy.done['abs-T']=true;
   S.blocks.forEach((b,bi)=>{if(D.short&&b.p>1)return;const bix=b.bi!=null?b.bi:bi;b.items.forEach((it,ii)=>{if(it.gone)return;const v=k.curVar(it,loc);if(v<0)return;const key=id+'-'+bix+'-'+ii;dy.done[key]=true;
     if(it.f||it.iso)return;const n=k.setsOf(it,b,c,id);
     if(it.test){const t=it.test,cur=D.profile[t]||0;const val=course==='prog'?cur+(rnd()<pTest?1:0):Math.max(cur,1);dy.inp[key]={s:[String(val)]};return;}

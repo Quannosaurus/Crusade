@@ -82,9 +82,12 @@ const findIt=(k,s,key)=>{let r=null;s.blocks.forEach(b=>b.items.forEach(it=>{if(
  set({ex:{['c_sq#'+v]:{r:8,w:60,d:old,n:'a'},['c_sq#'+(v?0:2)]:{r:8,w:20,d:addD(TD,-3),n:'b'}}});if(back())issue('another variant 3 days ago: still stepped back');
  set({ex:{['c_sq#'+v]:{r:8,w:60,d:old,n:'a'},'mx_c_sq#3':{r:12,w:0,d:addD(TD,-3),n:'kit'}}});if(back())issue('Field kit replacement of the pattern 3 days ago: still stepped back');
  set({ex:{['c_sq#'+v]:{r:8,w:60,d:old,n:'a'}},kd:{c_sq:addD(TD,-2)}});if(back())issue('kit day of the pattern: still stepped back');
- // by key, not by name: Strength C RDL and the glute RDL share a name but not the pattern
+ // A-051: by movement pattern (PATK), not by name or key: the glute RDL trains hinge like the Strength C RDL → no step back;
+ // an exercise of another pattern (rows, pull) two days ago does not hold the hinge pattern
  const rd=findIt(k,s,'c_rdl'),rv=k.curVar(rd,'g');set({ex:{['c_rdl#'+rv]:{r:10,w:60,d:old,n:'Romanian deadlift'},'g_rdl#0':{r:10,w:60,d:addD(TD,-2),n:'Romanian deadlift'}}});
- if(!/back/.test(k.target(rd,rv).note||''))issue('pause rule followed the name instead of the pattern key');
+ if(/back/.test(k.target(rd,rv).note||''))issue('pause rule: another exercise of the hinge pattern 2 days ago, still stepped back');
+ set({ex:{['c_rdl#'+rv]:{r:10,w:60,d:old,n:'Romanian deadlift'},'a_row#0':{r:10,w:30,d:addD(TD,-2),n:'Row'}}});
+ if(!/back/.test(k.target(rd,rv).note||''))issue('pause rule: an exercise of another pattern held the hinge pattern');
  // the kit replacement itself: its own entry is old, the gym variant fresh → no step back
  D.kit=[];k.day().kit=true;const ks=k.S('KC',c),kx=ks.blocks.flatMap(b=>b.items).find(it=>/^mx_/.test(it.k||'')&&!it.f&&k.curVar(it,'m')>=0);
  if(kx){const kv=k.curVar(kx,'m'),base=kx.k.replace(/^mx_/,'');set({ex:{[kx.k+'#'+kv]:{r:12,w:0,d:old,n:'kit'},[base+'#0']:{r:8,w:60,d:addD(TD,-2),n:'gym'}}});

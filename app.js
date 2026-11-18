@@ -300,8 +300,12 @@ function kitApply(s){var used={};
 var PKC={};function patKey(k){var v=PKC[k];if(v===undefined){v=String(k||"").replace(/^(mx_|fav_)+/,"");if(typeof k==="string")PKC[k]=v;}return v;}
 /* P-5: one pause rule for every exercise, by movement pattern (patKey), never by name: the last session of the pattern is
    the newest of every variant of it (gym, home, Field kit "mx_"+key, favourite copies) and of kitD (kit days, logged past days). */
-function patLast(k,d){var p=patKey(k),x=(D.kitD||{})[p];if(x&&x>d)d=x;
-  for(var q in D.ex){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&e.d>d&&i>0&&patKey(q.slice(0,i))===p)d=e.d;}return d;}
+/* A-051: the pause rule measures the movement pattern (PATK), not the single exercise: patGrp() = "@<pattern>", items
+   without a pattern belong to "@all" (any training), so only a real pause of the whole pattern steps back. */
+var PGC={};function patGrp(k){var v=PGC[k];if(v===undefined){var pk=patKey(k);v=own(PATK,pk)?"@"+PATK[pk]:"@all";if(typeof k==="string")PGC[k]=v;}return v;}
+function grpHas(p,k){return p==="@all"||patKey(k)===p||patGrp(k)===p;}
+function patLast(k,d,key){var p=key?patKey(k):patGrp(k),kd=D.kitD||{};for(var x in kd)if(own(kd,x)&&typeof kd[x]==="string"&&kd[x]>d&&grpHas(p,x))d=kd[x];
+  for(var q in D.ex){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&e.d>d&&i>0&&grpHas(p,q.slice(0,i)))d=e.d;}return d;}
 function kitLabel(){var k=D.kit||[];return k.length?KITS.filter(function(x){return k.indexOf(x[0])>=0;}).map(function(x){return x[1];}).join(", "):"Nothing";}
 function isKick(s){return D.kickDays.indexOf(pd(s).getDay())>=0;}
 function O(s){var p=s.split("|");return {n:p[0],req:p[1]||"",w:p[2]==="w"};}
@@ -1068,22 +1072,36 @@ function nextVar(it,v,loc){if(it.kx||it.fx||it.test||it.iso||it.f)return -1;
    end of the range (unless the last value already was). With fewer than 2 known gaps the old rule holds (14 / 28 days).
    Paused days (P-7) count for no gap. Dates per pattern come from the logs (l.ex keys), the kit days (kitD) and D.ex;
    computed once per day and number of entries (RHC). No new data fields. */
-var RHC={k:"",L:null,m:null};
+var RHC={k:"",L:null,m:null},RHN=40,VPK={pull:1,push:1,legs:1,hinge:1,core:1};
 function patDates(p){var L=D.logs,ln=L.length,ky=ln+"|"+(ln?L[ln-1].d:"")+"|"+(D.pause?D.pause.from+D.pause.to:"")+"|"+(D.pauseH||[]).length+"|"+Object.keys(D.kitD||{}).length;
   if(RHC.k!==ky||RHC.L!==L||RHC.D!==D||RHC.last!==L[ln-1]){var lm,i0=0,dp=0;if(grown(RHC,L)&&RHC.dp<8){lm=Object.create(RHC.lm);dp=RHC.dp+1;i0=RHC.n;}else lm={};
-    for(var j=i0;j<ln;j++){var l=L[j],ex=l.ex;if(ex)for(var q in ex){var i=q.indexOf("#");if(i>0){var pk=patKey(q.slice(0,i));if(i0){var o2=Object.create(lm[pk]||null);o2[l.d]=1;lm[pk]=o2;}else (lm[pk]||(lm[pk]={}))[l.d]=1;}}}
+    /* A-051: per key (patKey), per pattern group ("@pull" …, from the logged keys and from l.vs, so the Core Blitz, holds and
+       loaded fixed items count) and "@all"; each a short ascending list of the newest dates (copied on growth, never shared). */
+    var put=function(pk,d){var a=lm[pk];if(!a){a=lm[pk]=[];}else if(i0&&!own(lm,pk)){a=lm[pk]=a.slice(-RHN);}if(a[a.length-1]!==d){a.push(d);if(a.length>2*RHN)lm[pk]=a.slice(-RHN);}};
+    /* the entry that was newest last time is read again: saveTrain adds its l.vs after the entry is stored */
+    for(var j=i0?i0-1:0;j<ln;j++){var l=L[j],ex=l.ex,vs=l.vs,any=0;if(ex)for(var q in ex){var i=q.indexOf("#");if(i>0){var k0=q.slice(0,i),g=patGrp(k0);put(patKey(k0),l.d);if(g!=="@all")put(g,l.d);any=1;}}
+      if(vs&&typeof vs==="object")for(var pp in vs)if(own(vs,pp)&&vs[pp]>0&&own(VPK,pp)){put("@"+pp,l.d);any=1;}if(any)put("@all",l.d);}
     RHC={k:ky,L:L,D:D,lm:lm,n:ln,last:L[ln-1],m:{},dp:dp};}
-  /* Per pattern: dates of the logs (lm, kept incrementally) plus kitD and D.ex, sorted once per state. */
-  var r=RHC.m[p];if(r)return r;var m={},a=RHC.lm[p];if(a)for(var d in a)m[d]=1;var kd=(D.kitD||{})[p];if(typeof kd==="string")m[kd]=1;
-  for(var q in D.ex){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&i>0&&patKey(q.slice(0,i))===p)m[e.d]=1;}
+  /* Per pattern: the newest dates of the logs plus kitD and D.ex, sorted once per state. */
+  var r=RHC.m[p];if(r)return r;var m={},a=RHC.lm[p];if(a)for(var x0=Math.max(0,a.length-RHN);x0<a.length;x0++)m[a[x0]]=1;var kd=D.kitD||{};for(var x in kd)if(own(kd,x)&&typeof kd[x]==="string"&&grpHas(p,x))m[kd[x]]=1;
+  for(var q in D.ex){var e=D.ex[q],i=q.indexOf("#");if(e&&e.d&&i>0&&grpHas(p,q.slice(0,i)))m[e.d]=1;}
   return RHC.m[p]=Object.keys(m).sort();}
-function gapDays(a,z){return Math.max(0,diff(a,z)-pausedIn(a,z));}
+/* A-051: deload and test weeks (cycle week 6) count for no gap, like paused days. */
+var DLW={m:{}};
+function dlDay(d){if(!D.start||d<D.start)return false;var w=Math.floor(diff(D.start,d)/7),L=D.logs,ln=L.length,e=D.easy||"";
+  /* past weeks keep their answer while entries are only appended after them (week preview, a new log) */
+  if(DLW.D!==D||DLW.st!==D.start||DLW.e!==e||DLW.L!==L)DLW={D:D,st:D.start,e:e,L:L,n:ln,last:L[ln-1],m:{}};
+  else if(DLW.n!==ln||DLW.last!==L[ln-1]){if(grown(DLW,L)){var w0=Math.floor(diff(D.start,L[DLW.n].d)/7);for(var q in DLW.m)if(+q>=w0)delete DLW.m[q];}else DLW.m={};DLW.n=ln;DLW.last=L[ln-1];}
+  var r=DLW.m[w];if(r===undefined)r=DLW.m[w]=(cycWk(d).ef-1)%6===5;return r;}
+/* newest logged date of a pattern group up to t (logged keys and l.vs; kitD and D.ex come live through patLast) */
+function grpLogLast(p,t){patDates(p);var a=RHC.lm[p];if(!a||!a.length)return "";var i=lbIdx(a,addD(t,1))-1;return i>=0?a[i]:"";}
+function gapDays(a,z){var n=diff(a,z),o=0;if(n<=0)return 0;var p=D.pause||(D.pauseH&&D.pauseH.length);for(var d=a,i=0;d<z&&i<400;d=addD(d,1),i++)if(dlDay(d)||(p&&pausedDay(d)))o++;return Math.max(0,n-o);}
 /* Usual rhythm of a pattern up to date d (median of the last 4 gaps up to d), null with fewer than 2 gaps. */
 function rhythm(p,d){var a=patDates(p),g=[],e=lbIdx(a,d);if(e<a.length&&a[e]===d)e++;for(var i=e-1;i>0&&g.length<4;i--)g.push(gapDays(a[i-1],a[i]));
   if(g.length<2)return null;g.sort(function(x,y){return x-y;});var n=g.length;return n%2?g[(n-1)/2]:(g[n/2-1]+g[n/2])/2;}
 function backSteps(gap,rh){if(rh==null)return gap>=14?(gap>28?2:1):0;return gap>28&&gap>=2*rh?2:(gap>=14&&gap>=1.5*rh?1:0);}
 /* Was the last session of this variant itself a step back whose target was not reached? Then no second step back. */
-function backTwice(it,v,step){var K=it.k+"#"+v,p=patKey(it.k),h=[];D.logs.forEach(function(l){if(l.ex&&l.ex[K]&&l.d<TODAY)h.push([l.d,l.ex[K]]);});
+function backTwice(it,v,step){var K=it.k+"#"+v,p=patGrp(it.k),h=[];D.logs.forEach(function(l){if(l.ex&&l.ex[K]&&l.d<TODAY)h.push([l.d,l.ex[K]]);});
   if(!h.length)return false;var last=h[h.length-1],dl=last[0],a=patDates(p),ai=lbIdx(a,dl);if(!ai)return false;
   var pg=a[ai-1],bl=backSteps(gapDays(pg,dl),rhythm(p,pg));if(!bl)return false;var prev=h.length>1?h[h.length-2][1]:null;if(!prev)return false;
   var rT=Math.max(Math.min(it.lo,prev[0]),Math.min(it.hi,prev[0])-bl*step),wT=prev[1]?kgRnd(prev[1]-bl*kgStep(prev[1]),prev[1]):0;
@@ -1095,12 +1113,15 @@ function target(it,v){
   if(g.top&&!ow&&!holdOn("str")&&nextVar(it,v,LOC())<0&&topTwice(it,v)){var nl=ladNext(it,v);if(nl){g.lad=nl;g.note="Top of the range twice: next step “"+LADN[nl]+"”.";}}
   return g;}
 function target0(it,v,o,st,isS,step,ow){var w=null;
-  w=st.w||null; var p0=patLast(it.k,st.d), gap=gapDays(p0,TODAY), inc=w?kgStep(w):0, rh=rhythm(patKey(it.k),p0), back=backSteps(gap,rh);
+  w=st.w||null; var gp=patGrp(it.k), p0=patLast(it.k,st.d), pl=grpLogLast(gp,TODAY);if(pl>p0)p0=pl;var gap=gapDays(p0,TODAY), inc=w?kgStep(w):0, rh=rhythm(gp,p0), back=backSteps(gap,rh);
   if(back&&backTwice(it,v,step)) back=0;
+  /* A-051: the exercise rested (rotation, phase change) while its pattern kept training: no weight step back, at most one rep
+     less for getting used to the technique again. Only a real pause of the whole pattern steps back (below). */
+  var gk=0;if(!back){var k0=patLast(it.k,st.d,1);gk=gapDays(k0,TODAY);if(!(gk>28&&backSteps(gk,rhythm(patKey(it.k),k0))))gk=0;}
   /* A-043: a rotation set that returns after a block pause steps back once, never twice (L5) */
   if(back>1&&it.rot) back=1;
   if(back){var fl=Math.max(1,Math.min(it.lo,st.r)), r0=Math.max(fl,Math.min(it.hi,st.r)-back*step), w0=(ow&&w)?kgRnd(w-back*inc,w):w;
-    return {r:r0,w:w0,note:"Last entry "+gap+" days"+(rh?" (usual rhythm about "+Math.round(rh)+" days)":"")+": "+(back===2?"two steps":"one step")+" back."};}
+    return {r:r0,w:w0,back:back,note:"Last entry "+gap+" days"+(rh?" (usual rhythm about "+Math.round(rh)+" days)":"")+": "+(back===2?"two steps":"one step")+" back."};}
   if(cbInfo(TODAY).low) return {r:Math.min(it.hi,Math.max(st.r,1)),w:w,note:"Comeback after a break: same target as last time, no step up yet."};
   if(st.hold&&st.lad&&st.r===it.lo) return {r:it.lo,w:w,note:"New step: "+LADN[st.lad]+". Start at the bottom of the range."};
   if(st.hold) return {r:Math.min(it.hi,Math.max(st.r,1)),w:w,note:"At the limit last time: same target."};
@@ -1109,8 +1130,15 @@ function target0(it,v,o,st,isS,step,ow){var w=null;
       return {r:Math.min(it.hi,Math.max(st.r,it.lo)),w:w1,note:"Three times without progress: 10 % lighter, then build back up.",low:true,reset:true};}
     var rr=Math.max(Math.max(1,Math.min(it.lo,st.r)),Math.min(it.hi,st.r)-2*step),dd=Math.min(it.hi,st.r)-rr;
     return {r:rr,w:w,note:"Three times without progress: "+(dd>0?dd+" "+(isS?"s":"reps")+" fewer":"hold at the bottom of the range")+", then build back up.",low:true,reset:true};}
+  /* A-051: return after a rest of the exercise (rotation, phase change, > 28 days) while the pattern trained: at most one rep
+     less, weight holds (a new block range that moved its bottom above the last value aims for its bottom, below). */
+  if(gk&&!(ow&&w&&st.r<it.lo)){var flr=Math.max(1,Math.min(it.lo,st.r)),rb=Math.max(flr,Math.min(it.hi,st.r)-(isS?step:1));
+    return {r:rb,w:w,ret:true,note:"Back after "+gk+" days (the movement pattern kept training): "+(rb<Math.min(it.hi,st.r)?"one "+(isS?"step":"rep")+" less":"same target")+(ow&&w?", same weight":"")+"."};}
   if(st.r>=it.hi){ if(ow&&w) return {r:it.lo,w:w+inc,note:"Last time "+st.r+" at "+fmtKg(w)+" kg: weight up.",top:true};
     return {r:it.hi,w:w,note:"Top of the range reached"+(it.up?". Next step: "+it.up:"")+". If it stays easy, "+(nextVar(it,v,LOC())>=0?"take the next variation.":"swap the variation."),top:true}; }
+  /* A-051 (N-12): the block's range moved its bottom above a value that was inside the normal range: no failure, the weight
+     holds and the target is the new bottom. */
+  if(st.r<it.lo&&ow&&w&&it.lo0!=null&&st.r>=it.lo0) return {r:it.lo,w:w,rng:true,note:"New range this block ("+it.lo+"–"+it.hi+"): same weight, aim for "+it.lo+"."};
   if(st.r<it.lo){ if(ow&&w) return {r:it.lo,w:kgRnd(w-inc,w),note:"Last time only "+st.r+": weight down.",low:true};
     return {r:Math.max(1,st.r+1),w:w,note:"Below the range. Easier variation or band via “Swap” until "+it.lo+" are clean.",low:true}; }
   return {r:Math.min(it.hi,st.r+step),w:w,note:"Last time "+st.r+(ow&&w?" at "+fmtKg(w)+" kg":"")+"."};
@@ -1166,7 +1194,7 @@ function accLeg(b){return !!b.legs||b.items.some(function(it){var p=itPat(it);re
 function accMain(b){return !b.warm&&!b.cool&&!b.trial&&!b.jump&&!b.add&&!b.skill&&!b.hsb&&!b.acc&&!b.sh&&!b.fav&&!b.rehab&&!b.ser&&(b.p||1)===1;}
 function accSide(b){return !b.warm&&!b.cool&&!b.trial&&!b.jump&&!b.add&&!b.skill&&!b.hsb&&!b.fav&&!b.rehab&&!b.ser&&!b.gx&&(b.acc||b.sh||(b.p||1)>1);}
 function accRange(it,a){var v=curVar(it,LOC());if(v<0||!wOn(it,v)||it.hi-it.lo<2)return it;var mid=it.lo+Math.floor((it.hi-it.lo)/2),n=Object.assign({},it);
-  if(a==="str")n.hi=Math.max(it.lo+1,mid);else n.lo=Math.min(it.hi-1,mid);return n;}
+  n.lo0=it.lo;if(a==="str")n.hi=Math.max(it.lo+1,mid);else n.lo=Math.min(it.hi-1,mid);return n;}
 function accSets(it,d){if(it.f||it.iso||it.test||it.ts!=null)return it;var n=parseInt(String(it.sets),10);if(isNaN(n)||n<=0)return it;var x=Object.assign({},it);x.sets=Math.max(2,n+d);if(d>0)x.accP=1;return x;}
 /* applied in S() after the filters and before design(): design() and the band then keep 60–90 min and the caps */
 function accApply(s,id,c){var a=c&&c.acc;if(!a||a==="base"||!BANDIDS[id]||c.cyc>5||gTaper(TODAY))return;s.acc=a;
@@ -1952,10 +1980,13 @@ function plNoGoal(){if(D.goal||holdOn("str"))return null;var L=D.logs,ln=L.lengt
   var from=addD(TODAY,-180),i0=ln;while(i0>0&&L[i0-1].d>=from)i0--;var per={};
   for(var i=i0;i<ln;i++){var l=L[i];if(!STR[l.id]||l.bl||l.cb||l.sim||!l.ex||l.d>TODAY)continue;var wk=blkStart(l.d);
     for(var q in l.ex){if(!own(l.ex,q))continue;var e=l.ex[q],pk=patKey(q.split("#")[0]);if(!own(PATK,pk)||!Array.isArray(e))continue;var sc=(+e[1]||0)*1000+(+e[0]||0),a=per[q]||(per[q]=[]),z=a[a.length-1];
-      if(z&&z.wk===wk){if(sc>z.sc)z.sc=sc;}else a.push({wk:wk,d:l.d,sc:sc});}}
+      if(z&&z.wk===wk){if(sc>z.sc)z.sc=sc;}else a.push({wk:wk,d:l.d,sc:sc,bk:blkNo(l.d)});}}
   var best=null;Object.keys(per).forEach(function(q){var a=per[q];if(a.length<4||diff(a[a.length-1].d,TODAY)>21)return;
     var st=D.ex[q],k0=q.split("#")[0],hi=hiOf(k0);if(st&&!(st.w>0)&&hi!=null&&st.r>=hi)return;
-    var b=a[0].sc,lp=a[0].d,np=0;for(var j=1;j<a.length;j++){if(a[j].sc>b){b=a[j].sc;lp=a[j].d;np=0;}else np++;}
+    /* A-051 (M-1): after an accent change (new block) or a real pause (gap ≥ 14 days) the comparison starts anew: a value
+       lowered on purpose there (new range, step back) becomes the new mark and is no standstill check. */
+    var b=a[0].sc,lp=a[0].d,np=0,fr=0;for(var j=1;j<a.length;j++){var nw=a[j].bk!==a[j-1].bk||gapDays(a[j-1].d,a[j].d)>=14;
+      if(a[j].sc>b){b=a[j].sc;lp=a[j].d;np=0;fr=0;}else if(a[j].sc<b&&(nw||fr)){b=a[j].sc;fr=nw?1:0;}else{np++;fr=0;}}
     var age=diff(lp,TODAY)-pausedIn(lp,TODAY);if(np<3||age<21)return;
     if(!best||np>best.np||(np===best.np&&lp<best.lp))best={q:q,n:st&&st.n||q,p:PATK[patKey(k0)],np:np,lp:lp,age:age};});
   if(best)best.pm=best.np>=6&&best.age>=42?"v":(loadHigh()?"e":"s");
@@ -2952,6 +2983,8 @@ function saveTrain(){
     var pv=D.ex[it.k+"#"+v],stall=(pv&&!pv.hold&&r<=pv.r&&(w||0)<=(pv.w||0))?(pv.stall||0)+1:0;if(holdOn("str"))stall=pv?(pv.stall||0):0;
     /* P-5: after three stalls the target steps back (10 % or 2 reps); that session starts the rebuild. */
     if(pv&&(pv.stall||0)>=3)stall=0;
+    /* A-051: a planned lower target (return after a rest, new block range, pause step back) is no stall. */
+    if(g.ret||g.rng||g.back)stall=pv?(pv.stall||0):0;
     /* The top of a bodyweight range is no stall: the next step is a harder variation, not a smaller target. */
     if(r>=it.hi&&!(wOn(it,v)&&w))stall=0;
     var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(sets.length||setsOf(it,b,c,id)));
@@ -3228,7 +3261,7 @@ function startHold(sec,sides){document.body.classList.add("tmr");audio();stop();
 document.querySelectorAll(".timer [data-t]").forEach(function(b){b.addEventListener("click",function(){startRest(parseInt(b.dataset.t,10));});});
 document.getElementById("tstop").addEventListener("click",function(){stop();clock.textContent="0:00";});
 render();
-window.__kz={TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+window.__kz={patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}

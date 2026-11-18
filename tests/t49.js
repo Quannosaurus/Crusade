@@ -13,12 +13,14 @@
 // (A-041; upper and lower stand at the start and the end, and the week of the first rise, are printed for every profile)
 // · blk = volume and ranges differ between the accent blocks: the planned volume per strength session (sets × range middle)
 // differs by ≥ 5 % between the accents and weighted exercises sit lower in their range in the strength block than in the
-// volume block (A-042).
+// volume block (A-042) · start = in the progress course every weighted exercise ends at or above its start weight unless only
+// stall resets (3 × no progress, P-5) took it under (printed apart); under
+// also counts a weighted target under the start weight of its variant that is no planned lighter weight (A-051).
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const html=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
 const {longSim,addD}=require('./fixtures/longsim.js');const PROF=require('./fixtures/profiles.json');
-const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042','A-043','A-044'];
-const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',blk:'A-042',names:'A-043',run:'A-044'};
+const ACTIVE=['A-030b','A-037','A-038','A-039','A-041','A-042','A-043','A-044','A-051'];
+const STONE={dur:'A-030b',under:'A-037',wk:'A-038',top:'A-039',lvl:'A-041',blk:'A-042',names:'A-043',run:'A-044',start:'A-051'};
 const sharp=x=>ACTIVE.includes(STONE[x]);
 const ONLY=process.argv.slice(2).filter(a=>!a.startsWith('-'));const WEEKS=+(process.argv.find(a=>/^--weeks=/.test(a))||'--weeks=104').split('=')[1];
 const DAYS=WEEKS*7,START='2026-11-16',STR=['KA','KB','KC','CH','HO'];
@@ -33,11 +35,14 @@ function wkTime(k){const t=[];for(let j=0;j<15;j++){k.WK.plan=null;k.WK.key='';c
   return t.sort((a,b)=>a-b)[7];}
 function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math.floor(i/91);
   const m={under:0,underEx:'',dur:0,durEx:'',top:{},topMax:0,topEx:'',names:[],km:[],long:[],sets:[],wk12:0,wkEnd:0,wkA:[],wkB:[],rankWk:null};
-  m.acc={};m.lastUse={};m.rph={};m.phd={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
+  m.acc={};m.lastUse={};m.w0={};m.dn={};m.rs={};m.rph={};m.phd={};const seen=new Set();m.lv0=[k.lvUp(),k.lvLo()];m.lvW=[null,null];
   longSim(k,DAYS,START,course,7+p.n.length,ev=>{const Q=q(ev.i);
     if(ev.type==='target'){const {it,g,st,v}=ev;
       if(st&&st.r>=it.lo&&g.r<it.lo){m.under++;if(!m.underEx)m.underEx=ev.d+' '+ev.name+' '+g.r+' < '+it.lo;}
-      const kk=it.k+'#'+v;if(!it.opts[v].w&&!g.wl&&g.top&&ev.nv<0&&!g.lad){const t=m.top[kk]||(m.top[kk]={from:ev.d});const wks=(Date.parse(ev.d)-Date.parse(t.from))/864e5/7;if(wks>m.topMax){m.topMax=wks;m.topEx=ev.name;}}
+      const kk=it.k+'#'+v,w0=m.w0[kk];if(g.w>0&&w0==null)m.w0[kk]=g.w;else if(!st&&(it.opts[v].w||g.wl)&&w0==null)m.w0[kk]=20;
+      if(st&&st.w>0&&g.w!=null&&g.w<st.w){if(g.reset)m.rs[kk]=1;else if(!m.dn[kk])m.dn[kk]=ev.d+' '+g.w+' kg ('+g.note+')';}
+      if(w0!=null&&st&&st.w>=w0&&g.w!=null&&g.w<w0&&!g.reset&&!g.rng){m.under++;if(!m.underEx)m.underEx=ev.d+' '+ev.name+' '+g.w+' kg < start '+w0+' kg ('+g.note+')';}
+if(!it.opts[v].w&&!g.wl&&g.top&&ev.nv<0&&!g.lad){const t=m.top[kk]||(m.top[kk]={from:ev.d});const wks=(Date.parse(ev.d)-Date.parse(t.from))/864e5/7;if(wks>m.topMax){m.topMax=wks;m.topEx=ev.name;}}
       else delete m.top[kk];}
     if(ev.type==='session'){const S=ev.s,bl=S.blocks;
       if(STR.includes(ev.id)){const ac=k.accNow(),c=k.ctx(ev.d),A=m.acc[ac]||(m.acc[ac]={n:0,sets:0,reps:0,mid:0,mn:0});A.n++;
@@ -57,6 +62,7 @@ function one(p,course){const {k}=boot();setup(k,p);const D=k.D();const q=i=>Math
   const full=JSON.stringify(D),td=k.today(),lim=addD(td,-84),one=tr=>{const S=JSON.parse(full);if(tr)S.logs=S.logs.filter(l=>l.d>=lim);k.setD(S);k.today(td);k.hist(td);return wkTime(k);};
   const A=[],B=[];for(let r=0;r<4;r++){A.push(one(true));B.push(one(false));}m.wk12=Math.min(...A);m.wkEnd=Math.min(...B);k.setD(JSON.parse(full));k.today(td);
   D.logs.forEach(l=>{if(!l.vs||l.bl)return;const Q=q(Math.round((Date.parse(l.d)-Date.parse(START))/864e5));m.sets[Q]=(m.sets[Q]||0)+Object.values(l.vs).reduce((a,b)=>a+b,0);});
+  const fin=k.D().ex;const und=Object.keys(m.w0).filter(q=>fin[q]&&fin[q].w>0&&fin[q].w<m.w0[q]);m.wRs=und.filter(q=>!m.dn[q]).length;m.wUnder=und.filter(q=>m.dn[q]).map(q=>(fin[q].n||q)+' '+fin[q].w+' < '+m.w0[q]+', first lower target '+m.dn[q]);m.wN=Object.keys(m.w0).filter(q=>fin[q]&&fin[q].w>0).length;
   m.lvl=k.lvl();m.lv1=[k.lvUp(),k.lvLo()];m.runKm=D.runKm;m.runI=D.runI;m.logs=D.logs.length;return m;}
 const fmtQ=(a,f)=>Array.from({length:Math.ceil(DAYS/91)},(_,i)=>f(a[i]||0)).join(' ');
 function stone(x,ok,val){const st=ok?'ok':(sharp(x)?'FAIL':'open');return x+' '+st+' ('+val+')';}
@@ -78,6 +84,7 @@ PROF.concat([BEG]).filter(p=>!ONLY.length||ONLY.some(o=>p.n.toLowerCase().includ
     const res=[stone('under',m.under===0,m.under+(m.underEx?', e.g. '+m.underEx:'')),stone('dur',m.dur===0,m.dur+(m.durEx?', e.g. '+m.durEx:'')),
       stone('top',m.topMax<=12,'max '+m.topMax.toFixed(1)+' weeks'+(m.topEx?' '+m.topEx:'')),stone('names',namesOk,'new per quarter after Q1: '+nq.join(' ')),
       runner?stone('run',runOk,phTxt+' · per quarter km/week '+fmtQ(kmw,x=>x.toFixed(1))+' · long run '+fmtQ(m.long,x=>x)):'run n/a (no runs)',
+      course==='prog'?stone('start',!m.wUnder.length,m.wUnder.length+' of '+m.wN+' weighted exercises under their start weight by a lower target that was no stall reset · '+m.wRs+' under start only through stall resets (3 × no progress, P-5)'+(m.wUnder.length?', e.g. '+m.wUnder.slice(0,3).join('; '):'')):'start info ('+m.wUnder.length+' of '+m.wN+' under start)',
       lvNeed?stone('lvl',lvOk,lvTxt):'lvl info ('+lvTxt+')',stone('blk',blkOk,blkTxt),
       stone('wk',wkOk,'week preview of the final day '+m.wk12.toFixed(1)+' ms with the last 12 weeks → '+m.wkEnd.toFixed(1)+' ms with '+WEEKS+' weeks of history, × '+rat.toFixed(2)+' · info: weeks 12–15 '+m.wkW12.toFixed(1)+' ms, weeks '+(WEEKS-3)+'–'+WEEKS+' '+m.wkW104.toFixed(1)+' ms')];
     res.forEach(r=>{if(/ FAIL /.test(r))issue(tag+': '+r);});

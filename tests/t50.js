@@ -30,7 +30,7 @@ const START='2026-09-21';
 // step-back notes over the same kind of run, read directly from target()
 ['Runner','Captain'].forEach(pn=>{const {k}=boot();const D=setup(k,prof(pn),START);let backs=0,bad=0,ex='',reg14=0;
   for(let i=0;i<112;i++){const s=addD(START,i);k.today(s);const r=k.recAll(s,false);
-    if(['KA','KB','KC','CH'].includes(r.id)){const S=k.S(r.id,k.ctx(s));S.blocks.forEach(b=>b.items.forEach(it=>{if(!it.k||it.f||it.iso||it.test)return;const v=k.curVar(it,'g');if(v<0)return;const st=D.ex[it.k+'#'+v];if(st){const p0=k.patLast(it.k,st.d),rh=k.rhythm(k.patKey(it.k),p0),gp=k.gapDays(p0,s);if(rh!=null&&rh>=13&&rh<=19&&gp>=13&&gp<=19)reg14++;}
+    if(['KA','KB','KC','CH'].includes(r.id)){const S=k.S(r.id,k.ctx(s));S.blocks.forEach(b=>b.items.forEach(it=>{if(!it.k||it.f||it.iso||it.test)return;const v=k.curVar(it,'g');if(v<0)return;const st=D.ex[it.k+'#'+v];if(st){const p0=k.patLast(it.k,st.d,1),rh=k.rhythm(k.patKey(it.k),p0),gp=k.gapDays(p0,s);if(rh!=null&&rh>=13&&rh<=19&&gp>=13&&gp<=19)reg14++;}
       const g=k.target(it,v),m=(g.note||'').match(/Last entry (\d+) days \(usual rhythm about (\d+) days\)/);if(m){const gp=+m[1],rh=+m[2];backs++;
       if(gp<14||gp<1.5*rh-0.5){bad++;if(!ex)ex=s+' '+r.id+' '+it.opts[v].n+': '+g.note;}if(rh>=13&&rh<=19&&gp<=19){bad++;if(!ex)ex=s+' '+r.id+' '+it.opts[v].n+' (14–18 day rhythm): '+g.note;}}}));}
     sim(k,1,s);}
@@ -38,7 +38,7 @@ const START='2026-09-21';
 // 2 synthetic histories of one exercise
 function hist(k,key,v,dates,val,w){const D=k.D();D.logs=dates.map(d=>({d,id:'KA',t:'A',rpe:6,ex:{[key+'#'+v]:[val,w||0]}}));D.ex={};D.ex[key+'#'+v]={r:val,w:w||0,d:dates[dates.length-1],hold:false,n:'x',stall:0};D.kitD={};D.pause=null;D.pauseH=[];}
 function item(k,key){const S=k.S('KA',k.ctx(k.today()));let f=null;S.blocks.forEach(b=>b.items.forEach(it=>{if(it.k===key)f=it;}));return f;}
-{const {k}=boot();Object.assign(k.D(),{onb:true,start:'2026-06-01',logs:[]});k.today('2026-11-16');const it=item(k,'a_row');if(!it){issue('a_row not found');}else{const v=0,TD='2026-11-16';
+{const {k}=boot();Object.assign(k.D(),{onb:true,start:'2026-11-16',logs:[]});k.today('2026-11-16');const it=item(k,'a_row');if(!it){issue('a_row not found');}else{const v=0,TD='2026-11-16';
   const every=(n,g,end)=>{const a=[];let d=end;for(let i=0;i<n;i++){a.unshift(d);d=addD(d,-g);}return a;};
   const at=(gap,rhythmGap,val,n)=>{const end=addD(TD,-gap);hist(k,'a_row',v,every(n||5,rhythmGap,end),val);return k.target(it,v);};
   let g=at(20,16,10);if(g.r!==11)issue('rhythm 16, gap 20: expected the normal step up to 11, got '+g.r+' ('+g.note+')');

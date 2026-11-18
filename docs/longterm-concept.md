@@ -24,6 +24,10 @@ Stand: freigegeben (A-030b, Session 13). Grundlage: 104-Wochen-Simulation von 5 
 | A-043 | L5 | Übungsrotation je Block, neue Übungen, Deload/Test in 3 Fassungen |
 | A-044 | L6 | Lauf über Saisons, Intervall-Formen, Tempo-Hinweis |
 | A-045 | L7 Teil 2 | Erhaltungs-Modus |
+| A-051 | Nacharbeit A-036 | Rückschritt nur bei echter Pause des Musters (H-1, M-1) |
+| A-052 | Nacharbeit A-036 | Schmerzfilter-Namen, Limited time mit Tired/Hold (M-2, M-3) |
+| A-053 | Nacharbeit A-036 | Lauf: 30-%-Deckel, Übergangswoche, harte Läufe gegen echte Läufe (M-4, M-5, N-4, N-5) |
+| A-054 | Nacharbeit A-036 | Feinschliff und Testnetz |
 | A-046 | L8 Ansichten | Langzeit-Ansichten, Jahresrückblick, gestufte Ehrungen, Ränge, mehr Texte (ohne Love-Theme) |
 
 Abhängigkeiten: A-039 nach A-037; A-042 nach A-041; A-043, A-044 und A-045 nach A-042; A-046 nach A-038.
@@ -277,6 +281,28 @@ Umsetzung (A-046):
   Love-Theme bleibt unverändert.
 - Chronicle: 20 Einträge, ältere erst auf Tipp („Show older entries“, je 50).
 
+## Nacharbeit A-036 – neue Doktrin (Captain und Leitstand, A-051 … A-054)
+
+- **Rückschritt nur bei echter Pause des Musters (A-051).** Solange dasselbe Bewegungsmuster (PATK: pull, push, legs,
+  hinge, core) durch andere Übungen trainiert wird, gibt es keinen Rückschritt. Abstand und Rhythmus der Pausenregel
+  messen die letzte Belastung des Musters, nicht der einzelnen Übung; Übungen ohne Muster messen an jedem Training. Deload-
+  und Test-Wochen (Zykluswoche 6) zählen wie pausierte Tage nicht als Abstand. Ein Rückschritt nach A-037 kommt nur, wenn
+  das ganze Muster über Rhythmus pausiert hat (Urlaub, Krankheit, stille Lücke). Kehrt eine Übung nach Rotation oder
+  Phasenwechsel zurück (> 28 Tage ohne sie, das Muster lief weiter): höchstens −1 Wiederholung, Gewicht hält. Ein
+  Akzent-Block, der den unteren Rand der Spanne über den letzten Wert hebt, hält das Gewicht und zielt auf den neuen
+  unteren Rand (kein „weight down“). Begründung: Detraining hängt am fehlenden Reiz des Muskels, nicht am Fehlen einer
+  einzelnen Übung; Kraft hält sich bis etwa 3 Wochen ohne Training und bei reduziertem Umfang mit gehaltener Intensität
+  [Q63][Q64] (Bell 2023 und Spiering 2021, siehe CLAUDE.md Tired-Doktrin). Stillstand ohne Ziel (M-1): nach einem
+  Akzentwechsel oder einer echten Pause beginnt der Vergleich neu; ein planmäßig gesenkter Wert ist kein Stillstands-Check.
+  Prüfstein: t49 „start“ (im Fortschritts-Verlauf endet jede gewichtete Übung ≥ Startgewicht), t62.
+- **Langer Lauf (A-053).** ≤ 30 % des 4-Wochen-Mittels [Q61] (Daniels: 25–30 % des Wochenumfangs; ersetzt die 35 % aus
+  L6), mindestens lockerer Lauf + 1 km. Übergang aus Hold/Erhalt mit einer Woche × 0,9 [Q62] (höchstens 10 % über dem
+  längsten Lauf der letzten 30 Tage).
+- **Harte Läufe (A-053).** Höchstens 1 von 3 der in den letzten 14 Tagen gelaufenen Läufe hart; ist der empfohlene Lauf
+  der einzige der Woche, ist er locker oder zügig. Harter Lauf in Balanced ≤ 8 km, Wachstum über zügige Abschnitte.
+- **Level-Startwert (A-054).** Bester Wert der ersten 4 Trainingswochen; gezählt werden Trainingswochen, nicht
+  Kalenderwochen.
+
 ## Datenmodell und Migration im Überblick
 
 | Baustein | Neue Felder | Migration | Alte Backups |
@@ -331,3 +357,5 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 - [Q60] Billat LV. Interval training for performance: a scientific and empirical practice. Part I: aerobic interval training. *Sports Med* 2001;31(1):13–31.
 - [Q61] Daniels J. *Daniels' Running Formula*. 3rd ed. Human Kinetics; 2014 (long run as a share of the weekly volume; easy pace well below 5 km race pace, threshold close to 10 km pace).
 - [Q62] Frandsen JSB, Hulme A, Parner ET, et al. How much running is too much? Identifying high-risk running sessions in a 5200-person cohort study. *Br J Sports Med* 2025 (single sessions more than 10 % longer than the longest run of the last 30 days raised the injury risk).
+- [Q63] Bosquet L, Berryman N, Dupuy O, et al. Effect of training cessation on muscular performance: a meta-analysis. *Scand J Med Sci Sports* 2013;23(3):e140–e149 (strength holds for about 3 weeks without training, losses grow after that).
+- [Q64] Mujika I, Padilla S. Detraining: loss of training-induced physiological and performance adaptations. Part I: short term insufficient training stimulus. *Sports Med* 2000;30(2):79–87 (detraining follows an insufficient stimulus of the trained system).
