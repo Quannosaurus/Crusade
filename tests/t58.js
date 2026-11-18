@@ -60,5 +60,9 @@ const sets=(k,S,c,id)=>S.blocks.reduce((a,b)=>b.warm||b.cool?a:a+b.items.reduce(
   if(sk(A).length&&ss(B)>ss(A))issue('skill sets not lower: '+ss(A)+' → '+ss(B));if(B.min>90)issue('skills hold over 90 min');rep.push('skills: long blocks '+lg(A)+'→'+lg(B)+', skill sets '+ss(A)+'→'+ss(B));}
 // 7 week preview and Today render with every hold on
 {const {k,d,w}=boot();const D=setup(k,6);D.hold={str:true,run:true,sk:true};['start','train','mehr','stand'].forEach(t=>{D.tab=t;k.render();if(!d.getElementById('app').textContent)issue('tab '+t+' empty');});const wp=k.weekPlan();if(!wp||!wp.length)issue('no week preview');}
+// A-052 (M-3): hold + Limited time cuts about a third of the visible session, not of hidden p>1 blocks
+{const {k}=boot();const D=setup(k,6);D.short=true;const c=k.ctx(k.today()),vis=(S,id)=>S.blocks.reduce((a,b)=>b.warm||b.cool||(b.p>1)?a:a+b.items.reduce((x,it)=>it.gone||it.f||it.iso||it.test||!it.k||k.curVar(it,k.LOC())<0?x:x+k.setsOf(it,b,c,id),0),0);
+  ['KA','KC'].forEach(id=>{const a=vis(k.S(id,c),id);D.hold.str=true;const b=vis(k.S(id,c),id);D.hold.str=false;const tg=Math.round(a*2/3);rep.push('hold + Limited time '+id+': visible sets '+a+' → '+b+' (target '+tg+')');
+    if(a>4&&(b<tg-2||b>tg+1))issue('hold + Limited time '+id+': '+a+' → '+b+' sets, not about ⅔ ('+tg+')');});D.short=false;}
 rep.forEach(r=>console.log(' · '+r));
 console.log('=== AUFFÄLLIGKEITEN ('+P.length+') ===');P.forEach(x=>console.log(' - '+x));

@@ -26,7 +26,16 @@ const rep={};
   ['w','Side plank dips, switch sides each round'],['s','Side plank dips, switch sides each round'],['e','Side plank dips, switch sides each round'],['e','Nordic Curls'],['b','Side-lying leg raises'],['b','Leg swings, front to back and sideways'],['w','Wrist and ankle circles']]
   .forEach(([r,n])=>{if(hit(r,n))issue('false hit '+r+': '+n);});
  [['a','Box Jumps'],['a','Standing calf raises'],['b','Cable Woodchopper'],['b','Landmine rotation'],['b','Kettlebell Swings'],['b','Lying leg raises'],['h','Frog pumps'],['h','Barbell hip thrust'],['w','Frogstand'],['w','Crow'],['w','Parallel bar dips'],['s','Dips'],
-  ['e','Dumbbell curls'],['k','Nordic Curls'],['k','Leg curl machine'],['k','Barbell back squat'],['w','Wrist prep'],['s','Overhead dumbbell extension'],['e','Clean pull-ups']].forEach(([r,n])=>{if(!hit(r,n))issue('real hit lost '+r+': '+n);});}
+  ['e','Dumbbell curls'],['k','Nordic Curls'],['k','Leg curl machine'],['k','Barbell back squat'],['w','Wrist prep'],['s','Overhead dumbbell extension'],['e','Clean pull-ups'],['h','Cable standing hip extension'],['h','Banded donkey kicks'],['h','Side plank clamshells'],['k','Pogo hops'],['b','Cable half-kneeling chop'],['b','Prone hip extension off a bed']].forEach(([r,n])=>{if(!hit(r,n))issue('real hit lost '+r+': '+n);});}
+// 0b A-052: pain doctrine table of the rotation sets (fixtures/pattern-table.js PAIN): every B/C name has a row, the app
+// filters exactly the listed regions, and no B/C form escapes a region that filters every form of its set A
+{const {k}=boot();const D=k.D();const R='wsekbah'.split(''),hits=n=>R.filter(r=>{pain(D,r);return k.painHit(n);}).join('');
+ const byKey={};Object.values(k.favCatalog()).forEach(x=>{byKey[x.it.k]=x.it;});let rows=0;
+ Object.keys(k.ROT).forEach(fam=>{const A=byKey[fam],aN=A?A.opts.map(o=>o.n):[];if(!aN.length)issue('rotation family without set A: '+fam);
+   k.ROT[fam].forEach(sp=>sp[5].map(o=>String(o).split('|')[0]).forEach(n=>{const r=TBL.PAIN.find(x=>x[0]===sp[0]&&x[1]===n);rows++;
+     if(!r){issue('pain table: no row for '+sp[0]+' '+n);return;}const h=hits(n);if(h!==r[2])issue('pain filter '+n+': app '+(h||'none')+', table '+(r[2]||'none'));
+     R.forEach(g=>{if(aN.length&&aN.every(a=>hits(a).includes(g))&&!h.includes(g))issue('pain '+g+': '+n+' escapes while every set-A form of '+fam+' is filtered');});}));});
+ console.log('rotation pain table: '+rows+' rows checked');}
 // 1 matrix: region × unit (gym and home) × lists
 const UNITS=[['KA','g'],['KB','g'],['KC','g'],['CH','g'],['SK','g'],['DL','g'],['TE','g'],['HO','h'],['HK','h']];
 const BLOCK={k:['KC'],a:['KC'],h:['KC'],s:['CH','TE'],e:['CH','TE'],w:['CH','TE']};

@@ -581,13 +581,16 @@ var REHAB={
 var PAINN={w:"Wrist",s:"Shoulder",e:"Elbow",k:"Knee",b:"Lower back",a:"Ankle",h:"Hip"};
 /* A-027 (N-2): word boundaries, so a name only hits its own region: Woodchopper is no hop, external rotation and
    march in place are no loaded back rotation/swing, Frogstand/Crow no hip opener, side plank dips no dips. */
-var PAINRX={w:/\b(?:handstands?|(?:chest|back)-to-wall|push-ups?|shoulder taps|bail|frog ?stand|wall walks?|pike|crow|planche|(?<!plank )dips|l-sit|heel pulls|victorian|wrist (?:prep|curls?|flexor)|hspu)\b|liegestütz|handgelenk|schulter-taps|aussteigen/i,
-  s:/\b(?:german hang|(?:chest|back)-to-wall|shoulder press|overhead|shoulder taps|bail|(?<!plank )dips|handstands?|wall walks?|skin the cat|dislocates|muscle-ups?|transitions?|pike|landmine press|hspu|heel pulls)\b|schulterdrücken|schulterpresse|überkopf|schulter-taps|aussteigen/i,
-  k:/\b(?:squats?|lunges?|step-ups?|pistol|leg press|box jumps?|jumping|jump rope|skipping|cossack|leg curls?|nordic|wall sit|horse stance|leg extensions?|sumo)\b/i,
-  b:/\b(?:deadlifts?|good mornings?|kettlebell swings?|back extensions?|hyperextensions?|superman|pull-through|bent-over|t-bar|woodchoppers?|rotational|landmine rotation|(?<!side-lying )leg raises|knee raises|barbell back squat|rowing machine|jefferson)\b/i,
+var PAINRX={w:/\b(?:handstands?|(?:chest|back)-to-wall|push-ups?|shoulder taps|bail|frog ?stand|wall walks?|pike|crow|planche|dips|l-sit|heel pulls|victorian|wrist (?:prep|curls?|flexor)|hspu)\b|liegestütz|handgelenk|schulter-taps|aussteigen/i,
+  s:/\b(?:german hang|(?:chest|back)-to-wall|shoulder press|overhead|shoulder taps|bail|dips|handstands?|wall walks?|skin the cat|dislocates|muscle-ups?|transitions?|pike|landmine press|hspu|heel pulls)\b|schulterdrücken|schulterpresse|überkopf|schulter-taps|aussteigen/i,
+  k:/\b(?:hops?|hopping|squats?|lunges?|step-ups?|pistol|leg press|box jumps?|jumping|jump rope|skipping|cossack|leg curls?|nordic|wall sit|horse stance|leg extensions?|sumo)\b/i,
+  b:/\b(?:deadlifts?|good mornings?|kettlebell swings?|back extensions?|hyperextensions?|superman|pull-through|bent-over|t-bar|woodchoppers?|chops?|hip extension off a bed|(?:hip|reaching) hinge|windshield wipers?|toe touches|rotational|landmine rotation|leg raises|knee raises|barbell back squat|rowing machine|jefferson)\b/i,
   a:/\b(?:jumps?|jumping|skipping|hops?|hopping|calf raises?|pistol|lunges?|step-ups?|sprints?|tibialis|cossack)\b/i,
-  h:/\b(?:hip thrusts?|glute bridges?|kickbacks?|abduction|abductor|hydrants?|side-lying leg raises|copenhagen|adductors?|cossack|split squats?|lunges?|sumo|frog(?! ?stand)|hip flexor|leg raises|horse stance|90\/90|pigeon)\b/i,
-  e:/\b(?:muscle-ups?|pull-ups?|pulldowns?|(?<!nordic |leg )curls?|triceps|chin-ups?|transitions?|false-grip|explosive|frenchie|(?<!plank )dips|french press)\b|klimmzüge|latzug|trizeps/i};
+  h:/\b(?:hip extensions?|donkey kicks?|clamshells?|hip thrusts?|glute bridges?|kickbacks?|abduction|abductor|hydrants?|side-lying leg raises|copenhagen|adductors?|cossack|split squats?|lunges?|sumo|frog(?! ?stand)|hip flexor|leg raises|horse stance|90\/90|pigeon)\b/i,
+  e:/\b(?:muscle-ups?|pull-ups?|pulldowns?|curls?|triceps|chin-ups?|transitions?|false-grip|explosive|frenchie|dips|french press)\b|klimmzüge|latzug|trizeps/i};
+/* A-052: exceptions per region instead of lookbehind (older iOS Safari has none): these names are cut before the test. */
+var PAINEX={w:/\bplank dips\b/gi,s:/\bplank dips\b/gi,e:/\bplank dips\b|\b(?:nordic|leg) curls?\b/gi,b:/\bside-lying leg raises\b/gi};
+function painRx(k,name){var n=String(name||"");if(own(PAINEX,k))n=n.replace(PAINEX[k]," ");return PAINRX[k].test(n);}
 /* A-027: the pain filter works on whole sessions too. Knee, ankle or hip: no Strength C, no leg block on upper-body days,
    no run goal day; shoulder, elbow or wrist: no Skill Trial or test (postponed); knee or ankle: kickboxing only with a hint. */
 var PAINU={k:{kc:1,leg:1,rgoal:1,kick:1},a:{kc:1,leg:1,rgoal:1,kick:1},h:{kc:1,leg:1,rgoal:1},s:{test:1},e:{test:1},w:{test:1}};
@@ -1424,7 +1427,7 @@ function tiredSets(n){return Math.min(n,Math.max(2,Math.ceil(n*2/3)));}
    variation unchanged, 3–4 reps in reserve, no tests, never under 45 min (DURMIN), warm-up and cool-down complete. The weekly
    floor legs + hinge ≥ 10 holds over the week, not on the tired day: a leg session may go down to its anchor + 1 exercise
    (≥ 4 leg sets). Sources: Bell et al. 2023; Spiering et al. 2021. */
-function tWork(s,c,id){var n=0;s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items.forEach(function(it){if(!it.k||it.f||it.iso||it.test||curVar(it,LOC())<0)return;n+=setsOf(it,b,c,id);});});return n;}
+function tWork(s,c,id){var n=0;s.blocks.forEach(function(b){if(b.warm||b.cool||(D.short&&b.p>1))return;/* A-052 (M-3): blocks hidden by Limited time do not count */b.items.forEach(function(it){if(!it.k||it.f||it.iso||it.test||curVar(it,LOC())<0)return;n+=setsOf(it,b,c,id);});});return n;}
 function tiredCut(s,c,id,est){var ch=false,lg0=legSets(s,c,id),W=tWork(s,c,id),T=Math.round(W*2/3);
   function ok(){return (D.short||est()>=DURMIN)&&!(lg0>=4&&legSets(s,c,id)<Math.min(4,lg0));}
   function live(b){return !(b.warm||b.cool||b.add||b.trial||b.rehab||(D.short&&b.p>1));}
@@ -1817,7 +1820,7 @@ function whyX(w){return String(w||"").replace(/\s*[^.]*\b(still to do|last done 
 function rpeHTML(f){return '<p class="q" id="rpeq">'+W("battle")+'</p><div class="seg" role="group" aria-labelledby="rpeq">'+[[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return '<button type="button" class="b'+(f.rpe===x[0]?" on":"")+'" data-a="rpe" data-v="'+x[0]+'" aria-pressed="'+(f.rpe===x[0])+'">'+x[1]+'</button>';}).join("")+'</div>';}
 /* P-7: a knee or ankle on the pain list: no run is suggested (every run path reads hist().kmOK). */
 function painRun(){var p=D.pain||{};return !!(p.k||p.a);}
-function painHit(name){var p=D.pain||{};return Object.keys(PAINRX).some(function(k){return p[k]&&PAINRX[k].test(name);});}
+function painHit(name){var p=D.pain||{};return Object.keys(PAINRX).some(function(k){return p[k]&&painRx(k,name);});}
 function setBoxes(id,n,inp,ph,isS,rest,last){
   var s=inp.s||[],h='';
   for(var i=0;i<n;i++) h+='<label>'+(n>1?(i+1)+'.':(isS?"Sec.":"reps"))+'<input type="number" inputmode="numeric" data-set="'+i+'" data-id="'+id+'" data-rest="'+rest+'" data-last="'+(last?1:0)+'" data-n="'+n+'" value="'+esc(s[i])+'" placeholder="'+ph+'" aria-label="Set '+(i+1)+(isS?" seconds":" reps")+'"></label>';

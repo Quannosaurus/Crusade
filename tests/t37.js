@@ -123,6 +123,11 @@ PROF.forEach(p=>{const z=hist(boot().k,p),k=z.k,D=k.D();const td=addD(START,28);
  if(errs.length)issue('UI JS errors '+errs.join('; '));}
 
 // 6 Playwright 390×844
+// A-052 (M-3): Limited time + Tired cuts about a third of the visible session (hidden p>1 blocks do not count)
+{const vis=(k,s,c,id)=>{let n=0;s.blocks.forEach(b=>{if(b.warm||b.cool||(k.D().short&&b.p>1))return;b.items.forEach(it=>{if(it.gone||k.curVar(it,k.LOC())<0||!it.k||it.f||it.iso||it.test)return;n+=k.setsOf(it,b,c,id);});});return n;};
+ [['Captain','KB'],['Partner lower','KC']].forEach(([pn,id])=>{const z=hist(boot().k,prof(pn),28),k=z.k,D=k.D();const td=addD(START,28);k.today(td);D.opt.ready=true;D.short=true;const c=k.ctx(td);
+   k.day().ready=2;const a=vis(k,k.S(id,c),c,id);k.day().ready=3;const b=vis(k,k.S(id,c),c,id);const tg=Math.round(a*2/3);
+   rep.push('Limited time + Tired '+pn+' '+id+': visible sets '+a+' → '+b+' (target '+tg+')');if(a>4&&(b<tg-2||b>tg+1))issue('Limited time + Tired '+pn+' '+id+': '+a+' → '+b+' sets, not about ⅔ ('+tg+')');D.short=false;});}
 (async()=>{let chromium;try{({chromium}=require('playwright'));}catch(e){issue('playwright missing');return done();}
  const guard=require('./netguard');const b=await chromium.launch();const errs=[];const p=await b.newPage({viewport:{width:390,height:844}});p.on('pageerror',e=>errs.push(e.message));await guard(p,errs);
  await p.goto('file://'+R+'/.build/index.html');
