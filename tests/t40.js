@@ -42,7 +42,7 @@ PROF.forEach(p=>{const {k,errs}=boot();const D=setup(k,p);
   D.never=[];if(errs.length)issue(p.n+': JS errors '+errs.join('; '));});
 // 2 UI flow: tap "Never suggest", favourite beaten, addition kept, More list brings it back, favourites page toggle
 {const x=boot();const D=setup(x.k,PROF[0]);D.tab='train';x.k.day().pick='KA';x.k.render();
- const btn=x.$$('[data-a=never]')[0];if(!btn){issue('no "Never suggest" on planned exercises');}
+ const btn=x.$$('[data-a=never]').filter(b=>Object.prototype.hasOwnProperty.call(x.k.favCatalog(),b.dataset.n))[0];/* A-055 d: warm-up items have Never too; this check needs a catalogue exercise */if(!btn){issue('no "Never suggest" on planned exercises');}
  else{const n=btn.dataset.n;btn.click();if(D.never.indexOf(n)<0)issue('tap did not exclude');
    if(x.$$('#app .ex label.n').some(l=>l.textContent.replace('★ ','')===n))issue('excluded still on the training page');
    if(!/will not be suggested again/.test(x.$('#app').textContent))issue('no confirmation after excluding');

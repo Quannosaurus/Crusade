@@ -59,6 +59,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   ["runKm","runI"].forEach(function(k){if(n[k]!=null&&n[k]!==""&&isFinite(+n[k]))b[k]=Math.max(0,Math.min(99,+n[k]));});
   if(n.opt&&typeof n.opt==="object")["ready","rest","oa"].forEach(function(k){b.opt[k]=n.opt[k]===true;});
   if(n.hold&&typeof n.hold==="object"&&!Array.isArray(n.hold))["str","run","sk"].forEach(function(k){b.hold[k]=own(n.hold,k)&&n.hold[k]===true;});
+  if(n.per==="12w"||n.per==="1y"||n.per==="all")b.per=n.per;/* A-055 b: stats period, allowed values only */
   ["easy","easyP","holdR"].forEach(function(k){if(typeof n[k]==="string"&&DS.test(n[k]))b[k]=n[k];});
   /* P-7: pause mode and the ended pauses (for streaks, plateau boost and the Skill Trial gap). */
   if(n.pause&&typeof n.pause==="object"&&DS.test(n.pause.from))b.pause={from:n.pause.from,to:typeof n.pause.to==="string"&&DS.test(n.pause.to)&&n.pause.to>=n.pause.from?n.pause.to:"",why:n.pause.why==="ill"?"ill":"pause"};
@@ -604,11 +605,30 @@ function S(id,c){
   if(adb){var ci=-1;s.blocks.forEach(function(b,i){if(b.cool&&ci<0)ci=i;});if(ci<0)s.blocks.push(adb);else s.blocks.splice(ci,0,adb);s.min=estMin(s,c,id);s.addMin=1;}
   return s;
 }
+/* A-055 d: "Never suggest" in the warm-up. Another form of the item that is not excluded comes first (avail); with none
+   left the item takes an equivalent warm-up exercise for the same joint and job (WALT, same gear rules), so the warm-up
+   stays complete, first, and on leg days still covers hips, knees and ankles. With no equivalent the item stays and
+   "Never suggest" is not offered for it (warmNv). */
+var WALT={"Rowing machine":["Marching in place with big arm swings","Light shadow boxing, moving feet"],
+  "Wrist prep":["Wrist rocks on all fours, palms and backs of the hands"],
+  "Band Pull-Aparts":["Arm circles, small to big, both directions"],
+  "Dip shrugs on parallel bars":["Scapula wall slides|w"],
+  "Active-passive hang":["Prone lat pull-downs on the floor"],
+  "Leg swings, front to back and sideways":["Standing hip circles, knee lifted"],
+  "World's greatest stretch":["Low lunge with reach to the ceiling"],
+  "Ankle rocks, knee to the wall":["Ankle circles and slow calf raises"],
+  "Bodyweight squats":["Slow reverse lunges"]};
+function warmRep(it,loc,used){var L=own(WALT,it.opts[0].n)?WALT[it.opts[0].n]:[];
+  for(var i=0;i<L.length;i++){var o=O(L[i]);if(can(o,loc)&&!isNever(o.n)&&!painHit(o.n)&&!(used&&used[o.n]))return L[i];}return null;}
+function warmNever(b,loc,used){b.items=b.items.map(function(it){if(it.fx!=null||it.gone)return it;var v=curVar(it,loc);if(v<0||!isNever(it.opts[v].n))return it;
+  var r=warmRep(it,loc,used);if(!r)return it;var n={};Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=[O(r)];n.fx=0;delete n.def;n.nx=it.opts[v].n;used[n.opts[0].n]=1;return n;});}
+function warmNv(it,v,loc){if(it.nx||it.fx!=null)return false;var a=avail(it,loc);
+  for(var i=0;i<a.length;i++)if(a[i]!==v&&!isNever(it.opts[a[i]].n))return true;return !!warmRep(it,loc,null);}
 /* Never suggest: an item whose every fitting variant is excluded gets an equivalent from the same muscle group (kitGroup):
    first an exercise from the catalogue (its own key and variant, so progression is shared), else the Field kit pool. */
 function neverApply(s){if(!nev().length)return;var loc=LOC(),used={},cat=null;
   s.blocks.forEach(function(b){b.items.forEach(function(it){var v=curVar(it,loc);if(v>=0)used[it.opts[v].n]=1;});});
-  s.blocks.forEach(function(b){if(b.warm||b.cool)return;b.items=b.items.map(function(it){if(it.f||it.test||it.iso||it.add)return it;var v=curVar(it,loc);if(v<0||!isNever(it.opts[v].n))return it;
+  s.blocks.forEach(function(b){if(b.warm){warmNever(b,loc,used);return;}if(b.cool)return;b.items=b.items.map(function(it){if(it.f||it.test||it.iso||it.add)return it;var v=curVar(it,loc);if(v<0||!isNever(it.opts[v].n))return it;
     if(it.gx){it.nh=1;return it;}
     var g=kitGroup(it),n={},pick=null;cat=cat||favCatalog();
     Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||painHit(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
@@ -1809,7 +1829,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
     h+=setBoxes(id,n,inp,g.r,isS,rest,last)+'</div>'; }
   var isFav=(D.fav||[]).indexOf(o.n)>=0,pl=!it.f&&!it.test&&!it.iso;
   var mn=(pl&&!it.kx?'<button type="button" class="lnk fv'+(isFav?" on":"")+'" data-a="fav" data-n="'+esc(o.n)+'" aria-pressed="'+isFav+'">'+(isFav?"★ Favourite":"☆ Favourite")+'</button>':'')+
-    (it.add?'<button type="button" class="lnk" data-a="addrm" data-id="'+id+'">✕ Remove</button>':'<button type="button" class="lnk" data-a="skip" data-id="'+id+'">Skip</button>'+(pl&&!(b&&(b.rehab||b.warm||b.cool))?'<button type="button" class="lnk nv" data-a="never" data-n="'+esc(o.n)+'">⊘ Never suggest</button>':''));
+    (it.add?'<button type="button" class="lnk" data-a="addrm" data-id="'+id+'">✕ Remove</button>':'<button type="button" class="lnk" data-a="skip" data-id="'+id+'">Skip</button>'+((pl&&!(b&&(b.rehab||b.warm||b.cool)))||(b&&b.warm&&warmNv(it,v,loc))?'<button type="button" class="lnk nv" data-a="never" data-n="'+esc(o.n)+'">⊘ Never suggest</button>':''));
   h+='<div class="acts">'+(it.f?holdBtn(tg):'')+(a.length>1?'<button type="button" class="lnk" data-a="chg" data-id="'+id+'">⇄ Swap</button>':'')+'<details class="mnu"><summary aria-label="More actions for '+esc(o.n)+'">⋯</summary><div class="mnub">'+mn+'</div></details></div>';
   return h+'</div></div>';
 }
@@ -2709,7 +2729,8 @@ function rankHTML(){var xp=xpTotal(),rk=rankOf(xp),nx=RANKS[rk+1],st=streaks(),h
   return h;}
 /* A-046: period for calendar, load and kilometres: 12 weeks (weekly), 1 year or everything (monthly values) */
 var MONN=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
-function perNow(){return D._per==="1y"||D._per==="all"?D._per:"12w";}
+/* A-055 b: the period choice is kept in D.per, so it travels with the backup (cleanImport: 12w, 1y, all; missing = 12w). */
+function perNow(){return D.per==="1y"||D.per==="all"?D.per:"12w";}
 function perName(){return {"12w":"12 weeks","1y":"1 year",all:"everything"}[perNow()];}
 function monLab(m){return MONN[+m.slice(5,7)-1]+" "+m.slice(2,4);}
 function perHTML(){return '<div class="chips per" role="group" aria-label="Period">'+[["12w","12 weeks"],["1y","1 year"],["all","All"]].map(function(x){var on=perNow()===x[0];return '<button type="button" class="b sm'+(on?" on":"")+'" data-a="per" data-v="'+x[0]+'" aria-pressed="'+on+'">'+x[1]+'</button>';}).join("")+'</div>';}
@@ -2787,13 +2808,22 @@ function editForm(l){var ids=Object.keys(NAMES).filter(function(k){return k!=="M
     '<label for="e_rpe">How hard</label><select id="e_rpe">'+[[0,"–"],[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return '<option value="'+x[0]+'"'+((l.rpe||0)===x[0]?" selected":"")+'>'+x[1]+'</option>';}).join("")+'</select>'+
     (isRun(l)?'<label for="e_km">Distance km</label><input type="number" id="e_km" step="0.01" inputmode="decimal" value="'+esc(l.km||"")+'"><label for="e_min">Time min</label><input type="number" id="e_min" step="0.1" inputmode="decimal" value="'+esc(l.min||"")+'">':'')+
     '</div><label class="lab" for="e_note">Note</label><textarea id="e_note">'+esc(l.note||"")+'</textarea><div class="row"><button type="button" class="b" data-a="edit" data-i="'+D.logs.indexOf(l)+'">Cancel</button><button type="button" class="b red" data-a="editsave">Save changes</button></div><p class="muted">Date format YYYY-MM-DD.</p></div>';}
+/* A-055 a: the hard-run tile follows the week preview (the same source as Today). It shows the hard run as current only
+   when the next 7 days plan one (RI, or RH outside long-run mode); otherwise the next run the plan actually holds,
+   and with no run planned the hard run is marked as not unlocked yet. */
+function hardTile(){var P=weekPlan(),hr=null,nx=null;
+  P.forEach(function(e,i){if(e.done||e.pause)return;if(!hr&&(e.id==="RI"||(e.id==="RH"&&!longMode())))hr=e;if(!nx&&e.run)nx={e:e,i:i};});
+  var hv=fmtKg(D.runKm)+' km · '+D.runI+' × 3 min';
+  if(hr)return '<div class="t hrt"><b>'+hv+'</b>Hard run · intervals</div>';
+  if(nx){var rp=runPlan(nx.e.id,nx.e.d);return '<div class="t hrt nx"><b>'+fmtKg(rp.km)+' km · '+esc(NAMES[nx.e.id])+'</b>Next run · '+(nx.i===0?"today":WDN[pd(nx.e.d).getDay()])+'</div>';}
+  return '<div class="t hrt lk"><b>'+hv+'</b>Next hard run · once unlocked</div>';}
 function vStand(){
   var p=D.profile,c=ctx(TODAY),L=lvl(),F2=[["pull","Clean pull-ups"],["dips","Dips"],["push","Push-ups"],["expl","Explosive chest-to-bar pull-ups"],["negmu","Negative Muscle-Ups (5 s)"],["mu","Clean muscle-ups"],["hang","Active Hang (s)"],["tuck","Tuck L-Sit (s)"],["lsit","Straight-leg L-sit (s)"],["hollow","Hollow Body (s)"],["hsw","Chest-to-wall handstand (s)"],["hsf","Freestanding handstand (s)"],["pike","Pike Push-Ups"]];
   var mu=L===0?"Basic: build pull-ups and dips":(p.mu>=3?"Advanced: build muscle-ups":(p.mu>=1?"Consolidate the muscle-up":(p.pull>=10&&p.expl>=5?"Free muscle-up attempts":"Build explosive strength")));
   var hq=isoP(p.hsw),lq=isoP(p[lsKey()]);
   var tv=D._tvEdit;
   var h='<div class="card">'+(D.logs.length?'<div class="sec"><h2>Your status</h2></div>'+rankHTML()+yearHTML():'<div class="sec"><h2>Your status</h2></div>')+goalLadder();
-  h+='<div class="sec"><h3>Where you stand</h3>'+'<div class="tally"><div class="t"><b>'+LVN[lvUp()]+'</b>Upper body</div><div class="t"><b>'+LVN[lvLo()]+'</b>Lower body</div><div class="t"><b>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+'</b>Focus</div>'+(D.skills.mu?'<div class="t"><b>'+mu+'</b>Muscle-Up</div>':'')+(D.skills.hs?'<div class="t"><b>Stage '+hsStage()+' · '+hq.n+' × '+hq.h+' s</b>Handstand</div>':'')+(D.skills.ls?'<div class="t"><b>'+(lsKey()==="lsit"?"L-Sit ":"Tuck ")+lq.n+' × '+lq.h+' s</b>L-Sit</div>':'')+(D.skills.fl?'<div class="t"><b>'+FLN[D.profile.flSt||0]+'</b>Front Lever</div>':'')+(D.skills.pl?'<div class="t"><b>'+PLN[D.profile.plSt||0]+'</b>Planche</div>':'')+'<div class="t"><b>Week '+c.week+(dlWk(TODAY,c)?' · Deload':'')+'</b>Block '+c.blk+' · '+accWord(c.acc)+'</div>'+(D.focus!=="str"?'<div class="t"><b>'+fmtKg(D.runKm)+' km · '+D.runI+' × 3 min</b>Hard run · intervals</div>':'')+''+'</div>'+lvHint()+'</div>';
+  h+='<div class="sec"><h3>Where you stand</h3>'+'<div class="tally"><div class="t"><b>'+LVN[lvUp()]+'</b>Upper body</div><div class="t"><b>'+LVN[lvLo()]+'</b>Lower body</div><div class="t"><b>'+FOC.filter(function(x){return x[0]===D.focus;})[0][1]+'</b>Focus</div>'+(D.skills.mu?'<div class="t"><b>'+mu+'</b>Muscle-Up</div>':'')+(D.skills.hs?'<div class="t"><b>Stage '+hsStage()+' · '+hq.n+' × '+hq.h+' s</b>Handstand</div>':'')+(D.skills.ls?'<div class="t"><b>'+(lsKey()==="lsit"?"L-Sit ":"Tuck ")+lq.n+' × '+lq.h+' s</b>L-Sit</div>':'')+(D.skills.fl?'<div class="t"><b>'+FLN[D.profile.flSt||0]+'</b>Front Lever</div>':'')+(D.skills.pl?'<div class="t"><b>'+PLN[D.profile.plSt||0]+'</b>Planche</div>':'')+'<div class="t"><b>Week '+c.week+(dlWk(TODAY,c)?' · Deload':'')+'</b>Block '+c.blk+' · '+accWord(c.acc)+'</div>'+(D.focus!=="str"?hardTile():'')+''+'</div>'+lvHint()+'</div>';
   if(D.logs.length<3)h+='<div class="sec"><p class="muted empty">Your charts, balance and honours fill in after your first 3 entries'+(D.logs.length?' ('+D.logs.length+' so far)':'')+'. Log a session and come back.</p></div>';
   else h+=weekTally()+statsHTML()+latestHTML();
   h+='<div class="sec"><div class="tvh"><h3>Test values</h3><button type="button" class="b sm" data-a="tvedit" aria-expanded="'+!!tv+'">'+(tv?'Done':'Edit')+'</button></div>'+
@@ -3069,7 +3099,7 @@ document.addEventListener("click",function(e){
   else if(a==="saverun"){saveRun();return;}
   else if(a==="saveoa"){saveOther();return;}
   else if(a==="oaname"){dy.fin.oan=t.dataset.v;}
-  else if(a==="per"){var pv=t.dataset.v;D._per=pv==="1y"||pv==="all"?pv:"12w";}
+  else if(a==="per"){var pv=t.dataset.v;D.per=pv==="1y"||pv==="all"?pv:"12w";save();}
   else if(a==="chmore"){D._chn=(D._chn||0)+50;}
   else if(a==="holdm"){var hk=t.dataset.k;if(["str","run","sk"].indexOf(hk)>=0){D.hold=D.hold||{str:false,run:false,sk:false};D.hold[hk]=!(D.hold[hk]===true);if(hk==="run"){if(D.hold.run)delete D.holdR;else D.holdR=TODAY;}WK.key="";}}
   else if(a==="opt"){var ok=t.dataset.k;if(["rest","oa","ready"].indexOf(ok)>=0){D.opt=D.opt||{};D.opt[ok]=!D.opt[ok];WK.key="";}}
@@ -3227,5 +3257,5 @@ document.getElementById("tstop").addEventListener("click",function(){stop();cloc
 render();
 /* A-054 (N-12): the test hook only outside the live site (file:, localhost, *.test) */
 var TESTENV=(function(){try{var h=location.hostname||"";return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||/\.test$/.test(h);}catch(e){return false;}})();
-if(TESTENV)window.__kz={transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+if(TESTENV)window.__kz={hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
