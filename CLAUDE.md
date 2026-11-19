@@ -48,7 +48,9 @@ The app speaks its own language. **No terms from other training programmes, temp
 (e.g. programme names, protocols named after researchers, device/brand names). Name everything yourself: English, in the
 crusade tone, but clear; explain the rhythm where needed (e.g. "20 s work, 10 s rest"). Generic exercise names
 (Squat, Hip Thrust, Muscle-up, Plank, Nordic curl …) stay. No letter labels in display names (A-062: no "Strength A/B/C", "Home strength A/B", no catch-all group like "From your plan"); a renamed display name always brings a migration of stored titles. Every future order follows this rule; `t24 naming-doctrine`
-holds the list of banned terms (`BAN`) and scans sources and build.
+holds the list of banned terms (`BAN`) and scans every text file of `src/` and the build. A-065: the old letter names
+(Strength A/B/C, Home strength A/B, Str A/B/C, Gym A/B, From your plan) are banned too; the one matcher that must know them,
+`migTitles`, writes them in character classes (`Strength [ABC]`, `Home strength(?: [AB])?`), so the ban has no allowlist.
 Internal IDs and data keys never change, only the display name:
 
 | Internal ID / key | Display name |

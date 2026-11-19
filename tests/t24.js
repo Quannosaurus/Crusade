@@ -13,14 +13,27 @@ const BAN=['venus','tabata','garmin','body battery',
   // brands, devices and apps
   'strava','zwift','fitbit','polar','suunto','coros','whoop','oura','peloton','apple watch','apple health','google fit','nike','adidas','asics','hoka','under armour','reebok','rogue','technogym','concept2','theragun','myfitnesspal','runna',
   // programme authors and coaches
-  'wendler','rippetoe','galloway','higdon','pfitzinger','daniels','lydiard','athlean','nippard','israetel','renaissance periodization','thenx','barstarzz','calisthenicmovement','sommer'];
+  'wendler','rippetoe','galloway','higdon','pfitzinger','daniels','lydiard','athlean','nippard','israetel','renaissance periodization','thenx','barstarzz','calisthenicmovement','sommer',
+  // A-065: old session names with letters and the old catch-all picker group (A-062 renamed them; no letter labels anywhere)
+  'strength a','strength b','strength c','home strength a','home strength b','str a','str b','str c','from your plan','gym a','gym b'];
+// A-065: the only place that still has to recognise the old titles is migTitles(). Its pattern is written with character classes
+// ("Strength [ABC]", "Home strength(?: [AB])?"), so no banned literal appears there either and there is no allowlist: the ban
+// holds for every byte of src/ and the build. t71 (b) proves that migTitles still recognises every old form.
+const OLDN=['strength a','strength b','strength c','home strength a','home strength b','str a','str b','str c','from your plan','gym a','gym b'];
 const BANRX=BAN.map(b=>[b,new RegExp('(^|[^a-z0-9])'+b.replace(/[.*+?^${}()|[\]\\\/]/g,'\\$&')+'(?![a-z0-9])','i')]);
 // The encrypted love notes are ciphertext and not display text: cut them out before scanning.
 let enc='';try{enc=JSON.stringify(JSON.parse(fs.readFileSync(R('src/love.enc.json'),'utf8')));}catch(e){}
-const files=['src/app.js','src/head.html','src/pics.js','index.html','app.js','app.css','sw.js','manifest.webmanifest','.build/index.html'];
+// A-065: every text file under src/ (themes, help texts, pictograms, icons as SVG …); binaries (fonts, PNG) are skipped.
+const srcFiles=(function walk(d){return fs.readdirSync(R(d),{withFileTypes:true}).flatMap(e=>{const p=d+'/'+e.name;return e.isDirectory()?walk(p):(/\.(png|woff2?|ico|jpe?g|gif|webp)$/i.test(e.name)?[]:[p]);});})('src').sort();
+['src/app.js','src/head.html','src/pics.js'].forEach(f=>{if(srcFiles.indexOf(f)<0)issue('src scan misses '+f);});
+const files=srcFiles.concat(['index.html','app.js','app.css','sw.js','manifest.webmanifest','.build/index.html']);
 files.forEach(f=>{if(!fs.existsSync(R(f))){issue('missing '+f);return;}let t=fs.readFileSync(R(f),'utf8');if(enc)t=t.split(enc).join('');
   BANRX.forEach(([b,rx])=>{const x=rx.exec(t);if(x){const m=x.index;issue(f+': forbidden term "'+b+'" near "'+t.slice(Math.max(0,m-30),m+30).replace(/\s+/g,' ')+'"');}});});
 if(BAN.length<60)issue('ban list too short: '+BAN.length);
+OLDN.forEach(n=>{if(BAN.indexOf(n)<0)issue('A-065: old name missing in BAN: '+n);});
+// A-065: migTitles keeps its recognition pattern without banned literals (character classes), and stays the only old-name matcher
+{const src=fs.readFileSync(R('src/app.js'),'utf8'),i=src.indexOf('function migTitles');if(i<0)issue('migTitles missing');
+  else{const body=src.slice(i,src.indexOf('\nfunction ',i+10));if(!/Strength \[ABC\]/.test(body)||!/Home strength\(\?: \[AB\]\)\?/.test(body))issue('migTitles pattern changed – keep it in character classes');}}
 // CLAUDE.md carries the naming glossary and the rule
 const cm=fs.readFileSync(R('CLAUDE.md'),'utf8');if(!/## Naming/.test(cm))issue('CLAUDE.md: Naming glossary missing');
 // Old backup: abs sessions, CH sessions, templar theme. Must load unchanged and keep counting.
