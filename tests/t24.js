@@ -41,7 +41,7 @@ if(D.logs.filter(l=>l.id==='CH').length!==3)issue('backup: CH entries lost');
 let z=b.k.honours().find(h=>h.k==='zealot');
 if(!z)issue('honour zealot (ID) missing');else{if(!z.got)issue('honour zealot not earned with 26 abs sessions');if(z.n!=='Zealot of the Blitz')issue('templar zealot name: '+z.n);}
 b.k.today('2026-11-16');D.tab='stand';b.k.render();/* A-029 U10: stats live on Status */let t=b.d.getElementById('app').textContent;
-if(!/Core Blitz/.test(t))issue('stats: Core Blitz row missing');if(!/Strength C \/ Skill Trial/.test(t))issue('stats: Skill Trial row missing');
+if(!/Core Blitz/.test(t))issue('stats: Core Blitz row missing');if(!/Legs &amp; full body \/ Skill Trial|Legs & full body \/ Skill Trial/.test(t))issue('stats: Skill Trial row missing');
 if(!/Zealot of the Blitz/.test(t))issue('honours: themed name not shown');
 D.tab='start';b.k.render();t=b.d.getElementById('app').textContent;if(/Venus|Tabata/i.test(t))issue('start page: old term');
 if(b.k.NAMES.CH!=='Skill Trial')issue('NAMES.CH: '+b.k.NAMES.CH);

@@ -52,7 +52,7 @@ function shown(x){x.k.D().tab='start';x.k.render();return !!x.$('#bkrem');}
 // 3 round trip: realistic state incl. day progress
 {const x=boot(null,{kz_love_k:'2:c2FsdA:a2V5LXNlY3JldA'});const D=base(x.k);
  Object.assign(D.profile,{pull:9,dips:14,push:22});D.emph='glutes';D.fav=['Cable kickbacks','Hip thrust machine'];D.loc='g';D.theme='sisters';D.kickDays=[2];D.pain={w:true,s:false,e:false};D.abs=2;
- D.logs=[{d:'2026-11-09',id:'KC',t:'Strength C',lg:1,rpe:7,note:'good <b>',abs:1,sum:'Squat 60 kg × 8',sk:['hs'],ex:{'c_sq#0':[8,60]},tv:{},pr:1},
+ D.logs=[{d:'2026-11-09',id:'KC',t:'Legs & full body',lg:1,rpe:7,note:'good <b>',abs:1,sum:'Squat 60 kg × 8',sk:['hs'],ex:{'c_sq#0':[8,60]},tv:{},pr:1},
    {d:'2026-11-10',id:'RE',t:'Easy run',rpe:4,note:'',km:6.2,min:38.5,pr:0},{d:'2026-11-11',id:'KI',t:'Kickboxing',rpe:8,note:''},{d:'2026-11-12',id:'MO',t:'Morning routine',m:['hips']}];
  D.ex={'c_sq#0':{r:8,w:60,d:'2026-11-09',hold:false,n:'Barbell back squat',stall:0},'g_ht#1':{r:10,w:40,d:'2026-11-09',hold:false,n:'Hip thrust machine'}};
  D.pr={'c_sq#0':{sc:60008,r:8,w:60,d:'2026-11-09',n:'Barbell back squat'},'run':{sc:1,r:0,w:0,d:'2026-11-10',n:'5 km',p:6.1,km:6.2}};D.vr={a_row:2};

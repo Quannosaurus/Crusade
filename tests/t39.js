@@ -32,7 +32,7 @@ const keys=Object.keys(D.vr);
 Object.assign(D.vr,{'g|f:Rowing machine':1,"h|f:World's greatest stretch":0,'h|hsw':2,'m|mx_c_sq':3,'g|fav_g_ht':1,'h|f:Transition on a Smith machine, low bar, feet on floor':1,'g|f:45° back extension':2});
 D.ex={'c_sq#0':{r:8,w:60,d:'2026-11-09',hold:false,n:'Barbell back squat'},'mx_c_sq#2':{r:12,w:0,d:'2026-11-10',hold:false,n:'Bodyweight squat'},'fav_g_ht#1':{r:10,w:40,d:'2026-11-09',hold:false,n:'Hip thrust machine'}};
 D.pr={'c_sq#0':{sc:60008,r:8,w:60,d:'2026-11-09',n:'Barbell back squat'},'iso:hsw':{sc:30,r:30,w:0,d:'2026-11-09',n:'Wall hold (s)'},'test:pull':{sc:10,r:10,w:0,d:'2026-11-08',n:'Pull-ups'},'run:pace5':{p:6.1,d:'2026-11-10'},'run:long':{km:12,d:'2026-11-11'}};
-D.kitD={c_sq:'2026-11-10',b_pu:'2026-11-10'};D.logs=[{d:'2026-11-10',id:'KB',t:'Strength B',rpe:6,ex:{'mx_c_sq#2':[12,0],'iso:hsw':[30,0]},tv:{pull:10}}];
+D.kitD={c_sq:'2026-11-10',b_pu:'2026-11-10'};D.logs=[{d:'2026-11-10',id:'KB',t:'Volume day',rpe:6,ex:{'mx_c_sq#2':[12,0],'iso:hsw':[30,0]},tv:{pull:10}}];
 const before={KA:shownVars(x.k,'KA','g'),HO:shownVars(x.k,'HO','h')};x.k.day().kit=true;before.KB=shownVars(x.k,'KB','m');x.k.day().kit=false;
 // other composite-key fields: same keys (values of run records are normalised by cleanImport, so keys and core values)
 const rest=E=>canon({ex:Object.keys(E.ex).sort(),pr:Object.keys(E.pr).sort().map(q=>q+':'+(E.pr[q].sc||0)+':'+(E.pr[q].km||0)+':'+(E.pr[q].p||0)),kitD:E.kitD,fav:E.fav,logs:E.logs});
