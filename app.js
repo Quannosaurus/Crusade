@@ -268,13 +268,17 @@ function kitReq(o){var n=o.n.toLowerCase(),r=o.req.replace(/w/g,"");
 function kitCan(o){var r=kitReq(o),k=D.kit||[];for(var i=0;i<r.length;i++){var ch=r[i];
     if(ch==="g")return false;if(ch==="p"){if(k.indexOf("s")<0)return false;continue;}if(ch==="x"){if(k.indexOf("k")<0&&k.indexOf("r")<0)return false;continue;}
     if(k.indexOf(ch)<0)return false;}return true;}
-function kitGroup(it){var p=it.k?itPat(it,curVar(it,D.loc==="h"?"h":"g")):"";if(!p&&it.k){var k0=patKey(it.k);p=own(PATK,k0)&&!/^(u_cur)$/.test(k0)?PATK[k0]:"";}if(p)return PGRP[p];return kitName(it);}
+/* A-064: adductor forms are their own group "hipad" (by the variant shown, or the catalogue variant v); everything else as before. */
+var ADDRX=/adduct|copenhagen/i;
+function kitGroup(it,v){var q=v!=null?v:(it.opts?curVar(it,D.loc==="h"?"h":"g"):-1);if(q>=0&&it.opts[q]&&ADDRX.test(it.opts[q].n))return "hipad";
+  var p=it.k?itPat(it,curVar(it,D.loc==="h"?"h":"g")):"";if(!p&&it.k){var k0=patKey(it.k);p=own(PATK,k0)&&!/^(u_cur)$/.test(k0)?PATK[k0]:"";}if(p)return PGRP[p];return kitName(it);}
 /* the name rules for pattern-free items (A-062: also the picker groups them) */
 function kitName(it){var n=it.opts.map(function(o){return o.n;}).join(" ").toLowerCase();
   if(/wrist|reverse curl/.test(n))return "fore";
   if(/face pull|external rotation|y-raise|y-t-w|reverse butterfly|reverse fl|lateral raise|serratus|scapula|pull-apart|t-raise/.test(n))return "shoulder";
   if(/calf|tibialis/.test(n))return "calf";
-  if(/abduct|band walk|hydrant|side-lying leg raise|copenhagen|adductor/.test(n))return "hipab";
+  if(/copenhagen|adductor/.test(n))return "hipad";
+  if(/abduct|band walk|hydrant|side-lying leg raise/.test(n))return "hipab";
   if(/hyperext|back extension|good morning|deadlift|leg curl|nordic|hip thrust|bridge|swing|kickback|frog pump|pull-through|hip extension/.test(n))return "hip";
   if(/squat|lunge|leg press|step-up|pistol|box jump|jumping/.test(n))return "knee";
   if(/woodchop|pallof|rotation|plank|leg raise|knee raise|dead bug|ab wheel|rollout|walkout|leg lower|dragon|neck|superman|bird dog/.test(n))return "core";
@@ -289,6 +293,7 @@ var KPOOL={pull:["Pull-ups|k","Ring rows|r","Band rows|b","One-arm dumbbell row|
   hip:["Nordic curls, feet under the sofa|s","Single-leg Romanian deadlift|d|w","Single-leg hip thrust, shoulders on a chair|s","Single-leg glute bridge","Glute bridge"],
   calf:["Single-leg calf raises on a step|s","Single-leg calf raises"],
   hipab:["Banded hip abduction|b","Side-lying leg raises","Fire hydrants"],
+  hipad:["Copenhagen Plank|s","Short-lever adductor plank|s","Side-lying adductor raises"],
   core:["Hanging knee raises|k","Band Pallof press|b","Side plank with reach","Lying leg raises","Dead bug"],
   shoulder:["Band face pulls|b","Side-lying dumbbell external rotation|d|w","Prone Y-T-W","Side-lying external rotation, no weight"],
   fore:["Band wrist curls|b","Dumbbell wrist curls|d|w","Towel wringing, both directions","Knuckle plank holds"],
@@ -746,7 +751,7 @@ function neverApply(s){if(!nev().length)return;var loc=LOC(),used={},cat=null;
   s.blocks.forEach(function(b){if(b.warm){warmNever(b,loc,used);return;}if(b.cool)return;b.items=b.items.map(function(it){if(it.f||it.test||it.iso||it.add)return it;var v=curVar(it,loc);if(v<0||!isNever(it.opts[v].n))return it;
     if(it.gx){it.nh=1;return it;}
     var g=kitGroup(it),n={},pick=null;cat=cat||favCatalog();
-    Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||painHit(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
+    Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||painHit(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it,x.v)!==g)return false;pick=x;return true;});
     if(pick){Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});n.fx=pick.v;}
     else{Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=KPOOL[g].map(O);if(n.k)n.k="mx_"+String(n.k).replace(/^(mx_)+/,"");var a=avail(n,loc).filter(function(i){return !used[n.opts[i].n]&&!isNever(n.opts[i].n)&&!painHit(n.opts[i].n);});if(!a.length)return it;a.sort(function(x,y){return (poolPat(g,n.opts[x].n)===GRPP[g]?0:1)-(poolPat(g,n.opts[y].n)===GRPP[g]?0:1);});n.fx=a[0];n.kx=g;}
     delete n.def;delete n.lv;n.nx=it.opts[v].n;if(it.anc)n.anc=it.anc;used[n.opts[n.fx].n]=1;return n;});});}
@@ -762,7 +767,7 @@ function painApply(s){if(!painAny())return;var loc=LOC(),used={},cat=null;
     b.items=b.items.map(function(it){var v=curVar(it,loc);if(v<0||!painHit(it.opts[v].n))return it;
       if(b.warm||b.cool||it.f||it.iso||it.test||it.add)return null;
       var g=kitGroup(it),n={},pick=null;cat=cat||favCatalog();
-      Object.keys(cat).some(function(nm){var x=cat[nm];if(painHit(nm)||isNever(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
+      Object.keys(cat).some(function(nm){var x=cat[nm];if(painHit(nm)||isNever(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it,x.v)!==g)return false;pick=x;return true;});
       if(pick){Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});n.fx=pick.v;}
       else{Object.keys(it).forEach(function(k){n[k]=it[k];});n.opts=KPOOL[g].map(O);if(n.k)n.k="mx_"+String(n.k).replace(/^(mx_)+/,"");var a=avail(n,loc).filter(function(i){return !used[n.opts[i].n]&&!painHit(n.opts[i].n)&&!isNever(n.opts[i].n);});if(!a.length)return null;
         a.sort(function(x,y){return (poolPat(g,n.opts[x].n)===GRPP[g]?0:1)-(poolPat(g,n.opts[y].n)===GRPP[g]?0:1);});n.fx=a[0];n.kx=g;}
@@ -784,7 +789,7 @@ function addPain(it,cat){if(!painAny())return it;var loc=LOC(),v=it.fx;if(v==nul
   var a=[];it.opts.forEach(function(o,i){if(can(o,loc)&&!painHit(o.n))a.push(i);});
   if(a.length){it.fx=a[0];it.px=old;return it;}
   var g=kitGroup(it),pick=null,used={};(D.days[TODAY].add||[]).forEach(function(n){used[n]=1;});
-  Object.keys(cat).some(function(nm){var x=cat[nm];if(painHit(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it)!==g)return false;pick=x;return true;});
+  Object.keys(cat).some(function(nm){var x=cat[nm];if(painHit(nm)||used[nm]||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it,x.v)!==g)return false;pick=x;return true;});
   if(pick){var n={};Object.keys(pick.it).forEach(function(k){n[k]=pick.it[k];});delete n.def;delete n.lv;delete n.anc;n.fx=pick.v;n.add=1;n.sets=n.sets||"3";n.px=old;return n;}
   it.gone=1;it.pgone=old;return it;}
 /* Search list for "+ Add exercise": every catalogue exercise that fits today's location or kit. */
@@ -848,7 +853,7 @@ function design0(s,id,c){s.ab=absFor(id);
     /* P-5: an extra round from the set band only fits inside 90 min, so it is the first thing to give way. */
     function(){var ch=false;s.blocks.forEach(function(b){if(b.rounds&&!b.vb0&&b.tr==null&&volBias(b)>0&&!legLow(b)){var r1=rounds(b,c,id);b.vb0=1;if(rounds(b,c,id)<r1)ch=true;}});return ch;},
     function(){var ch=false;s.blocks.forEach(function(b){if(b.acc&&b.rounds&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
-    function(){var b=blk(function(x){return x.acc&&!x.accm&&/Kickboxing|Power/.test(x.name);});if(!b)return false;var k=b.items.filter(function(it){return it.k==="kp_cop"||/Neck/.test(it.opts[0].n);});if(!k.length||k.length===b.items.length)return false;b.items=k;b.accm=1;b.info="Compact · tendons, adductors and neck · 60 s rest";return true;},
+    function(){var b=blk(function(x){return x.acc&&!x.accm&&/Kickboxing|Power/.test(x.name);});if(!b)return false;var k=b.items.filter(function(it){return patKey(it.k||"")==="kp_cop"||/Neck/.test(it.opts[0].n);});/* A-064: also the Field kit copy mx_kp_cop */if(!k.length||k.length===b.items.length)return false;b.items=k;b.accm=1;b.info="Compact · tendons, adductors and neck · 60 s rest";return true;},
     function(){var b=blk(function(x){return x.acc&&!x.accm&&x.name==="Forearms & elbows";});if(!b)return false;b.items=b.items.slice(0,1);b.accm=1;b.info=D.skills.mu?"Compact · protects the tendons for false grip and muscle-ups":"Compact · protects elbows and wrists for pulling";return true;},
     function(){var ch=false;s.blocks.forEach(function(b){if(b.p>1&&b.rounds&&!b.lowb&&!b.legs&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
     function(){var ch=false;s.blocks.forEach(function(b){if(b.rounds&&!b.lowb&&!b.legs&&b.rounds[1]>b.rounds[0]){b.rounds=[b.rounds[0],b.rounds[0]];ch=true;}});return ch;},
@@ -1397,20 +1402,22 @@ var VSEST={KA:{pull:8,push:8,core:3},KB:{pull:8,push:8,core:3},KC:{legs:9,hinge:
 /* A-026: hip abduction (abductor machine, banded abduction, side-lying leg raises, fire hydrants: key g_ab) is leg
    accessory and counts for no pattern, like the running prehab abduction c_gm; it is no hip hinge. Logs written since
    carry vm = VMAP; for older logs logVs() reads their sets by the new mapping (the logs themselves stay as they are). */
-/* A-027 mapping (doctrine): hip extension = hinge (x_be bench, a_hyp); knee flexion (leg curl, Nordic curl) = legs;
+/* A-027 mapping (doctrine): hip extension = hinge (x_be bench, a_hyp); knee flexion (leg curl, Nordic curl) = legs (A-064: hinge);
    by variant: b_jump (swing hinge, jumps legs), x_be (home variants superman holds and bird dog core), u_cur (only chin-up
    negatives pull), u_tri push. Calf raises (c_calf) and hip abduction (g_ab) are leg accessory without a pattern and do not
    count for legs + hinge ≥ 10 or the 6 leg sets of a leg session. The Core Blitz counts for core (rounds / 2 sets), fixed
    items with real load by their pattern (it.fp, it.fv sets: one set per started 10 reps of the dose).
    Logs written since carry vm = VMAP (3 since A-035); older logs are read through logVs() by this mapping, the logs stay unchanged. */
 /* A-035: triceps work of Volume day (KB) (b2_tr) counts as pressing too (VMAP 3); logs before carry it under no pattern. */
-var VMAP=3,V1P={c_calf:"legs",x_be:"core",u_tri:"",u_cur:"",b_jump:"hinge",c_rdl:"hinge",h_ham:"hinge",b2_tr:""};
+var VMAP=4,V1P={c_calf:"legs",x_be:"core",u_tri:"",u_cur:"",b_jump:"hinge",c_rdl:"hinge",h_ham:"hinge",b2_tr:""};
 var PATK=(function(){var m={},t={pull:"a2_com a2_row a2_wpu a_expu a_lat a_row b2_lr b2_sw b_er b_fr b_neg c_pu ch_row fl_pull gl_pull h_pull mu_neg mu_pro u_row r_ur1 r_ur2",
   push:"a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b2_tr b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh u_tri",
   legs:"c_sq c_lu g_bss g_su gl_sq h_sq r_lu1 r_lu2 r_bs1 r_bs2 r_su1 r_su2",hinge:"c_rdl g_ht g_kb g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl x_be r_rd1 r_rd2 r_kb1 r_kb2 r_fp1 r_fp2 r_45a r_45b",
   core:"x_aw x_db x_lr x_pal x_sp kp_pal kp_rot r_db1 r_db2 r_pa1 r_pa2 r_sp1 r_sp2 r_lr1 r_lr2 r_aw1 r_aw2"};Object.keys(t).forEach(function(p){t[p].split(" ").forEach(function(k){m[k]=p;});});return m;})();
-/* Variant names that move to another pattern than their item key (knee flexion, jumps, home back-extension forms, chin-up negatives). */
-var PATN={"Leg curl machine":"legs","Nordic Curls":"legs","Nordic curls, feet under the sofa":"legs","Box Jumps":"legs","Jumping Squats":"legs","Kettlebell Swings":"hinge",
+/* Variant names that move to another pattern than their item key (knee flexion, jumps, home back-extension forms, chin-up negatives).
+   A-064 (doctrine of the Captain): knee flexion trains the hamstrings and counts to the posterior chain (hinge) [Q68][Q69];
+   adductor forms are their own pattern-free group (kitGroup "hipad") [Q70], also the adductor form of the side-plank rotation. */
+var PATN={"Leg curl machine":"hinge","Nordic Curls":"hinge","Nordic curls, feet under the sofa":"hinge","Short-lever adductor plank":"","Box Jumps":"legs","Jumping Squats":"legs","Kettlebell Swings":"hinge",
   "Superman holds":"core","Bird dog":"core","Back extension bench":"hinge","Chin-up negatives":"pull"};
 var EMPAT={lower:["legs","hinge"],glutes:["hinge"],upper:["pull","push"],core:["core"]};
 var GPAT={pull:"pull",dips:"push",push:"push",sq:"legs",ht:"hinge",rdl:"hinge",mu:"pull",fl:"pull",hs:"push",pl:"push",ls:"core"};
@@ -1430,9 +1437,12 @@ function vsZero(){return {pull:0,push:0,legs:0,hinge:0,core:0};}
    moved from the old pattern to the new one; a done Core Blitz adds its core sets. Field kit copies ("mx_") keep their key. */
 var KEYV=null;function keyVar(k,i){if(!KEYV){KEYV={c_rdl:["Romanian deadlift","Leg curl machine","Nordic Curls"]};var cat=favCatalog();Object.keys(cat).forEach(function(n){var it=cat[n].it;if(it.k&&!KEYV[it.k])KEYV[it.k]=it.opts.map(function(o){return o.n;});});}var a=KEYV[k];return a&&a[i]||"";}
 function oldPat(k,vm){if(k==="g_ab")return vm<1?"hinge":"";if(own(V1P,k))return V1P[k];return own(PATK,k)?PATK[k]:"";}
+/* A-064: patterns of variants before VMAP 4 (knee flexion counted for legs, the adductor plank for core). */
+var V4N={"Leg curl machine":"legs","Nordic Curls":"legs","Nordic curls, feet under the sofa":"legs","Short-lever adductor plank":"core"};
+function oldPat4(q,b){var h=q.split("#");if(/^mx_/.test(h[0]))return b;var n=keyVar(patKey(h[0]),+h[1]);return own(V4N,n)?V4N[n]:b;}
 function newPat(q){var h=q.split("#"),k=patKey(h[0]),n=/^mx_/.test(h[0])?"":keyVar(k,+h[1]);return own(PATN,n)?PATN[n]:(own(PATK,k)?PATK[k]:"");}
 function logVs(l){var v=l.vs;if(!v)return VSEST[l.id]||null;var vm=l.vm||0;if(vm>=VMAP)return v;var o={pull:v.pull||0,push:v.push||0,legs:v.legs||0,hinge:v.hinge||0,core:v.core||0},ch=false;
-  if(l.ex)Object.keys(l.ex).forEach(function(q){var k=patKey(q.split("#")[0]),b=/^mx_/.test(q)?(own(PATK,k)?PATK[k]:""):newPat(q),a=vm>=2?(k==="b2_tr"?"":b):oldPat(k,vm);if(a===b)return;ch=true;if(a)o[a]=Math.max(0,o[a]-3);if(b)o[b]=Math.min(60,o[b]+3);});
+  if(l.ex)Object.keys(l.ex).forEach(function(q){var k=patKey(q.split("#")[0]),b=/^mx_/.test(q)?(own(PATK,k)?PATK[k]:""):newPat(q),a=vm>=2?(k==="b2_tr"&&vm<3?"":oldPat4(q,b)):oldPat(k,vm);if(a===b)return;ch=true;if(a)o[a]=Math.max(0,o[a]-3);if(b)o[b]=Math.min(60,o[b]+3);});
   if(l.abs&&vm<2){o.core=Math.min(60,o.core+({CH:1,TE:1,DL:1}[l.id]?2:4));ch=true;}
   return ch?o:v;}
 function volSets(s,c,id){var t=vsZero();s.blocks.forEach(function(b){if(D.short&&b.p>1)return;b.items.forEach(function(it){var q=curVar(it,LOC()),p=itPat(it,q),fp=fPat(it);if(q<0||painHit(it.opts[q].n))return;if(fp){t[fp]+=it.fv||1;return;}if(!p)return;t[p]+=setsOf(it,b,c,id);});});
@@ -1649,7 +1659,7 @@ function planDedup(s){var loc=LOC(),L=[],cat=null,n0=0;
     a.sort(function(p,q){return Math.abs(p-v)-Math.abs(q-v)||p-q;});
     for(var i=0;i<a.length;i++){var t=cp(it);t.fx=a[i];if(!clash(t,it)){delete t.def;t.ddv=it.opts[v].n;swapIn(x,t);return;}}
     if(it.k&&!it.f&&!it.iso){var g=kitGroup(it);cat=cat||favCatalog();var pick=null;
-      Object.keys(cat).some(function(nm){var c0=cat[nm];if(isNever(nm)||painHit(nm)||c0.it.f||c0.it.iso||c0.it.test||!can(c0.it.opts[c0.v],loc)||kitGroup(c0.it)!==g)return false;
+      Object.keys(cat).some(function(nm){var c0=cat[nm];if(isNever(nm)||painHit(nm)||c0.it.f||c0.it.iso||c0.it.test||!can(c0.it.opts[c0.v],loc)||kitGroup(c0.it,c0.v)!==g)return false;
         var t=cp(c0.it);t.fx=c0.v;if(clash(t,it))return false;pick=t;return true;});
       if(pick){delete pick.def;delete pick.lv;["ts","nx","px","pxk"].forEach(function(f){if(it[f]!=null)pick[f]=it[f];});pick.ddx=it.opts[v].n;swapIn(x,pick);return;}}
     drop(x,"ddg");}
@@ -3122,9 +3132,9 @@ function vStand(){
 /* A-062: the picker by movement and muscle, from the pattern data (itPat of the catalogue variant, PGRP), pattern-free
    exercises by kitGroup: arms/shoulder/forearms → Arms & shoulders, hip abduction → Glutes & hamstrings. Every exercise in
    exactly one group, empty groups hidden, no rest group, A–Z inside a group. */
-var FAVG=[["pull","Pull"],["push","Push"],["arms","Arms & shoulders"],["knee","Squat & lunge"],["hip","Glutes & hamstrings"],["calf","Calves"],["core","Core"]],
+var FAVG=[["pull","Pull"],["push","Push"],["arms","Arms & shoulders"],["knee","Squat & lunge"],["hip","Glutes & hamstrings"],["hipad","Adductors"],["calf","Calves"],["core","Core"]],
   FAVF={fore:"arms",shoulder:"arms",hipab:"hip"};
-function favGrp(e){var p=itPat(e.it,e.v),g=p?PGRP[p]:kitName(e.it);return own(FAVF,g)?FAVF[g]:g;}
+function favGrp(e){if(ADDRX.test(e.it.opts[e.v].n))return "hipad";var p=itPat(e.it,e.v),g=p?PGRP[p]:kitName(e.it);return own(FAVF,g)?FAVF[g]:g;}
 function favGroups(){var cat=favCatalog(),by={};Object.keys(cat).forEach(function(n){var g=favGrp(cat[n]);(by[g]=by[g]||[]).push(cat[n].it.opts[cat[n].v]);});
   return FAVG.filter(function(g){return by[g[0]]&&by[g[0]].length;}).map(function(g){return [g[1],by[g[0]].sort(function(a,b){return a.n.toLowerCase().localeCompare(b.n.toLowerCase(),"en");})];});}
 function favRow(o){var on=(D.fav||[]).indexOf(o.n)>=0,q=(D._favq||"").toLowerCase(),hid=q&&o.n.toLowerCase().indexOf(q)<0,nv=isNever(o.n);

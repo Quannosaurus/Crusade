@@ -335,6 +335,18 @@ Umsetzung (A-046):
   Kappen der anderen Muster gedrückt, ohne belegten Nutzen. Volumen- und Basis-Block messen weiter gegen die volle
   Untergrenze. `bandLo(p, acc)`; t42 prüft das Band je Akzent-Block.
 
+## Muster nach Muskelfunktion (A-064, Doktrin des Captains)
+
+- Kniebeugung (Leg curl, Nordic curls) trainiert die Beinbeuger und zählt zur hinteren Kette (`hinge`, Picker „Glutes &
+  hamstrings“): 12 Wochen Leg-curl-Training vergrößerten das Volumen der Beinbeuger (sitzend +14 %, liegend +9 %) [Q68];
+  Nordic curls (Kniebeugung) und Hüftstreckung vergrößerten den Semitendinosus gleich stark gegenüber der Kontrollgruppe
+  [Q69] – beide Bewegungen speisen dieselbe Muskelgruppe, also dasselbe Satzband.
+- Adduktoren sind eine eigene Muskelgruppe (`kitGroup` „hipad“, Picker „Adductors“), musterfrei: im MRT als eigene Gruppe
+  neben Kniestreckern, Beinbeugern und Gesäß gemessen, mit eigener Antwort (tiefe Kniebeuge: Adduktoren +, Beinbeuger
+  unverändert) [Q70]. Ersatz (Field kit, Never, Schmerz) bleibt in der Gruppe.
+- Zahlen und Grenzen bleiben (Satzband, 7-Tage-Spitze, Bein-Reserve, legs + hinge ≥ 10). Ältere Einträge liest `logVs()`
+  nach der neuen Zuordnung (`VMAP` 4); die Einträge selbst bleiben unverändert.
+
 ## Datenmodell und Migration im Überblick
 
 | Baustein | Neue Felder | Migration | Alte Backups |
@@ -394,3 +406,6 @@ Prüfsteine, die erst ein späterer Auftrag erfüllt, meldet t49 als „offen“
 - [Q65] Wyatt HE, Vicinanza D, Newell KM, Irwin G, Williams GKR. Bidirectional causal control in the dynamics of handstand balance. *Sci Rep* 2021;11(1). doi:10.1038/s41598-020-79730-z (less skilled gymnasts held the handstand 4–6 s, more skilled over 10 s).
 - [Q66] Kerwin DG, Trewartha G. Strategies for maintaining a handstand in the anterior-posterior direction. *Med Sci Sports Exerc* 2001;33(7):1182–1188 (superior balances rely on wrist and shoulder torques with little hip involvement).
 - [Q67] Rohleder J, Vogt T. Efficacy of wrist strategy coaching on handstand performances in novices. *Science of Gymnastics Journal* 2019;11(2):209–222 (explicit wrist-strategy practice raised balance times in less skilled novices).
+- [Q68] Maeo S, Huang M, Wu Y, et al. Greater hamstrings muscle hypertrophy but similar damage protection after training at long versus short muscle lengths. *Med Sci Sports Exerc* 2021;53(4):825–837 (12 weeks of leg curl training raised hamstrings volume, seated +14 %, prone +9 %; single-joint knee flexion as a hamstrings exercise).
+- [Q69] Bourne MN, Duhig SJ, Timmins RG, et al. Impact of the Nordic hamstring and hip extension exercises on hamstring architecture and morphology: implications for injury prevention. *Br J Sports Med* 2017;51(5):469–477 (both the Nordic hamstring exercise and hip extension raised semitendinosus volume against the control group, not different from each other; hip extension more for the biceps femoris long head).
+- [Q70] Kubo K, Ikebukuro T, Yata H. Effects of squat training with different depths on lower limb muscle volumes. *Eur J Appl Physiol* 2019;119(9):1933–1942 (MRI volumes of knee extensors, hamstrings, adductors and gluteus maximus measured as separate groups; full squats raised adductor and gluteus volume more than half squats, hamstrings unchanged).

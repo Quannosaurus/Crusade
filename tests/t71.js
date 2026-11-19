@@ -6,7 +6,7 @@
 // b) A fixture backup with old titles imports and the Chronicle shows only the new names; a second import and a reload
 //    change nothing; level, records, XP and stats are the same before (old titles in memory) and after the migration;
 //    other fields, free titles (OA) and notes stay untouched.
-// c) Picker: the groups are exactly Pull · Push · Arms & shoulders · Squat & lunge · Glutes & hamstrings · Calves · Core in
+// c) Picker: the groups are exactly Pull · Push · Arms & shoulders · Squat & lunge · Glutes & hamstrings · Adductors (A-064) · Calves · Core in
 //    this order (empty ones left out), the entries add up to the size of favCatalog, every exercise appears exactly once,
 //    one sample per group lies in the right group, the rendered picker shows the same groups and counts.
 // Mutations: an old name back in NAMES → (a) red; the migration switched off → (b) red; an exercise dropped from the grouping
@@ -102,9 +102,10 @@ function unitB(html){const bad=[];
   return bad;}
 
 // ---------- c) picker by movement and muscle ----------
-const ORDER=['Pull','Push','Arms & shoulders','Squat & lunge','Glutes & hamstrings','Calves','Core'];
+const ORDER=['Pull','Push','Arms & shoulders','Squat & lunge','Glutes & hamstrings','Adductors','Calves','Core'];
 const SAMPLE={'Pull-ups':'Pull','Dips':'Push','Dumbbell lateral raises':'Arms & shoulders','Dumbbell curls':'Arms & shoulders','Barbell back squat':'Squat & lunge',
-  'Barbell hip thrust':'Glutes & hamstrings','Banded hip abduction':'Glutes & hamstrings','Standing calf raises':'Calves','Side plank':'Core'};
+  'Barbell hip thrust':'Glutes & hamstrings','Banded hip abduction':'Glutes & hamstrings','Standing calf raises':'Calves','Side plank':'Core',
+  /* A-064: knee flexion under Glutes & hamstrings, adductors in their own group */'Leg curl machine':'Glutes & hamstrings','Nordic Curls':'Glutes & hamstrings','Copenhagen Plank':'Adductors','Adductor machine':'Adductors'};
 function unitC(html){const bad=[];const z=boot(html);z.k.today(TD);const D=z.k.D();Object.assign(D,{onb:true,seenFav:true,fav:[],never:[]});
   const cat=z.k.favCatalog(),n=Object.keys(cat).length,G=z.k.favGroups(),names=G.map(g=>g[0]);
   let i=-1;names.forEach(g=>{const j=ORDER.indexOf(g);if(j<0)bad.push('c: unknown group "'+g+'"');else if(j<=i)bad.push('c: group order '+names.join(' · '));i=Math.max(i,j);});

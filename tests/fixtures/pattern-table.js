@@ -2,7 +2,7 @@
 // (independent of PATK, itPat and kitGroup in the app). Used by t45 pattern-table and t28 minimal-kit.
 // Row: [key, variant ('*' = every variant without its own row), pattern ('' = counts for no pattern), group].
 // Groups are the Field kit / Never replacement groups: pull, push, knee (legs), hip (hinge), core for patterns;
-// pattern-free items keep their muscle group (arms, shoulder, fore, calf, hipab).
+// pattern-free items keep their muscle group (arms, shoulder, fore, calf, hipab; A-064: adductors hipad).
 const ROWS=[
   // pull
   ...'a2_com a2_row a2_wpu a_expu a_lat a_row b2_lr b2_sw b_er b_fr b_neg c_pu ch_row fl_pull gl_pull h_pull mu_neg mu_pro u_row'.split(' ').map(k=>[k,'*','pull','pull']),
@@ -12,8 +12,9 @@ const ROWS=[
   ...'c_sq c_lu g_bss g_su gl_sq h_sq'.split(' ').map(k=>[k,'*','legs','knee']),
   // hinge = hip extension (x_be bench and a_hyp included)
   ...'g_ht g_kb g_rdl g_fp g_45 b_gl a_hyp gl_ht gl_rdl'.split(' ').map(k=>[k,'*','hinge','hip']),
-  ['c_rdl','Romanian deadlift','hinge','hip'],['c_rdl','Leg curl machine','legs','hip'],['c_rdl','Nordic Curls','legs','hip'],
-  ['h_ham','Single-leg glute bridge','hinge','hip'],['h_ham','Romanian deadlift','hinge','hip'],['h_ham','Nordic curls, feet under the sofa','legs','hip'],
+  // A-064 (doctrine of the Captain): knee flexion trains the hamstrings and counts to the posterior chain (hinge, group hip)
+  ['c_rdl','Romanian deadlift','hinge','hip'],['c_rdl','Leg curl machine','hinge','hip'],['c_rdl','Nordic Curls','hinge','hip'],
+  ['h_ham','Single-leg glute bridge','hinge','hip'],['h_ham','Romanian deadlift','hinge','hip'],['h_ham','Nordic curls, feet under the sofa','hinge','hip'],
   ['b_jump','Kettlebell Swings','hinge','hip'],['b_jump','Box Jumps','legs','hip'],['b_jump','Jumping Squats','legs','hip'],
   ['x_be','Back extension bench','hinge','hip'],['x_be','Superman holds','core','hip'],['x_be','Bird dog','core','hip'],
   // A-043 rotation sets: legs, hinge, pull, core, pattern-free calf and abduction work
@@ -21,13 +22,14 @@ const ROWS=[
   ...'r_rd1 r_rd2 r_kb1 r_kb2 r_fp1 r_fp2 r_45a r_45b'.split(' ').map(k=>[k,'*','hinge','hip']),
   ...'r_ur1 r_ur2'.split(' ').map(k=>[k,'*','pull','pull']),
   ...'r_db1 r_db2 r_pa1 r_pa2 r_sp1 r_sp2 r_lr1 r_lr2 r_aw1 r_aw2'.split(' ').map(k=>[k,'*','core','core']),
+  ['r_sp2','Short-lever adductor plank','','core'],  // A-064: an adductor form counts for no pattern (its own group by variant, see ADDF)
   ['r_ca1','*','','calf'],['r_ca2','*','','calf'],['r_gm1','*','','hipab'],['r_gm2','*','','hipab'],
   // core
   ...'x_aw x_db x_lr x_pal x_sp kp_pal kp_rot'.split(' ').map(k=>[k,'*','core','core']),
   // variant-dependent arms: only chin-up negatives pull
   ['u_cur','EZ-bar curls','','arms'],['u_cur','Dumbbell curls','','arms'],['u_cur','Band curls','','arms'],['u_cur','Chin-up negatives','pull','arms'],
   // pattern-free accessory (leg accessory: calf raises and abduction never count for legs)
-  ['c_calf','*','','calf'],['c_tib','*','','calf'],['g_ab','*','','hipab'],['c_gm','*','','hipab'],['kp_cop','*','','hipab'],
+  ['c_calf','*','','calf'],['c_tib','*','','calf'],['g_ab','*','','hipab'],['c_gm','*','','hipab'],['kp_cop','*','','hipad'],
   ['b2_cu','*','','arms'],['fa_rc','*','','fore'],['fa_wc','*','','fore'],
   ...'c_rf sh_er sh_fp sh_sa sh_y u_lat u_rd h_fp'.split(' ').map(k=>[k,'*','','shoulder']),
   ['fl_h','*','','pull'],['km_front','*','','core'],['km_horse','*','','core'],['km_side','*','','core'],['s_hang','*','','pull'],['pl_h','*','','push'],['hk_pl','*','','push']];
@@ -132,8 +134,11 @@ const PAIN=[
   ["r_ur2","Single-arm band row",""],
   ["r_ur2","Table rows, feet elevated",""],
 ];
+// A-064: every knee-flexion form (pattern hinge, never legs) and every adductor form (group hipad, no pattern), by name.
+const KNEEF=['Leg curl machine','Nordic Curls','Nordic curls, feet under the sofa'];
+const ADDF=['Copenhagen Plank','Adductor machine','Short-lever adductor plank','Side-lying adductor raises'];
 const pk=k=>String(k||'').replace(/^(mx_|fav_)+/,'');
 function row(key,name){const k=pk(key);return ROWS.find(r=>r[0]===k&&r[1]===name)||ROWS.find(r=>r[0]===k&&r[1]==='*')||null;}
 function pattern(key,name){const r=row(key,name);return r?r[2]:undefined;}
 function group(key,name,home){const k=pk(key);if(home&&HOME_GROUP[k])return HOME_GROUP[k];const r=ROWS.find(x=>x[0]===k);return r?r[3]:undefined;}
-module.exports={ROWS,FIXED,BLITZ,HOME_GROUP,PAIN,row,pattern,group,pk};
+module.exports={ROWS,FIXED,BLITZ,HOME_GROUP,PAIN,KNEEF,ADDF,row,pattern,group,pk};

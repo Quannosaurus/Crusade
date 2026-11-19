@@ -34,12 +34,12 @@ D.loc='g';
 // 3 leg keys: legs + hinge only (calf raises and abduction out), derived
 TBL.ROWS.forEach(r=>{const leg=TBL.ROWS.some(x=>x[0]===r[0]&&(x[1]==='*'||x===TBL.ROWS.find(y=>y[0]===r[0]))&&(x[2]==='legs'||x[2]==='hinge'));if(!!k.LEGK.test(r[0])!==leg)issue('LEGK '+r[0]+': '+k.LEGK.test(r[0])+' (doctrine '+leg+')');});
 ['c_calf','g_ab','mx_g_ab','c_gm'].forEach(q=>{if(k.LEGK.test(q))issue(q+' still a leg key');});
-// legSets / volSets: calf raises and abduction never count, knee flexion counts for legs
+// legSets / volSets: calf raises and abduction never count, knee flexion counts for hinge (A-064)
 {const find=key=>Object.values(items).find(it=>it.k===key);const mk=(arr)=>({blocks:[{name:'x',p:1,rest:60,items:arr.map(([key,v])=>{const it=Object.assign({},find(key));it.fx=v;it.ts=3;return it;})}]});
  const c=k.ctx(TD);let s=mk([['c_calf',0],['g_ab',0],['c_sq',0]]);if(k.legSets(s,c,'KC')!==3)issue('legSets counts calf raises/abduction: '+k.legSets(s,c,'KC'));
  let v=k.volSets(s,c,'KC');if(v.legs!==3||v.hinge!==0)issue('volSets calf/abduction: '+JSON.stringify(v));
  s=mk([['c_rdl',2],['c_rdl',0],['b_jump',1],['b_jump',0],['u_tri',0],['u_cur',3],['u_cur',0]]);v=k.volSets(s,c,'KC');
- if(v.legs!==6||v.hinge!==6||v.push!==3||v.pull!==3)issue('volSets variant mapping: '+JSON.stringify(v)+' (legs 6, hinge 6, push 3, pull 3)');
+ if(v.legs!==3||v.hinge!==9||v.push!==3||v.pull!==3)issue('volSets variant mapping: '+JSON.stringify(v)+' (legs 3, hinge 9, push 3, pull 3)');
  if(k.legSets(s,c,'KC')!==12)issue('legSets with knee flexion: '+k.legSets(s,c,'KC'));
  D.loc='h';const xb=Object.assign({},find('x_be'));xb.ts=3;s={blocks:[{name:'x',p:1,rest:60,items:[xb]}]};const vh=k.volSets(s,c,'HO');if(vh.core!==3||vh.hinge!==0)issue('x_be at home (superman/bird dog) not core: '+JSON.stringify(vh));D.loc='g';
  // 4 Core Blitz counts for core (rounds / 2 sets)
@@ -50,22 +50,24 @@ TBL.ROWS.forEach(r=>{const leg=TBL.ROWS.some(x=>x[0]===r[0]&&(x[1]==='*'||x===TB
    if(row){seen[row[0]]=1;if(vv[row[2]]<1||(row[3]!=null&&vv[row[2]]!==row[3]))issue('fixed item with load '+row[0]+' ('+it.opts[0].n+'): '+JSON.stringify(vv));}
    else if(sum)issue('fixed item without load counts: '+b.name+' / '+it.opts[0].n+' '+JSON.stringify(vv));});}));
  ['Muscle-Up EMOM','Muscle-Up-Skill','Block 2','Block 3','Block 4'].forEach(n=>{if(!seen[n])issue('fixed item with load not found in any session: '+n);});
- // 6 replacements count under their own pattern: a Field kit replacement of a hinge item that lands on Nordic curls counts legs
+ // 6 replacements count under their own pattern: a Field kit replacement of a hinge item that lands on Nordic curls counts hinge (A-064)
  const mx={k:'mx_g_ht',kx:'hip',opts:[{n:'Nordic curls, feet under the sofa',req:'s',w:false},{n:'Glute bridge',req:'',w:false}],fx:0,ts:3,lo:8,hi:15,unit:'reps'};
- if(k.itPat(mx,0)!=='legs'||k.itPat(mx,1)!=='hinge')issue('pool replacement not under its own pattern: '+k.itPat(mx,0)+'/'+k.itPat(mx,1));}
+ if(k.itPat(mx,0)!=='hinge'||k.itPat(mx,1)!=='hinge')issue('pool replacement not under its own pattern: '+k.itPat(mx,0)+'/'+k.itPat(mx,1));}
 // 7 Field kit / Never replacement group follows the pattern (never by name for pattern items)
 {D.loc='g';D.kit=[];k.day().kit=true;const s=k.S('KA',k.ctx(TD));s.blocks.forEach(b=>b.items.forEach(it=>{if(!it.kx||!it.k)return;const orig=TBL.group(it.k,'',false);if(orig!==undefined&&it.kx!==orig)issue('Field kit replacement group '+it.k+': '+it.kx+' (doctrine '+orig+')');}));k.day().kit=false;}
 // 8 old logs read by the new mapping, unchanged
 {const old={d:'2026-11-14',id:'KC',t:'KC',rpe:6,vm:1,abs:1,vs:{pull:6,push:3,legs:9,hinge:9,core:3},ex:{'c_calf#0':[15,40],'c_rdl#2':[6,0],'b_jump#1':[10,0],'x_be#0':[12,10],'u_tri#0':[12,15],'u_cur#3':[5,0],'c_sq#0':[8,60]}};
  const v0={d:'2026-11-13',id:'KB',t:'KB',rpe:6,vs:{pull:4,push:4,legs:3,hinge:9,core:0},ex:{'g_ab#0':[15,30]}};
  const neu={d:'2026-11-12',id:'KB',t:'KB',rpe:6,vm:2,vs:{pull:5,push:5,legs:0,hinge:0,core:4},ex:{'c_calf#0':[15,40],'b2_tr#0':[12,20]}};
- D.logs=[{d:'2026-10-01',id:'KA',t:'KA',rpe:6,vs:{pull:0,push:0,legs:0,hinge:0,core:0}},neu,v0,old];const snap=JSON.stringify(D.logs);
- const t=k.vs7(TD);const want={pull:5+4+6+3,push:5+3+4+3+3,legs:0+3+(9-3+3+3),hinge:0+(9-3)+(9-3-3+3),core:4+0+(3-3+4)};
+ D.logs=[{d:'2026-10-01',id:'KA',t:'KA',rpe:6,vs:{pull:0,push:0,legs:0,hinge:0,core:0}},neu,v0,old];let snap=JSON.stringify(D.logs);
+ /* A-064: a vm 3 log moves its knee-flexion sets legs → hinge and the adductor plank core → none */
+ const v3={d:'2026-11-11',id:'KC',t:'KC',rpe:6,vm:3,vs:{pull:0,push:0,legs:9,hinge:3,core:3},ex:{'c_rdl#1':[10,40],'r_sp2#2':[30,0],'c_sq#0':[8,60]}};D.logs.splice(1,0,v3);snap=JSON.stringify(D.logs);
+ const t=k.vs7(TD);const want={pull:5+4+6+3,push:5+3+4+3+3,legs:0+3+(9-3+3)+(9-3),hinge:0+(9-3)+(9-3+3)+(3+3),core:4+0+(3-3+4)+(3-3)};
  Object.keys(want).forEach(q=>{if(t[q]!==want[q])issue('old logs by the new mapping: '+q+' '+t[q]+' (expected '+want[q]+')');});
  if(JSON.stringify(D.logs)!==snap)issue('old logs were changed');
- // a log written today carries vm 3 (A-035: b2_tr counts as push, vm 2 logs get its sets on push)
+ // a log written today carries vm 4 (A-035: b2_tr counts as push, vm 2 logs get its sets on push; A-064: knee flexion hinge)
  D.logs=[];const dy=k.day();dy.pick='KC';dy.fin={rpe:6};const c=k.ctx(TD),s=k.S('KC',c);s.blocks.forEach((b,bi)=>b.items.forEach((it,ii)=>{if(k.curVar(it,'g')>=0)dy.done['KC-'+bi+'-'+ii]=true;}));dy.done['abs-T']=!!s.ab;k.saveTrain();
- const l=D.logs[D.logs.length-1];if(!l||l.vm!==3)issue('new log without vm 3');else{const pv=k.volSets(s,c,'KC');if(s.ab&&l.vs.core<Math.round(s.ab.rounds/2))issue('logged Core Blitz not in l.vs.core');}}
+ const l=D.logs[D.logs.length-1];if(!l||l.vm!==4)issue('new log without vm 4');else{const pv=k.volSets(s,c,'KC');if(s.ab&&l.vs.core<Math.round(s.ab.rounds/2))issue('logged Core Blitz not in l.vs.core');}}
 // A-043: every exercise of the rotation sets is in the catalogue, has a doctrine row and was checked above (pattern and group)
 {const keys=Object.keys(k.ROT).flatMap(f=>k.ROT[f].map(x=>x[0]));keys.forEach(q=>{if(!Object.values(items).some(it=>it.k===q))issue('rotation exercise '+q+' not checked (not in the catalogue)');if(!TBL.ROWS.some(r=>r[0]===q))issue('rotation exercise '+q+' without a doctrine row');});
   console.log('rotation exercises checked: '+keys.filter(q=>Object.values(items).some(it=>it.k===q)).length+' of '+keys.length);}
