@@ -236,4 +236,20 @@ Internal IDs and data keys never change, only the display name:
   - **Log:** `saveTrain` writes `tg:1` on phone 2 (`s.tg`) and on phone 1 for the shared unit (`day().tgs`); a together
     entry takes `lg` from the leg/hinge sets actually logged (≥ 6). It counts like any session of its id. Chronicle shows the
     mark "Together" (`.tgm`). `cleanImport` keeps `tg` (only 1); older versions drop the field (whitelist). `t72`.
+- **Own workout (A-066):** Chronicle button "+ Log own workout" (`owBtn`, every theme, no Extra) opens tab `own`
+  (`vOwn`, draft `D._ow` = `owNew()`: `{d,nm,ex:[{n,s,w}],min,rpe,note,pick,err,at}`, read from the DOM by `owRead()` on
+  every action and on `change` of `data-ow` fields; actions `owopen/owpick/owshut/owx/owset/owsetrm/owrm/owrpe/owsave/owcancel`
+  in `owAct`). Day = today or a past day (`dOK`, never > TODAY), optional name ≤ 40 (else `NAMES.OW` "Own workout"),
+  catalogue exercises only (`favCatalog`, picker `owPick` = `favGroups` plus "★ Favourites", search through the `addq`
+  handler), each exercise once (a second add jumps to its row, `o.at`), ≤ 12 exercises, ≤ 12 sets, kg field where `wOn`;
+  rows start from the newest stored value (`owRow`: `D.ex[..].s`, else the weakest set, and `w`). Duration (default
+  `MINEST.OW` 60, like Other activity), RPE, note ≤ 300; save needs one set. `owSave()` writes log `{id:"OW",t,d,min,vs,vm,
+  lg (legs + hinge sets ≥ 6),rpe,note,sum,sk:[],ex,exs,pr}`; OW is in `STR` and `HARD` (strength yesterday/today, set band
+  `vs7`, 7-day peaks, pause rule via `l.ex`, cycle weeks, load), `XPB.OW` 40, `WKS`/`WKSYM` "Own" ⚔. Progression into the
+  same stores as `saveTrain` (`D.ex` per `<key>#<v>`, `D.pr`, `PATP` profile re-rating, lever/planche stage), but clean
+  sets only raise (more weight, or more reps at the same weight; else the stored value stays, no stall) and a past entry
+  never overwrites a newer stored value (`D.ex[..].d` > entry date). A past entry sorts in (`addLog`) and resets the history
+  caches. Edit/delete like any entry; the edit form offers OW only for OW entries and keeps the own title of an OW entry while
+  the session stays. Old builds keep OW entries (any two-letter id passes `cleanImport`). "Other activity" unchanged.
+  `t74`.
 - **Test hook:** `window.__kz` exposes internals for tests – only outside the live site (`TESTENV`: `file:`, localhost, `*.test`).
