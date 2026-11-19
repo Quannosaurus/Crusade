@@ -201,4 +201,39 @@ Internal IDs and data keys never change, only the display name:
   unchanged. Sources [Q68][Q69][Q70] in `docs/longterm-concept.md`. Doctrine lists `KNEEF`/`ADDF` in the pattern-table
   fixture; `t73`. The compact "Kickboxing power" form keeps the adductor slot by `patKey` (also its Field kit copy
   `mx_kp_cop`; before, only the gym key was kept and the kit day lost the adductor work).
+- **Train together (A-063):** Extra `D.opt.tg` (off by default, More → Extras "Train together", `cleanImport` opt key `tg`).
+  On: Today shows `tgHTML()` under the training card – "Share as together code · <unit>" (`data-a="tgshare"`, the recommended or
+  picked unit of `TGIDL` KA/KB/KC/HO/CH/SK) and "Join partner's session" (`tgjoin`); UI state lives in `TGU` (outside `D`, so
+  reading a code never changes `kz_app_v3`), actions in `tgAct()` (`tgcopy` clipboard, `tgsend` navigator.share when present,
+  `tgread`, `tgstart`, `tgx`, `tgend` "Back to my plan").
+  - **Code format:** `"CTB"` + Crockford Base32 payload + check symbol (Crockford mod 37, `TGCK` incl. `*~$=U`); shown in groups
+    of 4 (`tgShow`). Payload bits (`tgMake`): format version 3 (`TGV`) · catalogue check 12 (`tgHash` over the sorted
+    dictionaries) · day 11 (days since `TGD0` 2025-01-01, read as the nearest such date) · unit 3 · day choice 2 (g/h/m) ·
+    Core Blitz 1 · warm-up count 4 · cool-down count 3 · cool-down kind 3 · main blocks 4 · per main block its block form
+    (index into the block forms) + item count 3 (≤ 7, longer blocks split) · then the items as indices into the warm-up,
+    cool-down and main dictionaries. No doses, no personal data. A 60–90 min session gives about 55–66 signs.
+  - **Dictionaries (`tgReg`)**: built once per page load in a sandbox (`D` swapped for `fresh()` states, `holdSave`, `WK.sim`,
+    always restored): `favCatalog`, `S0`+`postBlocks` of every unit over skills (none, all, partial sets), emphases,
+    gym/home, 7 profile tiers (level, handstand stages of `hsStage`, lever/planche stages, dead-hang trial), goals,
+    skill-session versions, plus `COOLS`, `WARM`/`LEGWARM`/`WALT` and the Field kit pool (`x:<group>#<i>`, template from
+    `REPK`). Identities (`tgKey`): `k:<patKey>#<name>`, `f:<name>`, `i:<iso>#<name>`, `t:<test>#<name>`, `x:<group>#<i>`.
+    Block forms (`tgBT`) = rounds|rest|ser|skill|role (m main / s secondary / x other, as `accMain`/`accSide` see it),
+    stamped in `S()` right after `rotApply` (`b.tgb`), before filters, accent and design.
+  - **Reading (`tgParse`)**: strict – length ≤ `TGMAX` 160, prefix, alphabet, check symbol, version and catalogue check
+    ("Update the app on both phones"), counts and indices in range, zero padding; every failure is a message, nothing changes.
+    Input tolerant to case, spaces, dashes, O/0 and I/L/1. All code content reaches HTML only through `esc()`.
+  - **Phone 2 (`tgS`)**: `day().tg` (from Start; `cleanDays` → `tgClean`) makes `S(id)` return the partner's session outside
+    `WK.sim` (`trainId` keeps its unit). Each slot takes phone 2's own template of that unit when the exercise stands in its
+    plan (`S0`+`postBlocks`+`rotApply`), else the dictionary's; A's variant via `it.fx` when it fits phone 2's day choice,
+    pain filter and Never. Then Field kit (`kitApply`), the replacement step (`tgRep`: no fitting variant, pain, a skill not
+    switched on – `tgLock` – or a skill block, `b.tgsk`): work with a movement pattern gets a catalogue form of the same
+    `kitGroup` (else the Field kit pool), never one `sesHas` finds, hint "Instead of … (partner's plan)" (`it.tgx`);
+    holds, tests, drills without a pattern and warm-up/cool-down items only go (like `painApply` and `postBlocks`), listed in
+    `s.tgo`, the preview names left-out skill work. Then `painApply`, `accApply` (block roles from the code), `holdSk`,
+    `planDedup`, Core Blitz by phone 2's `absFor`, Tired/Hold cut (`tiredCut`), `estMin`, `swapOpts`. Doses come from
+    phone 2's state (`target`, `rounds` band, `isoQ`); the preview shows them (`tgDose`), "Planned on <date>" when the code
+    is from another day, and "Kickboxing tomorrow and legs today: your call" (`tgKick`, a hint only).
+  - **Log:** `saveTrain` writes `tg:1` on phone 2 (`s.tg`) and on phone 1 for the shared unit (`day().tgs`); a together
+    entry takes `lg` from the leg/hinge sets actually logged (≥ 6). It counts like any session of its id. Chronicle shows the
+    mark "Together" (`.tgm`). `cleanImport` keeps `tg` (only 1); older versions drop the field (whitelist). `t72`.
 - **Test hook:** `window.__kz` exposes internals for tests – only outside the live site (`TESTENV`: `file:`, localhost, `*.test`).

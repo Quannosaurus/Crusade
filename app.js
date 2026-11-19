@@ -108,7 +108,7 @@ function dOK(s){return typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&ds(pd
 var DSOK={test:dOK},KMMAX=300,MINMAX=1440,TRKMAX=20*1024*1024;
 function lim(v,hi){v=typeof v==="number"?v:num(v);return v!=null&&isFinite(v)&&v>0?Math.min(hi,v):null;}
 var TODAY=ds(new Date());
-function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],goalNext:[],opt:{ready:false,rest:false,oa:false},hold:{str:false,run:false,sk:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
+function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],goalNext:[],opt:{ready:false,rest:false,oa:false,tg:false},hold:{str:false,run:false,sk:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
     var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
@@ -140,7 +140,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   if(Array.isArray(n.kickDays))b.kickDays=n.kickDays.map(Number).filter(function(x,i,a){return x>=0&&x<=6&&x===Math.floor(x)&&a.indexOf(x)===i;}).slice(0,7);
   else if(own(n,"kickDay")){var kd=n.kickDay;b.kickDays=(kd==null||kd===2)?[2,5]:(typeof kd==="number"&&kd>=0&&kd<=6&&kd===Math.floor(kd)?[kd]:[]);}
   ["runKm","runI"].forEach(function(k){if(n[k]!=null&&n[k]!==""&&isFinite(+n[k]))b[k]=Math.max(0,Math.min(99,+n[k]));});
-  if(n.opt&&typeof n.opt==="object")["ready","rest","oa"].forEach(function(k){b.opt[k]=n.opt[k]===true;});
+  if(n.opt&&typeof n.opt==="object")["ready","rest","oa","tg"].forEach(function(k){b.opt[k]=n.opt[k]===true;});
   if(n.hold&&typeof n.hold==="object"&&!Array.isArray(n.hold))["str","run","sk"].forEach(function(k){b.hold[k]=own(n.hold,k)&&n.hold[k]===true;});
   if(n.per==="12w"||n.per==="1y"||n.per==="all")b.per=n.per;/* A-055 b: stats period, allowed values only */
   ["easy","easyP","holdR"].forEach(function(k){if(typeof n[k]==="string"&&DS.test(n[k]))b[k]=n[k];});
@@ -161,7 +161,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   lv=lv.map(function(l,i){return [l,i];}).sort(function(x,y){return x[0].d<y[0].d?-1:x[0].d>y[0].d?1:x[1]-y[1];}).map(function(x){return x[0];});
   b.logs=lv.slice(-LOGMAX).map(function(l){
     var o={d:l.d,id:l.id,t:str(l.t,60)};if(l.rpe!=null)o.rpe=Math.max(0,Math.min(10,numv(l.rpe)));if(l.note!=null)o.note=str(l.note);if(l.sum!=null)o.sum=str(l.sum);if(l.abs!=null)o.abs=l.abs?1:0;
-    if(l.km!=null)o.km=lim(numv(l.km),KMMAX)||0;if(l.cb!=null)o.cb=l.cb?1:0;if(l.rd===1||l.rd===2||l.rd===3)o.rd=l.rd;if(l.min!=null)o.min=lim(numv(l.min),MINMAX)||0;if(l.lg!=null)o.lg=l.lg?1:0;if(l.bl!=null)o.bl=l.bl?1:0;
+    if(l.km!=null)o.km=lim(numv(l.km),KMMAX)||0;if(l.cb!=null)o.cb=l.cb?1:0;if(l.rd===1||l.rd===2||l.rd===3)o.rd=l.rd;if(l.min!=null)o.min=lim(numv(l.min),MINMAX)||0;if(l.lg!=null)o.lg=l.lg?1:0;if(l.bl!=null)o.bl=l.bl?1:0;if(l.tg===1||l.tg===true)o.tg=1;
     if(l.vs&&typeof l.vs==="object"&&!o.bl){o.vs=vsZero();VPAT.forEach(function(p){o.vs[p]=Math.max(0,Math.min(60,Math.floor(numv(l.vs[p]))));});}if(o.vs&&l.vm!=null)o.vm=Math.max(0,Math.min(VMAP,Math.floor(numv(l.vm))));
     if(Array.isArray(l.sk))o.sk=l.sk.filter(function(x){return ["hs","mu","ls","fl","pl"].indexOf(x)>=0;});
     if(Array.isArray(l.m))o.m=l.m.filter(function(x){return own(MMOD,x);});
@@ -200,7 +200,7 @@ function cleanDays(n){var out={},DS=DSOK,K=/^[A-Za-z0-9_:#-]{1,40}$/,cut=addD(TO
   function sv(v,m){return typeof v==="string"?v.slice(0,m):(typeof v==="number"&&isFinite(v)?v:"");}
   function flags(o){var r={};if(o&&typeof o==="object")Object.keys(o).slice(0,400).forEach(function(k){if(K.test(k)&&okKey(k)&&o[k])r[k]=true;});return r;}
   Object.keys(n).filter(function(k){return DS.test(k)&&k>=cut;}).slice(0,20).forEach(function(k){var d=n[k];if(!d||typeof d!=="object")return;
-    var o={done:flags(d.done),inp:{},skip:flags(d.skip),pick:typeof d.pick==="string"&&/^[A-Z]{2}$/.test(d.pick)?d.pick:null,run:own(RUNT,d.run)?d.run:null,fin:{},noKick:d.noKick===true};if(d.kit===true)o.kit=true;if(d.xr===true)o.xr=true;if(d.ready===1||d.ready===2||d.ready===3)o.ready=d.ready;
+    var o={done:flags(d.done),inp:{},skip:flags(d.skip),pick:typeof d.pick==="string"&&/^[A-Z]{2}$/.test(d.pick)?d.pick:null,run:own(RUNT,d.run)?d.run:null,fin:{},noKick:d.noKick===true};if(d.kit===true)o.kit=true;if(d.xr===true)o.xr=true;if(d.tg){var tgc=tgClean(d.tg);if(tgc)o.tg=tgc;}if(typeof d.tgs==="string"&&TGIDL.indexOf(d.tgs)>=0)o.tgs=d.tgs;if(d.ready===1||d.ready===2||d.ready===3)o.ready=d.ready;
     if(Array.isArray(d.add)){var ad=d.add.filter(function(x,i,arr){return typeof x==="string"&&x.length>0&&x.length<90&&okKey(x)&&arr.indexOf(x)===i;}).slice(0,12);if(ad.length)o.add=ad;}
     if(d.open&&typeof d.open==="object")o.open=flags(d.open);
     if(d.inp&&typeof d.inp==="object")Object.keys(d.inp).slice(0,400).forEach(function(q){var e=d.inp[q];if(!K.test(q)||!okKey(q)||!e||typeof e!=="object")return;var r={};
@@ -703,12 +703,14 @@ function postBlocks(id,bl){var sk=D.skills,out=[];
 var GYM=["KA","KB","KC","CH","SK","RS","DL","TE"], HOME=["HO","HK","RS"];
 var HARD={KA:1,KB:1,KC:1,CH:1,RH:1,RI:1,KI:1,TE:1,HO:1}, STR={KA:1,KB:1,KC:1,CH:1,DL:1,TE:1,HO:1}, HASHS={KA:1,KB:1,SK:1,KC:1,HO:1,HK:1};
 function S(id,c){
+  if(!WK.sim){var tgd=tgDay();if(tgd&&tgd.id===id)return tgS(id,c,tgd);}
   var lka=!WK.sim&&BANDIDS[id]?legAhead():null,s=S0(id,c),sk=D.skills;s._lka=lka;
   if(!sk.mu&&id==="KA") s.goal="Pulling and pushing strength, explosive power"+(selSk().length?" and your skills.":".");
   if(!sk.mu&&id==="KB") s.goal="Lots of clean pulling and pushing volume in a circuit, plus shoulder health.";
   if(id==="HO"&&homeB()){s.goal="Legs first: the same muscles as last time, other variations.";s.blocks.forEach(function(b){if(b.rounds){b.items=b.items.slice(2).concat(b.items.slice(0,2));b.items.forEach(function(it){if(!it.def&&it.opts.length>1)it.def=function(){return 1;};});}});}
   s.blocks=postBlocks(id,s.blocks);
   rotApply(s,id,c);
+  s.blocks.forEach(function(b){b.tgb=tgBT(b);});/* A-063: the block template as built, before filters, accent and design */
   if(legDay(id)) s.blocks.forEach(function(b){if(b.warm){b.items=b.items.concat(LEGWARM());b.min=11;b.info="approx. 11 min · hips, knees and ankles too";}});
   if(kitOn()) kitApply(s);
   neverApply(s);
@@ -725,6 +727,164 @@ function S(id,c){
   if(adb){var ci=-1;s.blocks.forEach(function(b,i){if(b.cool&&ci<0)ci=i;});if(ci<0)s.blocks.push(adb);else s.blocks.splice(ci,0,adb);s.min=estMin(s,c,id);s.addMin=1;}
   return s;
 }
+/* ===== A-063 Train together (Extra, off by default). No network: the session travels as a short text code.
+   Phone 1 shares the ordered list of its strength session (warm-up, main blocks, cool-down) as item key + variant – no doses,
+   no personal data. Phone 2 reads it and trains the same exercises, each dosed by its own state exactly as if it stood in its
+   own plan (target(), rounds() band, Tired/Hold cut, pain/Never/skill/equipment filters with the existing replacement logic).
+   Code: "CTB" + Crockford Base32 payload + check symbol (Crockford mod 37). Payload bits: format version 3 · catalogue
+   check 12 (hash over every item identity and block template this app version can put into a code) · day 11 (days since
+   TGD0, read as the nearest such date) · unit 3 · day choice 2 (gym/home/Field kit) · Core Blitz 1 · warm-up count 4 ·
+   cool-down count 3 · cool-down kind 3 · main blocks 4 · per main block: block template + item count 3 (≤ 7, longer blocks split) · the items as
+   indices into three sorted dictionaries (warm-up, cool-down, main). The dictionaries come from tgReg(): a sandbox sweep of
+   the session builders on a fresh state, so both phones of one app version build the same ones. */
+var TGU=null,TGIDL=["KA","KB","KC","HO","CH","SK"],TGLOC=["g","h","m"],TGV=1,TGD0="2025-01-01",TGMAX=160,TGR=null,
+  TGA="0123456789ABCDEFGHJKMNPQRSTVWXYZ",TGCK=TGA+"*~$=U",
+  REPK={pull:"c_pu",push:"b_pu",knee:"c_sq",hip:"g_ht",core:"x_pal",calf:"c_calf",hipab:"g_ab",hipad:"kp_cop",shoulder:"sh_fp",fore:"fa_wc",arms:"u_cur"};
+function tgOn(){return !!(D.opt&&D.opt.tg);}
+function tgKey(it,v){if(!it||!it.opts||!it.opts[v])return "";var n=it.opts[v].n;
+  if(it.kx&&!it.k&&KPOOL[it.kx]){var j=KPOOL[it.kx].map(function(x){return O(x).n;}).indexOf(n);if(j>=0)return "x:"+it.kx+"#"+j;}
+  if(it.f)return "f:"+n;if(it.iso)return "i:"+it.iso+"#"+n;if(it.test)return "t:"+it.test+"#"+n;
+  if(it.k&&/^mx_/.test(it.k)&&it.kx&&KPOOL[it.kx]){var i=KPOOL[it.kx].map(function(x){return O(x).n;}).indexOf(n);return i>=0?"x:"+it.kx+"#"+i:"";}
+  if(it.k&&it.k!=="add_x")return "k:"+patKey(it.k)+"#"+n;return "";}
+function tgSk(b){return b.skill&&/^(hs|mu|ls|fl|pl)$/.test(b.skill)?b.skill:(b.mu||b.name==="Muscle-up transition"||b.name==="Muscle-Up EMOM"?"mu":(/^Handstand/.test(b.name||"")?"hs":""));}
+/* role of a main block for the accent rules: m main (accMain), s secondary (accSide, dropped by Limited time), x other */
+function tgBT(b){if(b.tgb)return b.tgb;return (b.rounds?b.rounds.join("-"):"s")+"|"+(b.rest||0)+"|"+(b.ser?1:0)+"|"+tgSk(b)+"|"+(b.tgr||(accMain(b)?"m":(accSide(b)?"s":"x")));}
+function tgHash(s){var h=5381;for(var i=0;i<s.length;i++)h=((h*33)^s.charCodeAt(i))>>>0;return (h^(h>>>16))&4095;}
+function tgReg(){if(TGR)return TGR;var R={w:{},c:{},m:{},bt:{}},sD=D,sT=TODAY,sW=WK.sim;
+  function add(p,it){if(!it||!it.opts||it.gone)return;it.opts.forEach(function(o,v){var q=tgKey(it,v);if(q&&!own(R[p],q))R[p][q]=it;});}
+  function addB(b){if(b.warm){b.items.forEach(function(it){add("w",it);});return;}if(b.cool){b.items.forEach(function(it){add("c",it);});return;}
+    b.items.forEach(function(it){add("m",it);});(b.more||[]).forEach(function(it){add("m",it);});R.bt[tgBT(b)]=1;}
+  var hs0=holdSave;holdSave=true;
+  /* profile tiers: level, handstand ladder, lever/planche stages change which items the builders choose */
+  /* handstand stages of hsStage(): hsw < 45 → 1, ≥ 45 → 2, hsf ≥ 5 → 3, ≥ 10 → 4, ≥ 34 → 5; pullTest: no pull-up → dead hang */
+  var TIER=[{pull:0,dips:0,mu:0,hang:15},{pull:3,dips:3,mu:0},{pull:8,dips:12,mu:0,hsw:25,hsf:0,flSt:1,plSt:1,lsit:5,tuck:20},{pull:10,dips:15,mu:0,hsw:50,hsf:0,flSt:2,plSt:2,lsit:8,tuck:25},
+    {pull:12,dips:15,mu:5,hsw:50,hsf:6,flSt:3,plSt:3,lsit:12,tuck:30},{pull:14,dips:18,mu:6,hsw:55,hsf:12,flSt:4,plSt:4,lsit:15,tuck:30},{pull:18,dips:25,mu:10,hsw:60,hsf:70,flSt:5,plSt:5,lsit:25,tuck:35}];
+  function prep(all,em,lc,ti){D=fresh();D.onb=true;D.emph=em;D.loc=lc;D.skills={hs:all,mu:all,ls:all,fl:all,pl:all};D.kickDays=all?[2,5]:[];Object.assign(D.profile,TIER[ti==null?(all?4:1):ti]);
+    Object.keys(D.home).forEach(function(k){D.home[k]=true;});}
+  function sweep(ids,phs){ids.forEach(function(id){phs.forEach(function(ph){try{var c=ctx(TODAY);c.phase=ph;c.legB=true;var s=S0(id,c);s.blocks=postBlocks(id,s.blocks);
+    if(legDay(id))s.blocks.forEach(function(b){if(b.warm)b.items=b.items.concat(LEGWARM());});s.blocks.forEach(addB);}catch(e){}});});}
+  try{WK.sim=true;
+    [false,true].forEach(function(all){["g","h"].forEach(function(lc){
+      ["bal","lower","glutes","upper","core"].forEach(function(em){(all?[2,3,4,5,6]:[0,1]).forEach(function(ti){prep(all,em,lc,ti);var cat=favCatalog();Object.keys(cat).forEach(function(n){add("m",cat[n].it);});sweep(TGIDL,[1,2]);});});
+      /* partial skill sets change the trial and skill blocks (e.g. without the lever skill) */
+      if(all)[{hs:true,mu:true},{hs:true},{mu:true},{ls:true},{fl:true},{pl:true}].forEach(function(sk){[2,4,6].forEach(function(ti){prep(true,"bal",lc,ti);D.skills={hs:!!sk.hs,mu:!!sk.mu,ls:!!sk.ls,fl:!!sk.fl,pl:!!sk.pl};sweep(["CH","SK","HO","KA","KB"],[1,2]);});});
+      [1,2].forEach(function(nv){prep(all,"bal",lc);for(var j=0;j<nv;j++)["SK","HK"].forEach(function(x){D.logs.push({d:addD(TODAY,-3-j),id:x,t:x});});sweep(["SK"],[1,2]);});
+      if(lc==="g")["pull","dips","push","sq","ht","rdl"].forEach(function(gk){prep(all,all?"glutes":"bal",lc);try{setGoal(gk);}catch(e){}sweep(["KA","KC","CH","HO"],[1]);});});});
+    D=fresh();R.bt[tgBT({name:"x",p:1,rest:75,add:1,items:[]})]=1;Object.keys(COOLS).forEach(function(k){COOLS[k].items.forEach(function(x){add("c",F(x[1],x[2],[x[0]]));});});
+    var wt=WARM().items.concat(LEGWARM());wt.forEach(function(it){add("w",it);var L=own(WALT,it.opts[0].n)?WALT[it.opts[0].n]:[];L.forEach(function(x){add("w",F(it.f,it.c,[x]));});});
+    Object.keys(KPOOL).forEach(function(g){var b=null,bk=REPK[g];Object.keys(R.m).some(function(q){var t=R.m[q];if(t.k===bk){b=t;return true;}});
+      var t={k:"mx_"+bk,kx:g,opts:KPOOL[g].map(O),lo:b?b.lo:8,hi:b?b.hi:15,unit:b?b.unit:"reps",c:"",up:"slower or a harder variation",sets:b?b.sets:"3"};
+      if(/^(reps|each side)$/.test(t.unit||"")){t.lo=Math.max(t.lo,8);t.hi=Math.max(t.hi,15);}add("m",t);});
+  }finally{D=sD;TODAY=sT;WK.sim=sW;holdSave=hs0;}
+  var L=function(o){return Object.keys(o).sort();};R.wl=L(R.w);R.cl=L(R.c);R.ml=L(R.m);R.btl=L(R.bt);R.ck=Object.keys(COOLS).sort();
+  R.h=tgHash("v"+TGV+"|"+R.wl.join(",")+"|"+R.cl.join(",")+"|"+R.ml.join(",")+"|"+R.btl.join(",")+"|"+R.ck.join(","));TGR=R;return R;}
+function tgBits(n){var b=1;while((1<<b)<n)b++;return b;}
+/* Code from a session (phone 1): miss = items no dictionary knows (left out, said on the card). */
+function tgMake(id,s){var R=tgReg(),loc=LOC(),W=[],C=[],M=[],ab=s.ab?1:0,ck=0,miss=0,bmiss=0;
+  s.blocks.forEach(function(b){if(D.short&&b.p>1)return;var L=[];b.items.forEach(function(it){if(it.gone)return;var v=curVar(it,loc);if(v<0)return;var q=tgKey(it,v),P=b.warm?R.w:(b.cool?R.c:R.m);if(q&&own(P,q))L.push(q);else miss++;});
+    if(b.warm)W=W.concat(L);else if(b.cool){C=C.concat(L);ck=Math.max(0,R.ck.indexOf(b.cool));}
+    else if(L.length){var bt=tgBT(b);if(R.btl.indexOf(bt)<0){bt=R.btl[0];bmiss++;}for(var i=0;i<L.length;i+=7)M.push([bt,L.slice(i,i+7)]);}});
+  W=W.slice(0,15);C=C.slice(0,7);M=M.slice(0,15);
+  var bits=[];function put(v,n){for(var i=n-1;i>=0;i--)bits.push((v>>i)&1);}
+  var dd=((diff(TGD0,TODAY)%2048)+2048)%2048;
+  put(TGV,3);put(R.h,12);put(dd,11);put(TGIDL.indexOf(id),3);put(TGLOC.indexOf(loc),2);put(ab,1);put(W.length,4);put(C.length,3);put(ck,3);put(M.length,4);
+  var bw=tgBits(R.wl.length),bc=tgBits(R.cl.length),bm=tgBits(R.ml.length),bb=tgBits(R.btl.length);
+  M.forEach(function(x){put(R.btl.indexOf(x[0]),bb);put(x[1].length,3);});
+  W.forEach(function(q){put(R.wl.indexOf(q),bw);});C.forEach(function(q){put(R.cl.indexOf(q),bc);});M.forEach(function(x){x[1].forEach(function(q){put(R.ml.indexOf(q),bm);});});
+  while(bits.length%5)bits.push(0);var out="",r=0;for(var i=0;i<bits.length;i+=5){var v=0;for(var j=0;j<5;j++)v=v*2+bits[i+j];out+=TGA.charAt(v);r=(r*32+v)%37;}
+  return {code:"CTB"+out+TGCK.charAt(r),id:id,miss:miss,bmiss:bmiss,n:W.length+C.length+M.reduce(function(a,x){return a+x[1].length;},0)};}
+function tgShow(code){var b=code.slice(3),g=["CTB"];for(var i=0;i<b.length;i+=4)g.push(b.slice(i,i+4));return g.join("-");}
+/* Strict parser (phone 2): returns {ok:…} or {err:"…"}; it never changes state. */
+function tgParse(txt){var R=tgReg();if(typeof txt!=="string"||!txt.trim())return {err:"Paste or type the code first."};if(txt.length>TGMAX)return {err:"That is not a together code (too long)."};
+  var t=txt.toUpperCase().replace(/[\s-]+/g,"").replace(/O/g,"0").replace(/[IL]/g,"1");
+  if(t.slice(0,3)!=="CTB")return {err:"That is not a together code: it starts with CTB."};t=t.slice(3);if(t.length<9)return {err:"The code is too short: part of it is missing."};
+  var body=t.slice(0,-1),chk=t.slice(-1),r=0,bits=[];
+  for(var i=0;i<body.length;i++){var v=TGA.indexOf(body.charAt(i));if(v<0)return {err:"The code has a sign that does not belong in it: "+body.charAt(i)+"."};r=(r*32+v)%37;for(var j=4;j>=0;j--)bits.push((v>>j)&1);}
+  if(TGCK.indexOf(chk)<0||TGCK.indexOf(chk)!==r)return {err:"The code does not add up: check it for a typo or a missing part."};
+  var p=0;function get(n){if(p+n>bits.length)throw 0;var v=0;for(var i=0;i<n;i++)v=v*2+bits[p++];return v;}
+  try{if(get(3)!==TGV||get(12)!==R.h)return {err:"Update the app on both phones: this code comes from another version."};
+    var dd=get(11),idi=get(3),li=get(2),ab=get(1),nw=get(4),nc=get(3),ck=get(3),nb=get(4);
+    if(idi>=TGIDL.length||li>=TGLOC.length||ck>=R.ck.length)return {err:"That is not a together code."};
+    var bw=tgBits(R.wl.length),bc=tgBits(R.cl.length),bm=tgBits(R.ml.length),bb=tgBits(R.btl.length),B=[],w=[],c=[],m=[];
+    for(var k=0;k<nb;k++){var bi=get(bb),n=get(3);if(bi>=R.btl.length||!n)return {err:"That is not a together code."};B.push([R.btl[bi],n]);}
+    for(k=0;k<nw;k++){var x=get(bw);if(x>=R.wl.length)return {err:"That is not a together code."};w.push(R.wl[x]);}
+    for(k=0;k<nc;k++){x=get(bc);if(x>=R.cl.length)return {err:"That is not a together code."};c.push(R.cl[x]);}
+    B.forEach(function(e){var L=[];for(var q=0;q<e[1];q++){var y=get(bm);if(y>=R.ml.length)throw 1;L.push(R.ml[y]);}m.push([e[0],L]);});
+    if(bits.length-p>=5||bits.slice(p).some(function(z){return z;}))return {err:"The code does not add up: check it for a typo or a missing part."};
+    if(!m.length)return {err:"That is not a together code."};
+    var d0=addD(TGD0,dd),dn=diff(d0,TODAY),kk=Math.round(dn/2048),d=addD(d0,kk*2048);
+    return {ok:{v:TGV,id:TGIDL[idi],d:d,loc:TGLOC[li],ab:ab,ck:R.ck[ck],w:w,c:c,m:m}};
+  }catch(e){return {err:"The code is too short: part of it is missing."};}}
+function tgDay(){var dy=D.days&&D.days[TODAY];return tgOn()&&dy&&dy.tg&&typeof dy.tg==="object"?dy.tg:null;}
+function tgCp(it){var t={};Object.keys(it).forEach(function(k){t[k]=it[k];});if(it.opts)t.opts=it.opts.slice();return t;}
+function tgLock(it,v){var sk=D.skills,n=v>=0&&it.opts[v]?it.opts[v].n:"";
+  if(!sk.ls&&(it.iso==="tuck"||it.iso==="lsit"||it.test==="tuck"||it.test==="lsit"))return true;
+  if(!sk.mu&&(it.test==="mu"||it.test==="expl"||/muscle-up|false grip/i.test(n)))return true;
+  if(!sk.hs&&(it.test==="hsw"||it.test==="hsf"||it.iso==="hsw"||it.iso==="hsf"||/handstand/i.test(n)))return true;
+  if(!sk.fl&&(/front lever|back lever|dragon flag/i.test(n)||/^(mx_|fav_)*(fl_h|fl_pull)$/.test(it.k||"")))return true;
+  var pk=it.k?patKey(it.k):"";if(!sk.pl&&(pk==="pl_h"||pk==="pl_pu"||it.iso==="pl"||it.test==="pl"))return true;return false;}
+/* One slot phone 2 cannot train (no fitting variant with its own day choice, pain, a skill it has not switched on): the
+   existing replacement logic – a catalogue exercise of the same group (kitGroup), else the Field kit pool – and never a
+   form the session already has (sesHas). Without one the slot goes. Hint "Instead of … (partner's plan)". */
+function tgRep(s,it,loc,cat){var g=kitGroup(it),pick=null;
+  Object.keys(cat).some(function(nm){var x=cat[nm];if(isNever(nm)||painHit(nm)||x.it.f||x.it.iso||x.it.test||!can(x.it.opts[x.v],loc)||kitGroup(x.it,x.v)!==g||tgLock(x.it,x.v))return false;
+    var t=tgCp(x.it);t.fx=x.v;delete t.def;delete t.lv;delete t.anc;delete t.gx;if(sesHas(s,t,it))return false;pick=t;return true;});
+  if(!pick&&KPOOL[g]){var q=tgReg().m["x:"+g+"#0"];if(q){var n=tgCp(q);for(var i=0;i<n.opts.length&&!pick;i++){var o=n.opts[i];if(!can(o,loc)||painHit(o.n)||isNever(o.n))continue;n.fx=i;if(!sesHas(s,n,it))pick=n;}}}
+  if(pick){pick.tgx=it.opts[Math.max(0,curVar(it,loc))].n;if(it.sets&&!pick.sets)pick.sets=it.sets;}return pick;}
+function tgS(id,c,tg){var R=tgReg(),loc=LOC(),s={id:id,goal:"The same exercises in the same order as your partner, with your own weights, reps and filters.",blocks:[],tg:1},O2={w:{},c:{},m:{}};
+  /* an exercise that stands in phone 2's own plan of this unit keeps that plan's template (range, sets, cue) */
+  try{var s0=S0(id,c);s0.blocks=postBlocks(id,s0.blocks);rotApply(s0,id,c);s0.blocks.forEach(function(b){var M=O2[b.warm?"w":(b.cool?"c":"m")];b.items.concat(b.more||[]).forEach(function(it){(it.opts||[]).forEach(function(o,v){var q=tgKey(it,v);if(q&&!own(M,q))M[q]=it;});});});}catch(e){}
+  function mk(P,q){if(!own(P,q))return null;var P2=P===R.w?O2.w:(P===R.c?O2.c:O2.m),it=tgCp(own(P2,q)?P2[q]:P[q]),n=q.replace(/^[a-z]:([^#]*#)?/,"");if(/^x:/.test(q))n=it.opts[+q.split("#")[1]].n;var v=-1;it.opts.forEach(function(o,i){if(v<0&&o.n===n)v=i;});
+    if(/^k:/.test(q))it.k=q.slice(2,q.indexOf("#"));
+    if(v>=0&&can(it.opts[v],loc)&&!painHit(it.opts[v].n)&&!isNever(it.opts[v].n)){it.fx=v;delete it.def;}delete it.lv;delete it.anc;delete it.gx;return it;}
+  var wb=WARM(),lw=LEGWARM().map(function(x){return x.opts[0].n;});wb.items=tg.w.map(function(q){return mk(R.w,q);}).filter(Boolean);
+  if(wb.items.some(function(it){return lw.indexOf(it.opts[0].n)>=0;})){wb.min=11;wb.info="approx. 11 min · hips, knees and ankles too";}
+  if(wb.items.length)s.blocks.push(wb);
+  tg.m.forEach(function(e,i){var p=e[0].split("|"),b={name:"Together · block "+(i+1),p:1,rest:+p[1]||0,items:e[1].map(function(q){return mk(R.m,q);}).filter(Boolean)};
+    if(p[0]!=="s")b.rounds=p[0].split("-").map(Number);if(p[2]==="1")b.ser=1;if(p[3])b.tgsk=p[3];b.tgr=p[4]||"x";if(b.tgr==="s")b.p=2;b.info=(b.rounds?"Back to back":"Set by set")+(b.rest?" · "+b.rest+" s rest":"");if(b.items.length)s.blocks.push(b);});
+  var cb=COOL(own(COOLS,tg.ck)?tg.ck:(COOLK[id]||"up"));cb.items=tg.c.map(function(q){return mk(R.c,q);}).filter(Boolean);if(cb.items.length)s.blocks.push(cb);
+  if(kitOn())kitApply(s);
+  var cat=favCatalog();s.tgo=[];s.blocks.forEach(function(b){var bl=b.tgsk&&!D.skills[b.tgsk];b.items=b.items.map(function(it){var v=curVar(it,loc),bad=bl||v<0||painHit(it.opts[v].n)||tgLock(it,v);if(!bad)return it;
+    /* like the own plan: warm-up/cool-down, holds, tests and fixed drills without a movement pattern only go (painApply,
+       postBlocks drops skill blocks without the skill); work with a pattern gets a form of the same group */
+    var q=v>=0?v:0;s.tgo.push(tgKey(it,q));if(b.warm||b.cool)return null;if(!(fPat(it)||(!it.f&&!it.iso&&!it.test&&(itPat(it,q)||it.k)))){if(bl||tgLock(it,q))s.tgsk=(s.tgsk||0)+1;return null;}var r=tgRep(s,it,loc,cat);if(r)s.tgo.pop();return r||null;}).filter(Boolean);});
+  s.blocks=s.blocks.filter(function(b){return b.items.length;});
+  painApply(s);if(BANDIDS[id])accApply(s,id,c);holdSk(s);planDedup(s);var bn=0;s.blocks.forEach(function(b){if(/^Together · block /.test(b.name))b.name="Together · block "+(++bn);});
+  s.ab=tg.ab?absFor(id):null;
+  if(BANDIDS[id]&&(rdDay()===3||holdOn("str"))){RD2=true;try{s.blocks.forEach(function(b){if(b.rounds&&b.tr==null&&!b.warm&&!b.cool)b.tr=rounds(b,c,id);});}finally{RD2=false;}tiredCut(s,c,id,function(){return estMin(s,c,id);});}
+  s.min=estMin(s,c,id);if(swapOpts(s))s.min=estMin(s,c,id);return s;}
+function tgDose(it,b,c,id,loc){var v=curVar(it,loc);if(v<0)return "";if(it.f)return it.f;
+  if(it.iso){var q=isoQ(it.iso,D.profile[it.iso]);return q.n+" × "+q.h+" s";}if(it.test)return "max";
+  var g=target(it,v),n=setsOf(it,b,c,id),u=it.unit==="s"?" s":"";return n+" × "+g.r+u+(g.w?" × "+fmtKg(g.w)+" kg":"");}
+function tgKick(id,s){var tm=pd(addD(TODAY,1)).getDay();return D.kickDays.indexOf(tm)>=0&&(id==="KC"||legSets(s,ctx(TODAY),id)>=6);}
+/* Today: the two actions (only with the Extra on) and the open card (share or join). */
+function tgHTML(dy){if(!tgOn())return "";var t=TGU,h="",tid=trainId(dy).id,can0=TGIDL.indexOf(tid)>=0;
+  if(!t)return '<div class="row tgrow">'+(can0?'<button type="button" class="b sm" data-a="tgshare">Share as together code · '+esc(shortN(tid))+'</button>':'')+'<button type="button" class="b sm" data-a="tgjoin">Join partner\'s session</button></div>';
+  if(t.mode==="show"){h='<div class="card tgcard" role="group" aria-label="Together code"><h3>Together code · '+esc(NAMES[t.id])+'</h3><p class="muted">Your partner opens “Join partner\'s session” and pastes or types it. Their phone doses every exercise for them.</p><p class="tgcode" id="tgcode">'+esc(tgShow(t.code))+'</p>'
+      +(t.miss?'<p class="c gold">'+t.miss+' exercise'+(t.miss===1?' is':'s are')+' not in the code (unknown to the code list).</p>':'')
+      +'<div class="row"><button type="button" class="b red" data-a="tgcopy">Copy</button>'+(navigator.share?'<button type="button" class="b" data-a="tgsend">Share</button>':'')+'<button type="button" class="b" data-a="tgx">Close</button></div>'+(t.msg?'<p class="muted" role="status">'+esc(t.msg)+'</p>':'')+'</div>';return h;}
+  h='<div class="card tgcard" role="group" aria-label="Join partner\'s session"><h3>Join partner\'s session</h3><label class="lab" for="tgin">Together code</label><textarea id="tgin" class="tgin" rows="2" maxlength="'+TGMAX+'" autocomplete="off" spellcheck="false">'+esc(t.txt||"")+'</textarea>'
+    +(t.err?'<p class="c gold tgerr" role="alert">'+esc(t.err)+'</p>':'')+'<div class="row"><button type="button" class="b red" data-a="tgread">Preview</button><button type="button" class="b" data-a="tgx">Cancel</button></div>';
+  if(t.ok){var q=t.ok,loc=LOC(),c=ctx(TODAY),s=tgS(q.id,c,q);h+='<div class="tgprev"><h3>'+esc(NAMES[q.id])+' · ≈ '+s.min+' min</h3>'+(q.d!==TODAY?'<p class="c gold">Planned on '+esc(WDN[pd(q.d).getDay()]+' '+dLabY(q.d))+'. You can still train it today.</p>':'<p class="muted">Planned for today.</p>')
+    +(s.tgsk?'<p class="c muted">'+s.tgsk+' skill exercise'+(s.tgsk===1?'':'s')+' left out: '+(s.tgsk===1?'it needs':'they need')+' a skill you have not switched on.</p>':'')+(tgKick(q.id,s)?'<p class="c muted">Kickboxing tomorrow and legs today: your call.</p>':'');
+    s.blocks.forEach(function(b){h+='<p class="tgb"><b>'+esc(b.name)+'</b></p><ul class="tgl">'+b.items.map(function(it){if(it.gone)return "";var v=curVar(it,loc);if(v<0)return "";
+      return '<li><span>'+esc(it.opts[v].n)+'</span> <span class="muted">'+esc(tgDose(it,b,c,q.id,loc))+'</span>'+(it.tgx?'<span class="c muted nxn ddn">Instead of '+esc(it.tgx)+' (partner\'s plan)</span>':'')+'</li>';}).join("")+'</ul>';});
+    h+='<button type="button" class="b red" data-a="tgstart">Start</button></div>';}
+  return h+'</div>';}
+function tgAct(a){var dy=day(),ch=false;
+  if(a==="tgshare"){var id=trainId(dy).id;if(TGIDL.indexOf(id)<0)return;var r=tgMake(id,S(id,ctx(TODAY)));dy.tgs=id;ch=true;TGU={mode:"show",code:r.code,id:id,miss:r.miss};}
+  else if(a==="tgjoin")TGU={mode:"join"};
+  else if(a==="tgx")TGU=null;
+  else if(a==="tgread"){var el=document.getElementById("tgin"),tx=el?String(el.value||""):"";var p=tgParse(tx);TGU={mode:"join",txt:tx.slice(0,TGMAX),err:p.err||"",ok:p.ok||null};}
+  else if(a==="tgstart"){var t=TGU;if(t&&t.ok){dy.tg=t.ok;dy.pick=t.ok.id;TGU=null;D.tab="train";WK.key="";ch=true;}}
+  else if(a==="tgend"){delete dy.tg;ch=true;}
+  else if(a==="tgcopy"&&TGU&&TGU.code){var cd=tgShow(TGU.code);try{navigator.clipboard.writeText(cd).then(function(){if(TGU)TGU.msg="Copied.";render();},function(){if(TGU)TGU.msg="Copying is not allowed. Please select the code by hand.";render();});}catch(x){TGU.msg="Copying is not allowed. Please select the code by hand.";}}
+  else if(a==="tgsend"&&TGU&&TGU.code&&navigator.share){try{navigator.share({text:tgShow(TGU.code)}).catch(function(){});}catch(x){}}
+  return ch;}
+/* cleanDays: a started together session (only its known shape) and the share marker */
+function tgClean(t){if(!t||typeof t!=="object"||TGIDL.indexOf(t.id)<0||!DSOK.test(t.d))return null;var K=/^[a-z]:[^<>"&]{1,90}$/,ok=function(a,n){return Array.isArray(a)&&a.length<=n&&a.every(function(q){return typeof q==="string"&&K.test(q)&&okKey(q);});};
+  if(!ok(t.w,15)||!ok(t.c,7)||!Array.isArray(t.m)||!t.m.length||t.m.length>15||!t.m.every(function(e){return Array.isArray(e)&&typeof e[0]==="string"&&/^[0-9s-]{1,9}\|\d{1,4}\|[01]\|(hs|mu|ls|fl|pl)?\|[msx]$/.test(e[0])&&ok(e[1],15);}))return null;
+  return {v:TGV,id:t.id,d:t.d,loc:TGLOC.indexOf(t.loc)>=0?t.loc:"g",ab:t.ab?1:0,ck:own(COOLS,t.ck)?t.ck:"up",w:t.w.slice(),c:t.c.slice(),m:t.m.map(function(e){return [e[0],e[1].slice()];})};}
 /* A-055 d: "Never suggest" in the warm-up. Another form of the item that is not excluded comes first (avail); with none
    left the item takes an equivalent warm-up exercise for the same joint and job (WALT, same gear rules), so the warm-up
    stays complete, first, and on leg days still covers hips, knees and ankles. With no equivalent the item stays and
@@ -1275,8 +1435,8 @@ function accOf(s){var a=ACCK[blkNo(s)%4];if(a==="skill"&&gStr())a="str";else if(
 function accNow(s){s=s||TODAY;if(ctxCyc(s)>5||gTaper(s))return "base";return accOf(s);}
 function accWord(a){var t=ACCW[thKey()]||ACCW.templar;return t[ACCK.indexOf(a)]||"";}
 function accLeg(b){return !!b.legs||b.items.some(function(it){var p=itPat(it);return p==="legs"||p==="hinge";});}
-function accMain(b){return !b.warm&&!b.cool&&!b.trial&&!b.jump&&!b.add&&!b.skill&&!b.hsb&&!b.acc&&!b.sh&&!b.fav&&!b.rehab&&!b.ser&&(b.p||1)===1;}
-function accSide(b){return !b.warm&&!b.cool&&!b.trial&&!b.jump&&!b.add&&!b.skill&&!b.hsb&&!b.fav&&!b.rehab&&!b.ser&&!b.gx&&(b.acc||b.sh||(b.p||1)>1);}
+function accMain(b){return b.tgr?b.tgr==="m":!b.warm&&!b.cool&&!b.trial&&!b.jump&&!b.add&&!b.skill&&!b.hsb&&!b.acc&&!b.sh&&!b.fav&&!b.rehab&&!b.ser&&(b.p||1)===1;}
+function accSide(b){return b.tgr?b.tgr==="s":!b.warm&&!b.cool&&!b.trial&&!b.jump&&!b.add&&!b.skill&&!b.hsb&&!b.fav&&!b.rehab&&!b.ser&&!b.gx&&(b.acc||b.sh||(b.p||1)>1);}
 function accRange(it,a){var v=curVar(it,LOC());if(v<0||!wOn(it,v)||it.hi-it.lo<2)return it;var mid=it.lo+Math.floor((it.hi-it.lo)/2),n=Object.assign({},it);
   n.lo0=it.lo;if(a==="str")n.hi=Math.max(it.lo+1,mid);else n.lo=Math.min(it.hi-1,mid);return n;}
 function accSets(it,d){if(it.f||it.iso||it.test||it.ts!=null)return it;var n=parseInt(String(it.sets),10);if(isNaN(n)||n<=0)return it;var x=Object.assign({},it);x.sets=Math.max(2,n+d);if(d>0)x.accP=1;return x;}
@@ -2089,6 +2249,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(it.nx) h+='<div class="c muted nxn">Instead of '+esc(it.nx)+' · '+esc(W("never")).toLowerCase()+'</div>';
   if(it.bx) h+='<div class="c muted nxn">Instead of '+esc(it.bx)+' · enough of these sets this week</div>';
   if(it.px) h+='<div class="c muted nxn">Instead of '+esc(it.px)+' · pain-free choice</div>';
+  if(it.tgx) h+='<div class="c muted nxn ddn">Instead of '+esc(it.tgx)+' (partner\'s plan)</div>';
   if(it.ddv||it.ddx) h+='<div class="c muted nxn ddn">Instead of '+esc(it.ddv||it.ddx)+' · already in this session</div>';
   if(it.sx&&!it.bx) h+='<div class="c muted nxn ddn">Instead of '+esc(it.sx)+' · '+(it.sxr==="v"?"your vow takes these sets":"enough of these sets this week")+'</div>';
   if(sk) return h+'<div class="c">'+(pain?(it.add?"Hidden today: your pain filter is on.":"Skipped because of pain."):"Skipped today.")+(pain?'':' <button type="button" class="lnk" data-a="skip" data-id="'+id+'">Undo</button>')+'</div></div></div>';
@@ -2152,6 +2313,8 @@ function rounds(b,c,id){
 }
 function pace(l){var p=l.min/l.km;return Math.floor(p)+":"+pad(Math.round((p%1)*60)%60)+"/km";}
 function trainId(dy){var loc=D.loc,list=loc==="g"?GYM:HOME;
+  /* A-063: a started together session keeps its unit, whatever the day choice */
+  if(dy.tg&&tgOn()&&TGIDL.indexOf(dy.tg.id)>=0) return {id:dy.tg.id,rec:null};
   if(dy.pick&&list.indexOf(dy.pick)>=0) return {id:dy.pick,rec:null};
   var t=recTrain(TODAY,loc,dy.noKick); return {id:t.id,rec:{why:[t.why]}};
 }
@@ -2495,6 +2658,7 @@ function vStart(){
   h+='<h2 class="q">'+W("orders")+'</h2>';
   h+=big("morgen","Morning routine","Home, on the mat · 7 or 15 min");
   h+=big("train","Training","Gym or home");
+  h+=tgHTML(dy);
   var rro=!dn.run&&r.btn!=="run"&&runRec().opt;
   if(rro) h+='<button type="button" class="big also" data-a="xrun"><span class="bt"><b>Running</b><i class="tag dim">Also possible</i></span><span>Easy run, optional · '+(dn.train?'after your training':'strength day')+'</span></button>';
   else h+=big("run","Running",D.focus==="str"?"Not in the plan · log it anyway":"Easy, intervals or hard "+fmtKg(D.runKm)+" km");
@@ -2596,7 +2760,7 @@ function vTrain(){
   var ch=function(a,v,on,t){return '<button type="button" class="chip'+(on?" on":"")+'" data-a="'+a+'"'+(v?' data-v="'+v+'"':'')+' aria-pressed="'+on+'">'+t+'</button>';};
   var h=back()+'<div class="chips trow" role="group" aria-label="Today\'s setup">'+ch("loc","g",D.loc==="g","Gym")+ch("loc","h",D.loc==="h","Home")+ch("short","",!!D.short,"Limited time")+ch("kit","",kon,esc(W("kit"))+(kon?" · "+esc(kitLabel()):""))+'</div>'+kitHTML(kon);
   var pnK=Object.keys(PAINN).filter(function(k){return pn[k];}),pnL=pnK.map(function(k){return PAINN[k];}),cbk=cbInfo(TODAY);
-  h+='<div class="hero"><span class="eyebrow">Week '+c.week+(dlWk(TODAY,c)?' · Deload':' · Block '+c.blk+' · '+accWord(accNow()))+(D.short?' · shortened':'')+(kon?' · '+esc(W("kit")):'')+'</span><h2>'+NAMES[id]+'</h2><p class="dur">⏱ ≈ '+s.min+' min'+(s.addMin?' <span class="muted">· with your additions</span>':'')+'</p>'+(s.min<DURMIN&&STR[id]?'<p class="muted">A short one today. Nothing gets padded: shorter is fine.</p>':'')+'<p>'+esc(s.goal)+'</p>'+(Tt.rec&&whyX(Tt.rec.why[0])?'<p class="muted">'+esc(whyX(Tt.rec.why[0]))+'</p>':'')+(STR[id]&&cbk.low?'<p class="c gold">'+esc(W("comeback"))+': fewer rounds, targets hold for now · session '+((cbk.n||0)+1)+' of 2</p>':'')+(pnL.length?'<p class="c gold">Rehab active: '+pnL.join(", ")+'</p><div class="chips">'+pnK.map(function(k){return '<button type="button" class="chip" data-a="healed" data-k="'+k+'">'+esc(W("healed"))+': '+PAINN[k]+'</button>';}).join("")+'</div>'+(painRun()?'<p class="muted">No runs are planned while the knee or ankle is on the list.</p>':''):'')+'</div>';
+  h+='<div class="hero"><span class="eyebrow">Week '+c.week+(dlWk(TODAY,c)?' · Deload':' · Block '+c.blk+' · '+accWord(accNow()))+(D.short?' · shortened':'')+(kon?' · '+esc(W("kit")):'')+(s.tg?' · Together':'')+'</span><h2>'+NAMES[id]+'</h2><p class="dur">⏱ ≈ '+s.min+' min'+(s.addMin?' <span class="muted">· with your additions</span>':'')+'</p>'+(s.min<DURMIN&&STR[id]?'<p class="muted">A short one today. Nothing gets padded: shorter is fine.</p>':'')+(s.tg?'<p class="muted tgnote">Training your partner\'s session. <button type="button" class="lnk" data-a="tgend">Back to my plan</button></p>':'')+'<p>'+esc(s.goal)+'</p>'+(Tt.rec&&whyX(Tt.rec.why[0])?'<p class="muted">'+esc(whyX(Tt.rec.why[0]))+'</p>':'')+(STR[id]&&cbk.low?'<p class="c gold">'+esc(W("comeback"))+': fewer rounds, targets hold for now · session '+((cbk.n||0)+1)+' of 2</p>':'')+(pnL.length?'<p class="c gold">Rehab active: '+pnL.join(", ")+'</p><div class="chips">'+pnK.map(function(k){return '<button type="button" class="chip" data-a="healed" data-k="'+k+'">'+esc(W("healed"))+': '+PAINN[k]+'</button>';}).join("")+'</div>'+(painRun()?'<p class="muted">No runs are planned while the knee or ankle is on the list.</p>':''):'')+'</div>';
   h+=readyHTML(id);
   if(D._nvMsg){h+='<p class="note" role="status">'+esc("“"+D._nvMsg+"” will not be suggested again. An equivalent for the same muscles takes its place. Bring it back under More.")+'</p>';D._nvMsg="";}
   if(FAVIDS[id]&&!D.favP){D.favP=true;save();var nf=(D.fav||[]).length,emn=EMPH.filter(function(x){return x[0]===emph();})[0][1];h+='<button type="button" class="favcard" data-tab="favs" data-from="train"><span class="fvi" aria-hidden="true">★</span><span><b>'+(nf?nf+' favourite'+(nf>1?"s":"")+' in your plan':'Add your favourite exercises')+'</b><span class="muted">Emphasis: '+emn+(nf?'':' · starred exercises join every strength session')+'</span></span><span class="go">Edit →</span></button>';}
@@ -3094,7 +3258,7 @@ function vVerlauf(){var mon=perNow()!=="12w",pm=mon?perMonths():null;var h='<div
   h+='<div class="sec"><h3>All entries</h3>'+blHTML();
   /* A-046: older entries are built only on request, 50 at a time */
   var nl=D.logs.length,shown=Math.min(nl,20+(D._chn||0)),rev=D.logs.slice(nl-shown).reverse();rev.forEach(function(l,ri){var i=nl-1-ri;
-    h+='<div class="log"><b>'+esc(l.t)+'</b><span class="muted">'+dLabY(l.d)+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
+    h+='<div class="log"><b>'+esc(l.t)+(l.tg?' <i class="tag tgm">Together</i>':'')+'</b><span class="muted">'+dLabY(l.d)+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
   if(nl>shown)h+='<button type="button" class="b sm chmore" data-a="chmore">Show older entries ('+(nl-shown)+' more)</button>';
   return h+'</div></div>';
 }
@@ -3177,7 +3341,7 @@ function extrasHTML(){var o=D.opt||{},c=ctx(TODAY),row=function(k,t,x){var on=!!
   var ez;if(easyOpen())ez='<div class="xrow"><div><b>'+esc(W("easy"))+'</b><p class="muted">Easy week from '+WDN[pd(D.easy).getDay()]+' '+dLab(D.easy)+': deload, then test. Cycle, tests and Skill Trial follow.</p></div><button type="button" class="b sm" data-a="easyx">Undo</button></div>';
   else if(c.cyc===6)ez='<p class="muted">This is an easy week already.</p>';
   else{var en=easyNext();ez='<div class="xrow"><div><b>'+esc(W("easy"))+'</b><p class="muted">Tired or a busy week ahead? Brings the deload week forward'+(en>TODAY?' to '+WDN[pd(en).getDay()]+' '+dLab(en):' to this week')+'. The cycle, tests and Skill Trial move with it.</p></div><button type="button" class="b sm" data-a="easy">Start</button></div>';}
-  return '<div class="sec"><h3>'+esc(W("extras"))+'</h3>'+row("ready",W("rdx"),"One tap before training: good, normal or tired. Tired means fewer rounds and sets, good uses room left in the week. Without a tap nothing changes.")+row("rest",W("rest"),"At most 6 active days in 7: the plan sets a rest day after six in a row.")+row("oa",W("oa"),"Log hiking, dancing, cycling and more with minutes and effort. Counts for the weekly load and the next day.")+ez+holdHTML()+'</div>';}
+  return '<div class="sec"><h3>'+esc(W("extras"))+'</h3>'+row("ready",W("rdx"),"One tap before training: good, normal or tired. Tired means fewer rounds and sets, good uses room left in the week. Without a tap nothing changes.")+row("rest",W("rest"),"At most 6 active days in 7: the plan sets a rest day after six in a row.")+row("oa",W("oa"),"Log hiking, dancing, cycling and more with minutes and effort. Counts for the weekly load and the next day.")+row("tg","Train together","Train your partner's session from a short text code, with your own weights, reps and log on each phone.")+ez+holdHTML()+'</div>';}
 function holdHTML(){var h=D.hold||{},row=function(k,t){var on=h[k]===true;return '<button type="button" class="b sm'+(on?" on":"")+'" data-a="holdm" data-k="'+k+'" aria-pressed="'+on+'">'+t+'</button>';};
   return '<div class="xrow hold"><div><b>'+esc(W("holdx"))+'</b><p class="muted">Keep what you have built with about a third less volume: fewer sets or kilometres, same weights and pace. No step backs for standstill, no plateau line, no new steps offered.</p><div class="chips">'+row("str","Strength")+row("run","Running")+row("sk","Skills")+'</div></div></div>';}
 function bkHTML(){return '<div class="sec"><h3>Backup</h3><p class="muted">Your data lives only in this browser on this device.'+(dOK(D.bkDate)?' Last backup: '+dLab(D.bkDate)+'.':' No backup yet.')+'</p><div class="row"><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin">'+(prevSt()?'<button type="button" class="b" data-a="rsundo">Undo restore</button>':'')+'</div><details class="tv"><summary>Backup as text instead</summary><button type="button" class="b" data-a="exp">Create backup text</button><textarea id="bk" aria-label="Backup text" placeholder="The backup appears here. Paste text here to restore. Only restore backups you made yourself.">'+esc(D._bk)+'</textarea><div class="row"><button type="button" class="b" data-a="copy">Copy</button><button type="button" class="b" data-a="imp">Restore from text</button></div></details>'+(D._msg?'<p class="muted" role="status">'+esc(D._msg)+'</p>':'')+'</div>';}
@@ -3193,7 +3357,7 @@ function rescue(err){try{app.setAttribute("data-rescue","1");window.dispatchEven
   try{h+=rsHTML()+bkHTML();}catch(x){h+='<div class="sec"><h3>Backup</h3><button type="button" class="b red" data-a="bkfile">Save backup file</button><label class="b filebtn2" for="bkin">Restore from file</label><input type="file" id="bkin" class="vh" accept=".json,application/json" data-a="bkin"></div>';}
   app.innerHTML=h+resetHTML()+'</div>';}
 function vMehr(){
-  var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before "+NAMES.KA+".","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","Targets step back only after a real break of the movement: while other exercises keep training the same muscles (pull-ups go on while the lat pulldown rests), nothing steps back. After a real break the usual rhythm decides: one step after 14 days off or more and 1.5 × its usual gap, two steps after more than 4 weeks and twice its usual gap. Never twice in a row without reaching the target in between, never below the range. Paused days and the easy week do not count. An exercise that comes back after a rest starts with one rep less at the same weight.","Blocks: every 6 training weeks the accent changes – base, strength (heavier, fewer reps, longer rests), volume (more reps, shorter rests), skill and tempo. Some secondary exercises rotate with the block and come back two blocks later.","Running follows seasons with the blocks: base (more easy distance), build (the long run grows), tempo (the interval form changes), hold (about 20 % less). The week after hold runs at about 90 %. The long run stays at up to 30 % of your weekly distance; at most one in three runs is hard.","Hold (under Extras): keeps strength, running or skills with about a third less work, same effort. Level: upper and lower body each rise by your own progress over training weeks, measured from your best value of the first 4 weeks.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first. The free handstand has no last stage: past 3 × 20 s the hold target keeps growing with your best time.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: 10 % lighter or 2 reps fewer (never below the range), then build back up. A goal that stands still for 3 checks over 3 weeks gets one measure: an easy week or 2 more sets for 3 weeks; after 6 checks and 6 weeks, swap the variation. A run goal counts only runs that measure it (the long run, or a run as long as the goal distance): its measure is longer easy runs for 3 weeks, later another interval form. Three times at the limit in a week: a recovery day.","No exercise, movement or form twice in one session. Where one gives way you see “Instead of …”, and Swap offers only forms the session does not have yet.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];
+  var R=["Strength and running on the same day: strength first, then run, or at least 3 hours apart. No running before "+NAMES.KA+".","Strength sets end 1–2 reps before failure. Explosive sets end as soon as the movement slows down.","Rest: 2–3 min for muscle-ups and explosive work, 1–2 min in circuits. The timer starts after every logged set.","Targets build on your weakest set. Top of the range reached: more weight or a harder variation. Below it: easier.","Targets step back only after a real break of the movement: while other exercises keep training the same muscles (pull-ups go on while the lat pulldown rests), nothing steps back. After a real break the usual rhythm decides: one step after 14 days off or more and 1.5 × its usual gap, two steps after more than 4 weeks and twice its usual gap. Never twice in a row without reaching the target in between, never below the range. Paused days and the easy week do not count. An exercise that comes back after a rest starts with one rep less at the same weight.","Blocks: every 6 training weeks the accent changes – base, strength (heavier, fewer reps, longer rests), volume (more reps, shorter rests), skill and tempo. Some secondary exercises rotate with the block and come back two blocks later.","Running follows seasons with the blocks: base (more easy distance), build (the long run grows), tempo (the interval form changes), hold (about 20 % less). The week after hold runs at about 90 %. The long run stays at up to 30 % of your weekly distance; at most one in three runs is hard.","Hold (under Extras): keeps strength, running or skills with about a third less work, same effort. Level: upper and lower body each rise by your own progress over training weeks, measured from your best value of the first 4 weeks.","Skills often and short rather than rarely and long. Several skills take turns, whatever rested longest comes first. The free handstand has no last stage: past 3 × 20 s the hold target keeps growing with your best time.","Running: mostly easy, only one or two hard runs per week. Never hard runs on two days in a row.","Three times without progress on an exercise: 10 % lighter or 2 reps fewer (never below the range), then build back up. A goal that stands still for 3 checks over 3 weeks gets one measure: an easy week or 2 more sets for 3 weeks; after 6 checks and 6 weeks, swap the variation. A run goal counts only runs that measure it (the long run, or a run as long as the goal distance): its measure is longer easy runs for 3 weeks, later another interval form. Three times at the limit in a week: a recovery day.","No exercise, movement or form twice in one session. Where one gives way you see “Instead of …”, and Swap offers only forms the session does not have yet.","Stay with a variation for 3–4 weeks. Each variation has its own history.","No strength training after a hard run. After three hard days comes recovery.","Pain: tick it in the session. Affected exercises drop out and a rehab block is added. If it persists, see a doctor."];R.push("Train together (Extras, off by default): share today's strength session as a short text code. Your partner pastes it and trains the same exercises in the same order, with their own weights, reps, filters and log. What their phone cannot do (pain, a skill not switched on, missing gear) becomes a form of the same group, never a doubling. No network: the code travels by copy and paste.");
   if(!D.seenFocus){D.seenFocus=true;save();}
   var grp=function(t){return '<h2 class="grp">'+t+'</h2>';};
   return '<div class="card mgrp">'+grp("Training")+goalMore()+
@@ -3254,7 +3418,7 @@ function saveTrain(){
   var dy=day(); if(needRpe(dy)) return; var L0=[lvUp(),lvLo()];
   var loc=LOC(),kit=loc==="m",cbk=cbInfo(TODAY).low,c=ctx(TODAY),id=trainId(dy).id,s=S(id,c),f=dy.fin,wts=[],hold=f.rpe>=10,isoDone={},exl={},tv={},prs=[];
   function rec(key,r,w,nm){exl[key]=[r,w||0];var sc=(w||0)*1000+r,b=D.pr[key];if(b&&sc>b.sc)prs.push(nm+": "+r+(w?" × "+fmtKg(w)+" kg":""));if(!b||sc>b.sc)D.pr[key]={sc:sc,r:r,w:w||0,d:TODAY,n:nm};}
-  var addN=[],vsA=vsZero(),nSets=0,exs={};
+  var addN=[],vsA=vsZero(),nSets=0,exs={},lgN=0,tgL=!!((s.tg&&dy.tg)||(dy.tgs&&dy.tgs===id&&tgOn()));
   s.blocks.forEach(function(b,bi0){ if(D.short&&b.p>1) return; var bi=b.bi!=null?b.bi:bi0; b.items.forEach(function(it,ii){
     var iid=id+"-"+bi+"-"+ii, v=curVar(it,loc); if(v<0||dy.skip[iid]||painHit(it.opts[v].n)) return;
     if(it.add&&(dy.done[iid]||((dy.inp[iid]||{}).s||[]).some(function(x){return num(x)!==null;})))addN.push(it.opts[v].n);
@@ -3281,7 +3445,7 @@ function saveTrain(){
     if(g.ret||g.rng||g.back)stall=pv?(pv.stall||0):0;
     /* The top of a bodyweight range is no stall: the next step is a harder variation, not a smaller target. */
     if(r>=it.hi&&!(wOn(it,v)&&w))stall=0;
-    var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(all.length||setsOf(it,b,c,id)));
+    var ptn=itPat(it,v);if(ptn)vsA[ptn]=Math.min(60,vsA[ptn]+(all.length||setsOf(it,b,c,id)));if(ptn==="legs"||ptn==="hinge")lgN+=all.length||setsOf(it,b,c,id);
     if(kit){D.kitD=D.kitD||{};D.kitD[patKey(it.k)]=TODAY;}
     /* Field kit days never downgrade a shared variant and never count towards a stall (A-019 addendum). */
     if(kit&&pv&&((w||0)<(pv.w||0)||((w||0)===(pv.w||0)&&r<=pv.r))) {D.ex[it.k+"#"+v]={r:pv.r,w:pv.w,d:TODAY,hold:false,n:it.opts[v].n,stall:pv.stall||0};if(pv.s)D.ex[it.k+"#"+v].s=pv.s;if(pv.lad)D.ex[it.k+"#"+v].lad=pv.lad;}
@@ -3299,7 +3463,7 @@ function saveTrain(){
   var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
   var rk0=rankOf(xpTotal());
-  var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,vm:VMAP,lg:legSets(s,c,id)>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};if(Object.keys(exs).length)lgo.exs=exs;if(cbk)lgo.cb=1;var rd0=rdDay();if(rd0)lgo.rd=rd0;addLog(lgo);
+  var lgo={d:TODAY,id:id,t:NAMES[id],min:s.min||0,vs:vsA,vm:VMAP,lg:(s.tg?lgN:legSets(s,c,id))>=6?1:0,rpe:f.rpe,note:(f.note||"").slice(0,300),abs:absDone?1:0,sum:wts.slice(0,4).join(", "),sk:skl,ex:exl,tv:tv,pr:prs.length};if(Object.keys(exs).length)lgo.exs=exs;if(cbk)lgo.cb=1;if(tgL)lgo.tg=1;var rd0=rdDay();if(rd0)lgo.rd=rd0;addLog(lgo);
   /* Keep as favourite? Asked once per added exercise, on the Today page after logging. */
   var fa=D.favAsk||[];addN.forEach(function(n){if((D.fav||[]).indexOf(n)<0&&fa.indexOf(n)<0){fa.push(n);(D.favQ=D.favQ||[]).push(n);}});if(addN.length)D.favAsk=fa.slice(-200);
   D._fin={n:NAMES[id],min:s.min||0,sets:nSets,pr:prs.slice(0,2)};
@@ -3407,7 +3571,8 @@ document.addEventListener("click",function(e){
   else if(a==="per"){var pv=t.dataset.v;D.per=pv==="1y"||pv==="all"?pv:"12w";save();}
   else if(a==="chmore"){D._chn=(D._chn||0)+50;}
   else if(a==="holdm"){var hk=t.dataset.k;if(["str","run","sk"].indexOf(hk)>=0){D.hold=D.hold||{str:false,run:false,sk:false};D.hold[hk]=!(D.hold[hk]===true);if(hk==="run"){if(D.hold.run)delete D.holdR;else D.holdR=TODAY;}WK.key="";}}
-  else if(a==="opt"){var ok=t.dataset.k;if(["rest","oa","ready"].indexOf(ok)>=0){D.opt=D.opt||{};D.opt[ok]=!D.opt[ok];WK.key="";}}
+  else if(a==="opt"){var ok=t.dataset.k;if(["rest","oa","ready","tg"].indexOf(ok)>=0){D.opt=D.opt||{};D.opt[ok]=!D.opt[ok];if(ok==="tg"&&!D.opt.tg)TGU=null;WK.key="";}}
+  else if(a==="tgshare"||a==="tgjoin"||a==="tgx"||a==="tgread"||a==="tgstart"||a==="tgend"||a==="tgcopy"||a==="tgsend"){if(tgAct(a))save();render();return;}
   else if(a==="easy"){if(!easyOpen()&&ctx(TODAY).cyc!==6){D.easyP=D.easy||"";D.easy=easyNext();WK.key="";D._msg="";}}
   else if(a==="ready"){var rv=+t.dataset.v;if(rv===1||rv===2||rv===3){dy.ready=dy.ready===rv?0:rv;if(!dy.ready)delete dy.ready;WK.key="";}}
   else if(a==="pause"){pauseStart();}
@@ -3562,7 +3727,7 @@ document.getElementById("tstop").addEventListener("click",function(){stop();cloc
 render();
 /* A-054 (N-12): the test hook only outside the live site (file:, localhost, *.test) */
 var TESTENV=(function(){try{var h=location.hostname||"";return location.protocol==="file:"||h==="localhost"||h==="127.0.0.1"||/\.test$/.test(h);}catch(e){return false;}})();
-if(TESTENV)window.__kz={favGroups:favGroups,favGrp:favGrp,FAVG:FAVG,migTitles:migTitles,updNames:updNames,WKS:WKS,parseBk:parseBk,lbKey:lbKey,planDedup:planDedup,dupWhy:dupWhy,sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
+if(TESTENV)window.__kz={tgReg:tgReg,tgUI:function(v){if(v!==undefined)TGU=v;return TGU;},tgMake:tgMake,tgParse:tgParse,tgS:tgS,tgShow:tgShow,tgHTML:tgHTML,tgAct:tgAct,tgKey:tgKey,tgDay:tgDay,tgClean:tgClean,tgLock:tgLock,TGIDL:TGIDL,favGroups:favGroups,favGrp:favGrp,FAVG:FAVG,migTitles:migTitles,updNames:updNames,WKS:WKS,parseBk:parseBk,lbKey:lbKey,planDedup:planDedup,dupWhy:dupWhy,sesHas:sesHas,pkLim:pkLim,funOf:funOf,bandLo:bandLo,runPm:runPm,runCheck:runCheck,riForm0:riForm0,hsStage:hsStage,isoQ:isoQ,HSB:HSB,hardTile:hardTile,warmNv:warmNv,warmRep:warmRep,WALT:WALT,KITS:KITS,perNow:perNow,transWk:transWk,patGrp:patGrp,dlDay:dlDay,TH:TH,THEMES:THEMES,honTiers:honTiers,rankLabel:rankLabel,rankExt:rankExt,RKSTEP:RKSTEP,yearRev:yearRev,perMonths:perMonths,pickNR:pickNR,TXX:TXX,hold:holdOn,holdHTML:holdHTML,runPh:runPh,riForm:riForm,easyKm:easyKm,longCap:longCap,paceHint:paceHint,runBase:runBase,ROT:ROT,ROTK:ROTK,rotApply:rotApply,PATK:PATK,P:P,blkNo:blkNo,accOf:accOf,accNow:accNow,accWord:accWord,accApply:accApply,ACCK:ACCK,ACCW:ACCW,lvUp:lvUp,lvLo:lvLo,lvTxt:lvTxt,lvNext:lvNext,bStand:bStand,pStand:pStand,LVQ:LVQ,LVN:LVN,lvScan:lvScan,goalNextOf:goalNextOf,plNoGoal:plNoGoal,gUp:gUp,GCHAIN:GCHAIN,goalNextHTML:goalNextHTML,ladTake:ladTake,ladNext:ladNext,topTwice:topTwice,wOn:wOn,ORD:ORD,LADN:LADN,restoreText:restoreText,rsp:function(){return RSP;},cycWk:cycWk,dLabY:dLabY,LOGMAX:LOGMAX,rhythm:rhythm,backSteps:backSteps,patDates:patDates,gapDays:gapDays,patKey:patKey,shortN:shortN,FOREARM:FOREARM,trainId:trainId,tiredSets:tiredSets,tired3:tired3,applyState:applyState,plAge:plAge,dlWk:dlWk,begRun:begRun,chGap:chGap,goalIsCheck:goalIsCheck,KMPOST:KMPOST,ADDB:ADDB,logVs:logVs,FOC:FOC,vUnits:vUnits,avail:avail,LEGK:LEGK,PATN:PATN,painApply:painApply,painOK:painOK,painU:painU,goalBlocked:goalBlocked,goalDay:goalDay,absFor:absFor,mSections:mSections,coolItems:coolItems,PAINRX:PAINRX,ABS:ABS,prevSt:prevSt,PREVK:PREVK,own:own,dOK:dOK,lim:lim,pauseOn:pauseOn,pausedDay:pausedDay,pauseEnd:pauseEnd,pauseTick:pauseTick,cbInfo:cbInfo,painRun:painRun,painHit:painHit,PAINN:PAINN,REHAB:REHAB,streaks:streaks,bandCaps:bandCaps,bandFit:bandFit,itPat:itPat,volSets:volSets,vs7:vs7,vBand:vBand,volBias:volBias,plBoost:plBoost,goalPat:goalPat,platHTML:platHTML,kgStep:kgStep,nextVar:nextVar,patLast:patLast,runPlan:runPlan,hard3OK:hard3OK,longMode:longMode,kmStat:kmStat,weekKm:weekKm,hardRunL:hardRunL,runInfo:runInfo,logMin:logMin,logLoad:logLoad,weekLoad:weekLoad,loadStat:loadStat,restDue:restDue,easyNext:easyNext,easyOpen:easyOpen,trialItems:trialItems,lastTv:lastTv,gTaper:gTaper,gTrend:gTrend,goalTick:goalTick,setsOf:setsOf,design:design,GOALS:GOALS,goalCur:goalCur,goalDef:goalDef,goalPos:goalPos,goalLine:goalLine,goalCheck:goalCheck,setGoal:setGoal,saveRun:saveRun,xpTotal:xpTotal,favCatalog:favCatalog,blDays:blDays,ADDBI:ADDBI,loveFinIdx:loveFinIdx,patLast:patLast,kitOn:kitOn,kitGroup:kitGroup,kitReq:kitReq,kitCan:kitCan,KPOOL:KPOOL,LOC:LOC,cleanImport:cleanImport,weekPlan:weekPlan,WK:WK,termNote:termNote,weekHTML:weekHTML,blockSec:blockSec,bkJSON:bkJSON,bkDue:bkDue,MAXBK:MAXBK,tb:function(){return TB;},honours:function(){return honours();},estMin:estMin,wuSets:wuSets,legDay:legDay,DURMAX:DURMAX,legSets:legSets,legLog:legLog,hist:hist,today:function(s){if(s)TODAY=s;return TODAY;},day:day,saveTrain:saveTrain,recAll:recAll,recTrain:recTrain,S:S,NAMES:NAMES,D:function(){return D;},setD:function(x){D=x;},parseTrack:parseTrack,target:target,GYM:GYM,HOME:HOME,lvl:lvl,ctx:ctx,isoP:isoP,render:render,startRest:startRest,isKick:isKick,skillPlan:skillPlan,runRec:runRec,rounds:rounds,curVar:curVar,morning:morning,mSections:mSections,COOLS:COOLS,MMOD:MMOD,restore:function(t,w){var r=restoreText(t,w);if(r&&RSP)applyState(RSP.b,RSP.where,rsToast(RSP.b),true);return r;},love:{derive:loveDerive,open:loveOpen,pick:lovePick,unlock:loveUnlock,day:loveDay,on:loveOn,LV:LV,KK:LOVEKK,MIN:LOVEMIN}};
 })();
 
 if("serviceWorker" in navigator&&window.top===window.self){window.addEventListener("load",function(){navigator.serviceWorker.register("sw.js").catch(function(){});});}
