@@ -176,7 +176,7 @@ unitD(HTML,rep).forEach(issue);
 {const r=courseD(HTML);r.bad.forEach(issue);rep.push('d: 24 weeks Partner glutes and Partner lower + sq: '+r.n+' strength sessions, look-ahead = week plan in all, with a planned leg session in reach '+r.res+', without '+r.none+'; 60–90 min and hot 7-day peaks held');}
 
 // ---------- mutations ----------
-const MUT=[['a','return t.test==="lb"&&t.lk!==','return 0&&t.test==="lb"&&t.lk!==',unitA],
+const MUT=[['a','return isLb(t.test)&&t.lk!==','return 0&&isLb(t.test)&&t.lk!==',unitA],
   ['b','itPat(it,i)===pt&&!sesHas(s,cp(it,i),it)','itPat(it,i)===pt',unitB],
   ['c','ok=up?({KA:1,KB:1,HO:1,CH:1}[id]','ok=up?({KA:1,KB:1,HO:1,CH:1,TE:1}[id]',unitC],
   ['d','var AH=s._lka||(','var AH=(legPlan()?[{k:2,vs:null}]:[])||(',unitD]];

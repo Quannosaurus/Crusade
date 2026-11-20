@@ -1109,7 +1109,11 @@ function trialItems(){var sk=D.skills,g=D.goal&&GOALS[D.goal.k]?D.goal.k:"",out=
   var lb=lbTest();if(lb)out.push(lb);return out;}
 function lbTest(){var e=emph();if(e!=="lower"&&e!=="glutes")return null;var key=(ANCH[e].KC||[])[0],src=(e==="lower"?GLUTES():GLUTEX()).filter(function(it){return it.k===key;})[0];if(!src)return null;
   var v=curVar(src,LOC());if(v<0)return null;var o=src.opts[v],st=D.ex[src.k+"#"+v],w=o.w&&st?st.w:0;
-  return {test:"lb",tvo:1,unit:"reps",lw:w,lk:src.k+"#"+v,opts:[{n:o.n,req:o.req,w:false}],c:"Max clean reps"+(w?" with your working weight "+fmtKg(w)+" kg":" at your working weight")+". Stop when the form breaks."};}
+  return {test:lbSer(v),tvo:1,unit:"reps",lw:w,lk:src.k+"#"+v,opts:[{n:o.n,req:o.req,w:false}],c:"Max clean reps"+(w?" with your working weight "+fmtKg(w)+" kg":" at your working weight")+". Stop when the form breaks."};}
+/* I-53: the lower-body trial is one series per variant of its exercise (its weight store <key>#<v>): variant 0 stays "lb"
+   (old entries keep it), variant n is "lb"+LBV[n] (e.g. machine "lbb", home dumbbell "lbd"). A trial at another variant is
+   another measurement, so last trial, record and progress compare like with like. Letters only (cleanImport tv keys). */
+var LBV="abcdefghij";function lbSer(v){return v>0&&v<LBV.length?"lb"+LBV[v]:"lb";}function isLb(k){return k==="lb"||/^lb[a-j]$/.test(k);}
 function lastTv(k){for(var i=D.logs.length-1;i>=0;i--){var l=D.logs[i];if(l.tv&&l.tv[k]!=null)return l.tv[k];}return null;}
 /* A-033 (M-5): blocks 2–4 of the Skill Trial follow skills and level. Lever, planche and dragon-flag work only with the front
    lever / planche skill (the back lever goes with the front lever); without any skill the trial brings the "Pull & push"
@@ -1807,7 +1811,7 @@ function ddFix(it,b){return !!(it.anc||it.gx||it.test||it.add||b.fav||isFavIt(it
    the value is a different measurement: it goes into its own series "lbx" (tv.lbx, record and progress test:lbx), so the
    lb series, its last-trial line and its record compare only like with like. No conversion between weights (a rep-max
    formula would add a model error). Merged into the anchor of the same store, it stays "lb". */
-function lbKey(t,it,loc){return t.test==="lb"&&t.lk!==it.k+"#"+curVar(it,loc)?"lbx":t.test;}
+function lbKey(t,it,loc){return isLb(t.test)&&t.lk!==it.k+"#"+curVar(it,loc)?"lbx":t.test;}
 function planDedup(s){var loc=LOC(),L=[],cat=null,n0=0;
   s.blocks.forEach(function(b){if(b.warm||b.cool||b.add||(D.short&&b.p>1))return;b.items.forEach(function(it,ii){L.push({it:it,b:b,ii:ii});});});
   function live(x){return !x.it.gone&&curVar(x.it,loc)>=0;}
@@ -3543,7 +3547,7 @@ function saveTrain(){
     if(wOn(it,v)&&w) wts.push(it.opts[v].n+" "+fmtKg(w)+" kg × "+r);
     if(sets.length) rec(it.k+"#"+v,Math.max.apply(null,sets),w,it.opts[v].n);
     /* A-060: a test merged into this slot (planDedup) takes set 1 as the trial value; it counts for test and goal. */
-    if(it.tsv&&all.length){var t1=it.tsv.t;if(!it.tsv.tvo)D.profile[t1]=all[0];tv[t1]=all[0];rec("test:"+t1,all[0],((t1==="lb"||t1==="lbx")&&w)||0,it.tsv.n+(t1==="lbx"?" (trial set)":""));}
+    if(it.tsv&&all.length){var t1=it.tsv.t;if(!it.tsv.tvo)D.profile[t1]=all[0];tv[t1]=all[0];rec("test:"+t1,all[0],((isLb(t1)||t1==="lbx")&&w)||0,it.tsv.n+(t1==="lbx"?" (trial set)":""));}
   });});
   var absDone=!!dy.done["abs-T"],abf=absFor(id); if(absDone&&abf) D.abs=(abf.i+1)%ABS.length; if(absDone&&s.ab) vsA.core=Math.min(60,vsA.core+blitzSets(s.ab));
   var skl=[];s.blocks.forEach(function(b){if(D.short&&b.p>1)return;if(b.skill&&skl.indexOf(b.skill)<0)skl.push(b.skill);if(b.mu&&skl.indexOf("mu")<0)skl.push("mu");});
