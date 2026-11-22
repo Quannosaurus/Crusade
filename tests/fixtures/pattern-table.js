@@ -8,6 +8,9 @@ const ROWS=[
   ...'a2_com a2_row a2_wpu a_expu a_lat a_row b2_lr b2_sw b_er b_fr b_neg c_pu ch_row fl_pull gl_pull h_pull mu_neg mu_pro u_row'.split(' ').map(k=>[k,'*','pull','pull']),
   // push (u_tri, b2_tr: triceps work counts as pressing)
   ...'a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b2_tr b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh u_tri'.split(' ').map(k=>[k,'*','push','push']),
+  // A-069 gym catalogue forms
+  ...'y_sip y_fly'.split(' ').map(k=>[k,'*','push','push']),['y_dl','*','hinge','hip'],
+  ...'y_hs y_le'.split(' ').map(k=>[k,'*','legs','knee']),['y_jk','*','core','core'],
   // legs (knee-dominant)
   ...'c_sq c_lu g_bss g_su gl_sq h_sq'.split(' ').map(k=>[k,'*','legs','knee']),
   // hinge = hip extension (x_be bench and a_hyp included)

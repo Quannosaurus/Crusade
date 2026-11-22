@@ -252,4 +252,5 @@ Internal IDs and data keys never change, only the display name:
   caches. Edit/delete like any entry; the edit form offers OW only for OW entries and keeps the own title of an OW entry while
   the session stays. Old builds keep OW entries (any two-letter id passes `cleanImport`). "Other activity" unchanged.
   `t74`.
+- **Gym catalogue (A-069):** `GYMX()` holds six forms from the Captain's gym split (Smith machine incline press, Machine chest fly, Barbell deadlift, Hack squat, Leg extension, Diagonal jackknife; keys `y_sip y_fly y_dl y_hs y_le y_jk`, patterns push/push/hinge/legs/legs/core in `PATK` and the pattern-table fixture), each leading its item with existing forms of the same function as Swap alternatives. Catalogue only (`favCatalog`: picker, favourites, additions, Own workout, Never/pain replacements of the group); no base plan, rotation or generator rule uses them. `HOWTO` has a line each. `t76`.
 - **Test hook:** `window.__kz` exposes internals for tests – only outside the live site (`TESTENV`: `file:`, localhost, `*.test`).

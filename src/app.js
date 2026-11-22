@@ -421,6 +421,16 @@ function UPPERX(){return [
   P("u_row",8,12,"reps","Pull the elbow to the hip, pause 1 s",["Chest-supported row|g|w","One-arm dumbbell row|d|w","Band rows|b","Inverted rows under a table"],"more weight","3"),
   P("u_rd",12,20,"reps","Thumbs up, squeeze the shoulder blades",["Reverse fly machine|g|w","Bent-over dumbbell reverse fly|d|w","Band pull-aparts|b","Prone T-raises"],"more weight","3"),
   P("u_sh",8,12,"reps","Ribs down, press straight up",["Seated dumbbell shoulder press|g|w","Dumbbell shoulder press|d|w","Pike push-ups"],"more weight","3")];}
+/* A-069: gym forms from the Captain's 4-day split that the plans do not hold – catalogue only (picker, favourites,
+   additions, Own workout, Never/pain replacements of their group); no base plan, rotation or generator uses them. Each new
+   form leads its item, the alternatives are existing forms of the same function (Swap). */
+function GYMX(){return [
+  P("y_sip",8,12,"reps","Bench at about 30°, bar to the upper chest, elbows slightly in",["Smith machine incline press|g|w","Dumbbell bench press|g|w","Chest press machine|g|w"],"more weight","3"),
+  P("y_fly",10,15,"reps","Soft elbows, open wide, squeeze the chest together",["Machine chest fly|g|w","Chest press machine|g|w"],"more weight","3"),
+  P("y_dl",5,8,"reps","Bar close to the shins, flat back, push the floor away",["Barbell deadlift|g|w","Romanian deadlift|g|w","Kettlebell deadlift|g|w"],"more weight","3"),
+  P("y_hs",8,12,"reps","Feet shoulder-wide on the plate, knees track over the toes, go as deep as you control",["Hack squat|g|w","Leg press|g|w","Barbell back squat|g|w"],"more weight","3"),
+  P("y_le",10,15,"reps","Pause 1 s at the top, lower slowly",["Leg extension|g|w"],"more weight","3"),
+  P("y_jk",8,12,"each side","Elbow towards the opposite knee, lower under control",["Diagonal jackknife","Dead bug"],"slower or more reps","3")];}
 function COREX(){return [
   P("x_db",8,12,"each side","Lower back stays on the floor, exhale fully",["Dead bug with a weight|g|w","Dead bug"],"slower or add weight","3"),
   P("x_pal",10,12,"each side","Press out, resist the turn, hips square",["Cable Pallof press|g|w","Band Pallof press|b","Side plank with reach"],"step further out","3"),
@@ -502,7 +512,7 @@ function rotApply(s,id,c){var set=c&&c.blk?(c.blk-1)%3:rotSet();s.rset=set;
     var m=function(it){return it.anc||it.gx||it.f||it.iso||it.test||!it.k||isFavIt(it)?it:rotItem(it,set);};
     b.items=b.items.map(m);if(b.more)b.more=b.more.map(m);});}
 function favCatalog(){var cat={};function add(it,v){var n=it.opts[v].n;if(!cat[n])cat[n]={it:it,v:v};}
-  GLUTES().concat(GLUTEX(),UPPERX(),COREX()).forEach(function(it){it.opts.forEach(function(o,v){add(it,v);});});
+  GLUTES().concat(GLUTEX(),UPPERX(),COREX(),GYMX()).forEach(function(it){it.opts.forEach(function(o,v){add(it,v);});});
   Object.keys(ROT).forEach(function(k){ROT[k].forEach(function(x){var it=P(x[0],x[1],x[2],x[3],x[4],x[5],"more weight or the next variation");it.opts.forEach(function(o,v){add(it,v);});});});
   ["KA","KB","KC","HO"].forEach(function(id){[1,2].forEach(function(ph){var s=S0(id,{phase:ph,week:2,cyc:2,lowFreq:false});s.blocks.forEach(function(b){b.items.forEach(function(it){if(it.f||it.test||it.iso)return;it.opts.forEach(function(o,v){add(it,v);});});});});});
   return cat;}
@@ -1493,9 +1503,9 @@ var VSEST={KA:{pull:8,push:8,core:3},KB:{pull:8,push:8,core:3},KC:{legs:9,hinge:
 /* A-035: triceps work of Volume day (KB) (b2_tr) counts as pressing too (VMAP 3); logs before carry it under no pattern. */
 var VMAP=4,V1P={c_calf:"legs",x_be:"core",u_tri:"",u_cur:"",b_jump:"hinge",c_rdl:"hinge",h_ham:"hinge",b2_tr:""};
 var PATK=(function(){var m={},t={pull:"a2_com a2_row a2_wpu a_expu a_lat a_row b2_lr b2_sw b_er b_fr b_neg c_pu ch_row fl_pull gl_pull h_pull mu_neg mu_pro u_row r_ur1 r_ur2",
-  push:"a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b2_tr b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh u_tri",
-  legs:"c_sq c_lu g_bss g_su gl_sq h_sq r_lu1 r_lu2 r_bs1 r_bs2 r_su1 r_su2",hinge:"c_rdl g_ht g_kb g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl x_be r_rd1 r_rd2 r_kb1 r_kb2 r_fp1 r_fp2 r_45a r_45b",
-  core:"x_aw x_db x_lr x_pal x_sp kp_pal kp_rot r_db1 r_db2 r_pa1 r_pa2 r_sp1 r_sp2 r_lr1 r_lr2 r_aw1 r_aw2"};Object.keys(t).forEach(function(p){t[p].split(" ").forEach(function(k){m[k]=p;});});return m;})();
+  push:"y_sip y_fly a2_dtp a2_fl a2_ww a_pike a_sbd b2_am b2_dl b2_dp b2_tr b_pk b_pu c_dip ch_push gl_dip gl_push h_dip h_pike h_pu pl_pu u_sh u_tri",
+  legs:"y_hs y_le c_sq c_lu g_bss g_su gl_sq h_sq r_lu1 r_lu2 r_bs1 r_bs2 r_su1 r_su2",hinge:"y_dl c_rdl g_ht g_kb g_rdl g_fp g_45 h_ham b_gl b_jump a_hyp gl_ht gl_rdl x_be r_rd1 r_rd2 r_kb1 r_kb2 r_fp1 r_fp2 r_45a r_45b",
+  core:"y_jk x_aw x_db x_lr x_pal x_sp kp_pal kp_rot r_db1 r_db2 r_pa1 r_pa2 r_sp1 r_sp2 r_lr1 r_lr2 r_aw1 r_aw2"};Object.keys(t).forEach(function(p){t[p].split(" ").forEach(function(k){m[k]=p;});});return m;})();
 /* Variant names that move to another pattern than their item key (knee flexion, jumps, home back-extension forms, chin-up negatives).
    A-064 (doctrine of the Captain): knee flexion trains the hamstrings and counts to the posterior chain (hinge) [Q68][Q69];
    adductor forms are their own pattern-free group (kitGroup "hipad") [Q70], also the adductor form of the side-plank rotation. */
@@ -2082,6 +2092,13 @@ var COOLK={KA:"up",KB:"up",SK:"up",HO:"up",HK:"up",CH:"legs",TE:"up",DL:"legs",K
 
 /* Short technique notes: first matching pattern wins. Families share one note. */
 var HOWTO=[
+ /* A-069: gym catalogue forms */
+ [/smith machine incline press/i,"Set the bench to about 30°. Lower the bar to the upper chest with the elbows a little in, press up without locking out hard. The shoulder blades stay pulled back."],
+ [/machine chest fly/i,"Elbows slightly bent and fixed. Open until you feel a stretch across the chest, then bring the handles together and squeeze for a moment. No bouncing at the back."],
+ [/barbell deadlift/i,"Bar over the middle of the foot, shins close to it. Brace, flat back, push the floor away and stand tall; lower the bar along the legs the same way."],
+ [/hack squat/i,"Back and hips against the pad, feet shoulder-wide. Lower under control as deep as your back stays on the pad, knees over the toes, then push through the whole foot."],
+ [/leg extension/i,"Knee joint in line with the machine's pivot. Straighten the legs, hold 1 s at the top, lower slowly. Stay seated, no swinging."],
+ [/diagonal jackknife/i,"Lie on your back, arms overhead. Lift one straight leg and the opposite arm, reach the hand towards the foot so the trunk rolls up diagonally, lower slowly and switch sides."],
  /* A-056 a: handstand stages 4 and 5 */
  [/kick-ups to a free hold/i,"Kick up with a straight push leg, bring the second leg to it, then balance from the fingers and the heels of the hands. Come down calmly, count only the holds of 5 s or more."],
  [/toe pulls/i,"Back to the wall, toes touching it. Lift the toes off by pressing the heels of the hands into the floor, hold the balance, touch back down."],
