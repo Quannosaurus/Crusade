@@ -10,7 +10,7 @@ const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g
 const P=[];const issue=m=>P.push(m);
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
   w.addEventListener('error',e=>errs.push(e.message));if(pre)w.localStorage.setItem('kz_app_v3',JSON.stringify(pre));
-  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);const $=s=>w.document.querySelector(s);
+  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);if(!(pre&&pre.theme))w.__kz.D().theme='templar';/* A-074: new installs start in Plain; this test checks templar words */const $=s=>w.document.querySelector(s);
   return {w,k:w.__kz,errs,$,$$:s=>[...w.document.querySelectorAll(s)],click:s=>{const e=$(s);if(!e){issue('missing '+s);return;}e.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));},
     change:(s,v)=>{const e=$(s);if(!e){issue('missing '+s);return;}e.value=v;e.dispatchEvent(new w.Event('change',{bubbles:true}));}};}
 const TD='2026-11-16';
@@ -108,7 +108,7 @@ await p.evaluate(()=>{const D=window.__kz.D();D.obStep=1;window.__kz.render();})
 await p.locator('[data-a=goal]').first().scrollIntoViewIfNeeded();await p.screenshot({path:R+'/.build/t30-onboarding-goal.png'});
 await p.click('[data-a=goal][data-k=mu]');await p.waitForTimeout(60);
 if(!await p.evaluate(()=>window.__kz.D().goal&&window.__kz.D().goal.k==='mu'))issue('playwright: one tap did not set the goal');
-await p.evaluate(()=>{const k=window.__kz,D=k.D();Object.assign(D,{onb:true,seenFocus:true,seenFav:true,tab:'start',bkTs:Date.now()});Object.assign(D.profile,{pull:9,expl:3,negmu:1});
+await p.evaluate(()=>{const k=window.__kz,D=k.D();Object.assign(D,{onb:true,seenFocus:true,seenFav:true,tab:'start',bkTs:Date.now(),theme:'templar'});Object.assign(D.profile,{pull:9,expl:3,negmu:1});
   D.logs=[{d:k.today(),id:'MO',t:'Morning routine',m:['hips']}];localStorage.setItem('kz_app_v3',JSON.stringify(D));});
 await p.reload();await p.waitForTimeout(150);
 const line=await p.$('.gline');if(!line)issue('playwright: start line missing');else{const bb=await line.boundingBox();if(bb.width>390)issue('playwright: start line wider than the screen');}

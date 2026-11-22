@@ -31,7 +31,7 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
    '"kit":["'+nm+'"],"kickDays":["'+nm+'",1]}';
   let b;try{b=ci(JSON.parse(raw));}catch(e){issue(nm+': cleanImport throws '+e.message);return;}
   const l=b.logs[0]||{};
-  if(b.theme!=='templar')issue(nm+': theme taken');if(b.startP!=='s1')issue(nm+': startP taken');if(b.emph!==undefined)issue(nm+': emph taken');
+  if(b.theme!=='plain')issue(nm+': theme taken');  /* A-074: fresh default is Plain */if(b.startP!=='s1')issue(nm+': startP taken');if(b.emph!==undefined)issue(nm+': emph taken');
   if(b.focus!=='bal'||b.loc!=='g'||b.mlen!=='n')issue(nm+': focus/loc/mlen taken');
   const dd=b.days['2026-11-15']||{};if(dd.run!==null)issue(nm+': days.run taken');if(dd.pick!==null)issue(nm+': days.pick taken');
   ['done','skip','open','inp'].forEach(f=>{if(dd[f]&&own(dd[f],nm))issue(nm+': days.'+f+' key kept');if(dd[f]&&Object.getPrototypeOf(dd[f])!==WOP)issue(nm+': days.'+f+' prototype changed');});
@@ -48,7 +48,7 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
  if(polluted(x.w))issue('prototype polluted');
  // the restored state renders with the default theme
  const D=base(x.k);x.k.setD(Object.assign(ci(JSON.parse('{"profile":{},"logs":[],"theme":"constructor","onb":true}')),{tab:'mehr'}));x.k.render();
- if(x.$('body').getAttribute('data-theme')!=='templar')issue('restored proto theme not templar');if(x.errs.length)issue('JS errors (1): '+x.errs.join('; '));}
+ if(x.$('body').getAttribute('data-theme')!=='plain')issue('restored proto theme not the fresh default (plain)');if(x.errs.length)issue('JS errors (1): '+x.errs.join('; '));}
 
 // 1b A-034: the remaining whitelist fields (profile, fav, honSeen, never, favAsk, favQ, favP, seenFav, onb, runKm/runI,
 // logs.sk/rd, days.add/ready/fin, pause, pauseH, easy/easyP, bkDate, goal.s0 and the other goal fields, top-level
@@ -109,7 +109,7 @@ const polluted=w=>({}).polluted!==undefined||({}).x!==undefined||w.eval('({}).po
  const r=boot({v:3,onb:true,profile:{pull:5},logs:[null],days:{}});r.$('[data-a=reset]')&&r.$('[data-a=reset]').click();r.$('[data-a=reset]')&&r.$('[data-a=reset]').click();
  if(r.k.D().onb!==false||r.k.D().logs.length!==0)issue('reset from damaged state did not reset');
  BAD.concat(['nosuchtheme']).forEach(nm=>{const f=boot(null,'https://x.test/?theme='+encodeURIComponent(nm));
-   if(f.$('body').getAttribute('data-theme')!=='templar')issue('?theme='+nm+': not templar');if(f.k.D().theme!=='templar')issue('?theme='+nm+': stored theme '+f.k.D().theme);
+   if(f.$('body').getAttribute('data-theme')!=='plain')issue('?theme='+nm+': not the fresh default (plain)');if(f.k.D().theme!=='plain')issue('?theme='+nm+': stored theme '+f.k.D().theme);
    if(!f.$('#app').textContent.length)issue('?theme='+nm+': nothing rendered');if(f.errs.length)issue('?theme='+nm+': JS errors '+f.errs.join('; '));});
  const g=boot(null,'https://x.test/?theme=sanguine');g.k.D().onb=true;g.k.render();if(g.k.D().theme!=='sanguine')issue('?theme=sanguine no longer works');}
 

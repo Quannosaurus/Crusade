@@ -14,7 +14,7 @@ const {sim,addD}=require('./fixtures/sim.js');const PROF=require('./fixtures/pro
 const P=[];const issue=m=>P.push(m);const rep=[];
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
   w.addEventListener('error',e=>errs.push(e.message));if(pre)w.localStorage.setItem('kz_app_v3',JSON.stringify(pre));
-  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);return {w,k:w.__kz,errs,$:s=>w.document.querySelector(s),$$:s=>[...w.document.querySelectorAll(s)],txt:()=>w.document.getElementById('app').textContent};}
+  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);if(!(pre&&pre.theme))w.__kz.D().theme='templar';/* A-074: new installs start in Plain; this test checks templar words */return {w,k:w.__kz,errs,$:s=>w.document.querySelector(s),$$:s=>[...w.document.querySelectorAll(s)],txt:()=>w.document.getElementById('app').textContent};}
 const TD='2026-11-16';
 const prof=n=>PROF.find(p=>p.n===n);
 function setup(k,p,start){const D=k.D();Object.assign(D.profile,p.prof);D.focus=p.focus;D.emph=p.emph;D.skills=Object.assign({hs:false,mu:false,ls:false,fl:false,pl:false},p.skills);

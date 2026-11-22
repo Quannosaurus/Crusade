@@ -12,13 +12,15 @@ function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'http
 let A=boot();
 if(!/Welcome/.test(A.txt()))issue('Grunddaten-Fenster erscheint nicht beim ersten Start');if(!A.$('[role=dialog]'))issue('kein Dialog');
 if(A.$$('.nav button').length)issue('Reiterleiste während Einstufung sichtbar');
+/* A-074: new installs start in Plain; this flow checks the templar words, so it picks the theme in step 1 like a user would */
+{const tr=A.$('input[data-a="theme"][value="templar"]');if(!tr)issue('Theme-Wahl fehlt in Schritt 1');else{tr.checked=true;tr.dispatchEvent(new A.w.Event('change',{bubbles:true}));}}
 A.click('[data-a=obnext]');if(/muscle-up/i.test(A.txt().replace(/Muscle-Up<\/label>|Muscle-Up/g,'')))issue('Schritt 1 fragt Muscle-Ups ab');
 {const r=A.$('input[name=o_start][value=s0]');r.checked=true;r.dispatchEvent(new A.w.Event('change',{bubbles:true}));}
 A.click('[data-a=obnext]');if(!/Your numbers/.test(A.txt()))issue('Schritt 2 fehlt');
 if(A.$('#o_mu'))issue('Muscle-Up-Frage ohne gewählten Skill');if(A.$('#o_pull').value!=='0')issue('Startpunkt nicht übernommen: '+A.$('#o_pull').value);
 A.set('#o_pull','2');A.set('#o_dips','3');
 if(!/Basic/.test(A.$('#lvlnote').textContent))issue('Stufe aktualisiert sich nicht live in der Einstufung');
-A.click('[data-a=obnext]');if(!/Kickboxing days/.test(A.txt()))issue('Schritt 3 fehlt');A.click('[data-a=onb]');if(!/Your orders for today/.test(A.txt()))issue('Nach Einstufung keine Startseite');
+A.click('[data-a=obnext]');if(!/Kickboxing days/.test(A.txt()))issue('Schritt 3 fehlt');A.click('[data-a=onb]');if(!/Getting started/.test(A.txt()))issue('Nach der ersten Einstufung keine Einführung');A.click('#app [data-tab=start]');if(!/Your orders for today/.test(A.txt()))issue('Nach Einstufung keine Startseite');
 console.log('Anfänger-Start:',A.$$('.big span').map(x=>x.textContent).slice(0,8).join(' | '));
 // 2 Training flow as intermediate
 A=boot({...JSON.parse(A.w.localStorage.getItem('kz_app_v3')),skills:{hs:true,mu:true,ls:true,fl:false,pl:false},profile:{pull:10,dips:15,push:25,expl:5,negmu:5,mu:0,hang:45,tuck:30,lsit:10,hollow:90,hsw:30,hsf:0,pike:12},onb:true,logs:[]});

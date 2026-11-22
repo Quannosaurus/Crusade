@@ -92,7 +92,7 @@ RUNS.forEach(([n,gk,o])=>{const r=course(HTML,n,gk,Object.assign({loose:MUT==='p
 
 // 2 mutations: switching off either fix must turn the check red
 if(!MUT){const M=[['case 1','if(lose)yieldIt(lose);','if(lose&&0)yieldIt(lose);','Partner lower',null,'KA',/Band-assisted pull-ups \[Strength\] \/ Band-assisted pull-ups \[Transitions\]/],
-  ['case 2','if(tst&&!oth.it.test','if(0&&tst&&!oth.it.test','Partner glutes','ht','CH',/Barbell hip thrust \[Your vow: Hip thrust\] \/ Barbell hip thrust \[Trial\]/]];
+  ['case 2','if(tst&&!oth.it.test','if(0&&tst&&!oth.it.test','Partner glutes','ht','CH',/Barbell hip thrust \[(?:Your vow|Goal): Hip thrust\] \/ Barbell hip thrust \[Trial\]/]];
   M.forEach(([tag,a,b,n,gk,id,rx])=>{if(!HTML.includes(a)){issue('mutation '+tag+': code "'+a+'" not found');return;}const h=HTML.replace(a,b);
     const u=unit(h,'',null).filter(x=>x.startsWith(tag));const r=course(h,n,gk,{days:140,only:[id],loose:1});const hit=r.ex.some(x=>rx.test(x));
     rep.push('mutation '+tag+': unit '+(u.length?'red':'green')+', 20 weeks '+r.tot+' duplicates'+(hit?' (expected pair seen)':''));

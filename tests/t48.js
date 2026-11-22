@@ -8,7 +8,7 @@ const html=fs.readFileSync(R+'/.build/index.html','utf8').replace(/<link[^>]*>/g
 const P=[];const issue=m=>P.push(m);
 function boot(pre){const dom=new JSDOM(html,{runScripts:'outside-only',url:'https://x.test/'});const w=dom.window;w.scrollTo=()=>{};const errs=[];
   w.addEventListener('error',e=>errs.push(e.message));if(pre)w.localStorage.setItem('kz_app_v3',JSON.stringify(pre));
-  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);const $=s=>w.document.querySelector(s);
+  w.eval(html.match(/<script>([\s\S]*)<\/script>/)[1]);if(!(pre&&pre.theme))w.__kz.D().theme='templar';/* A-074: new installs start in Plain; this test checks templar words */const $=s=>w.document.querySelector(s);
   return {w,k:w.__kz,errs,$,$$:s=>[...w.document.querySelectorAll(s)],click:s=>{const e=typeof s==='string'?$(s):s;if(!e){issue('missing '+s);return;}e.dispatchEvent(new w.MouseEvent('click',{bubbles:true}));},
     change:(s,v)=>{const e=$(s);if(!e){issue('missing '+s);return;}e.value=v;e.dispatchEvent(new w.Event('change',{bubbles:true}));}};}
 const TD='2026-11-16';
