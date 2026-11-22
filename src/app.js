@@ -94,6 +94,8 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   if(typeof n.emph==="string"&&EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(typeof n.favP==="boolean")b.favP=n.favP; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90&&okKey(x);}).slice(0,20); if(own(THEMES,n.theme))b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string"&&x.length<40&&okKey(x);}).slice(0,50);
   if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&okKey(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
   if(Array.isArray(n.kit))b.kit=n.kit.filter(function(x){return typeof x==="string"&&"kbdsr".indexOf(x)>=0&&x.length===1;}).filter(function(x,i,a){return a.indexOf(x)===i;});
+  if(Array.isArray(n.owT))b.owT=n.owT.filter(function(t){return t&&typeof t==="object"&&typeof t.nm==="string"&&t.nm.trim()&&Array.isArray(t.ex);}).slice(-OWTMAX).map(function(t){
+    return {nm:t.nm.trim().slice(0,40),ex:t.ex.filter(function(x,i,arr){return typeof x==="string"&&x.length>0&&x.length<90&&okKey(x)&&arr.indexOf(x)===i;}).slice(0,OWMAX)};}).filter(function(t){return t.ex.length;});
   ["never","favAsk","favQ"].forEach(function(k){if(Array.isArray(n[k])){var a=n[k].filter(function(x,i,arr){return typeof x==="string"&&x.length>0&&x.length<90&&okKey(x)&&arr.indexOf(x)===i;}).slice(-200);if(k==="never")a=a.slice(-100);if(k==="favQ")a=a.slice(-20);b[k]=a;}});
   b.goal=cleanGoal(n.goal,DS);
   if(Array.isArray(n.goalNext))b.goalNext=n.goalNext.filter(function(x){return x&&typeof x==="object"&&typeof x.k==="string"&&own(GOALS,x.k)&&okKey(x.k)&&isFinite(+x.v)&&+x.v>0&&+x.v<=100000;}).slice(0,2).map(function(x){return {k:x.k,v:Math.round(+x.v*100)/100};});
@@ -2837,15 +2839,19 @@ function saveOther(){var dy=day();if(needRpe(dy))return;var f=dy.fin,nm=String(f
    (D.ex[..].d is the date of the newest value, so "last" means newest by date, not by time of logging). Only catalogue
    exercises (favCatalog); "Other activity" stays the place for sport without exercises. */
 var OWMAX=12,OWSMAX=12;
-function owBtn(){return '<button type="button" class="b wide owb" data-a="owopen">+ Log own workout</button>'+(D._owOk?'<p class="muted" role="status">'+esc(D._owOk)+'</p>':'');}
-function owNew(){return {d:TODAY,nm:"",ex:[],min:"",rpe:0,note:"",pick:false,err:"",at:-1};}
+/* A-070: saved Own workout templates (D.owT, ≤ OWTMAX: {nm, ex:[catalogue names]}); a chip opens the form with those
+   exercises, each row prefilled from its newest stored value. */
+var OWTMAX=12;function owTpls(){return Array.isArray(D.owT)?D.owT:[];}
+function owBtn(){var T=owTpls();return '<button type="button" class="b wide owb" data-a="owopen">+ Log own workout</button>'+
+  (T.length?'<div class="chips owt" role="group" aria-label="Your templates">'+T.map(function(t,i){return '<button type="button" class="chip" data-a="owtpl" data-i="'+i+'">↻ '+esc(t.nm)+'</button>';}).join("")+'</div>':'')+(D._owOk?'<p class="muted" role="status">'+esc(D._owOk)+'</p>':'');}
+function owNew(){return {d:TODAY,nm:"",ex:[],min:"",rpe:0,note:"",pick:false,err:"",at:-1,tpl:false,tk:-1};}
 function owSt(){var o=D._ow;if(!o||typeof o!=="object"||!Array.isArray(o.ex))o=D._ow=owNew();return o;}
 /* a new row starts from the newest stored value of that exercise: its sets (else the weakest set per planned set) and weight */
 function owRow(n,cat){var c=cat[n],it=c.it,v=c.v,pv=own(D.ex,it.k+"#"+v)?D.ex[it.k+"#"+v]:null,k=Math.max(1,Math.min(5,parseInt(String(it.sets),10)||3)),s=[],i;
   if(pv&&pv.s&&pv.s.length)s=pv.s.slice(0,OWSMAX).map(String);else for(i=0;i<k;i++)s.push(pv&&pv.r?String(pv.r):"");
   return {n:n,s:s,w:pv&&pv.w&&wOn(it,v)?String(pv.w):""};}
 function owRead(){var o=D._ow;if(!o||!Array.isArray(o.ex)||!document.getElementById("owf"))return;var g=function(id){var e=document.getElementById(id);return e?e.value:null;},v;
-  v=g("ow_d");if(v!=null)o.d=v;v=g("ow_nm");if(v!=null)o.nm=v.slice(0,40);v=g("ow_min");if(v!=null)o.min=v;v=g("ow_note");if(v!=null)o.note=v.slice(0,300);
+  v=g("ow_d");if(v!=null)o.d=v;v=g("ow_nm");if(v!=null)o.nm=v.slice(0,40);v=g("ow_min");if(v!=null)o.min=v;v=g("ow_note");if(v!=null)o.note=v.slice(0,300);var tc=document.getElementById("ow_tpl");if(tc)o.tpl=!!tc.checked;
   document.querySelectorAll("#owf [data-ows]").forEach(function(e){var x=o.ex[+e.dataset.owi];if(x&&+e.dataset.ows<x.s.length)x.s[+e.dataset.ows]=e.value;});
   document.querySelectorAll("#owf [data-oww]").forEach(function(e){var x=o.ex[+e.dataset.owi];if(x)x.w=e.value;});}
 /* the rows that carry at least one set, each with its catalogue item */
@@ -2868,11 +2874,16 @@ function owSave(){var o=owSt(),cat=favCatalog(),d=String(o.d||"");
     if(wOn(it,v)&&w)wts.push(x.n+" "+fmtKg(w)+" kg × "+r);});
   var nm=String(o.nm||"").trim().slice(0,40)||NAMES.OW,z=D.logs.length?D.logs[D.logs.length-1].d:"";
   var lg={d:d,id:"OW",t:nm,min:durOf(o.min,MINEST.OW),vs:vsA,vm:VMAP,lg:lgN>=6?1:0,rpe:o.rpe,note:String(o.note||"").slice(0,300),sum:wts.slice(0,4).join(", "),sk:[],ex:exl,exs:exs,pr:prs.length};
+  if(o.tpl){var T=owTpls().slice(),tn={nm:nm,ex:X.map(function(x){return x.n;}).slice(0,OWMAX)},ti=-1;T.forEach(function(t,q){if(t.nm===nm)ti=q;});
+    if(ti>=0)T[ti]=tn;else T.push(tn);D.owT=T.slice(-OWTMAX);}
   addLog(lg);if(d<z){CWC.k=RHC.k=HSC.k=ODC.k=IDI.k=TDI.k="";lvClr();}WK.key="";
   afterLog(rk0,prs,lg);var L1=[lvUp(),lvLo()],lu=[];if(L1[0]>L0[0])lu.push("Upper "+LVN[L1[0]]);if(L1[1]>L0[1])lu.push("Lower "+LVN[L1[1]]);if(lu.length&&!holdOn("str"))D._toastX=(D._toastX?D._toastX+" ":"")+"Level up: "+lu.join(" · ")+".";
   D._owOk="Logged for "+dLab(d)+": "+nm+"."+(D._toastX?" "+D._toastX:"");D._toastX="";D._ow=null;D._addq="";D.tab="verlauf";return true;}
 function owAct(a,t){
   if(a==="owopen"){D._ow=owNew();D._owOk="";D._addq="";D.tab="own";save();render();window.scrollTo(0,0);return;}
+  if(a==="owtpl"){var T0=owTpls(),tp=T0[+t.dataset.i];if(!tp)return;var ct=favCatalog(),o0=owNew();o0.nm=tp.nm;o0.tk=+t.dataset.i;o0.tpl=true;
+    tp.ex.forEach(function(n){if(own(ct,n)&&o0.ex.length<OWMAX)o0.ex.push(owRow(n,ct));});D._ow=o0;D._owOk="";D._addq="";D.tab="own";save();render();window.scrollTo(0,0);return;}
+  if(a==="owtdel"){var o1=owSt(),T1=owTpls().slice();if(o1.tk>=0&&o1.tk<T1.length){T1.splice(o1.tk,1);D.owT=T1;}o1.tk=-1;o1.tpl=false;save();render();return;}
   var o=owSt(),i=+t.dataset.i,x=o.ex[i];owRead();o.err="";o.at=-1;
   if(a==="owpick"){o.pick=true;D._addq="";}
   else if(a==="owshut"){o.pick=false;D._addq="";}
@@ -2899,7 +2910,7 @@ function owPick(o){var q=(D._addq||"").toLowerCase(),inW={},cat=favCatalog(),G=f
 function vOwn(){var o=owSt(),cat=favCatalog(),h='<button type="button" class="lnk bk" data-tab="verlauf">← '+esc(W("chron"))+'</button>';
   h+='<div class="hero"><span class="eyebrow">Own workout</span><h2>'+esc(String(o.nm||"").trim()||"Log own workout")+'</h2><p>Put it together from the catalogue and log your sets. It counts like a planned session: targets, records, level and the plan ahead. Sport without exercises goes to Other activity.</p></div>';
   h+='<div id="owf"><div class="card"><div class="sec"><div class="grid2"><label for="ow_d">Day</label><input type="date" id="ow_d" data-ow="d" max="'+TODAY+'" value="'+esc(o.d||TODAY)+'">'+
-    '<label for="ow_nm">Name (optional)</label><input type="text" id="ow_nm" data-ow="nm" maxlength="40" placeholder="'+esc(NAMES.OW)+'" value="'+esc(o.nm||"")+'"></div></div>';
+    '<label for="ow_nm">Name (optional)</label><input type="text" id="ow_nm" data-ow="nm" maxlength="40" placeholder="'+esc(NAMES.OW)+'" value="'+esc(o.nm||"")+'"></div><label class="chk owtc"><input type="checkbox" id="ow_tpl" data-ow="tpl"'+(o.tpl?' checked':'')+'> Save as template (repeat it later with one tap)</label>'+(o.tk>=0?'<button type="button" class="lnk" data-a="owtdel">✕ Delete this template</button>':'')+'</div>';
   h+='<div class="sec"><h3>Exercises</h3>'+(o.ex.length?'':'<p class="muted">No exercise yet.</p>');
   o.ex.forEach(function(x,i){var c=own(cat,x.n)?cat[x.n]:null;if(!c){h+='<div class="owx" id="owr-'+i+'"><b>'+esc(x.n)+'</b><p class="muted">Not in the catalogue of this version.</p><button type="button" class="lnk" data-a="owrm" data-i="'+i+'">✕ Remove</button></div>';return;}
     var it=c.it,v=c.v,isS=it.unit==="s"||/^s\b/.test(it.unit||""),pv=own(D.ex,it.k+"#"+v)?D.ex[it.k+"#"+v]:null,lt=lastTxt(it,v,pv);
@@ -3564,7 +3575,7 @@ document.addEventListener("click",function(e){
   if(a==="rsno"){RSP=null;D._msg="Restore cancelled. Nothing was changed.";render();return;}
   if(a==="rsundo"){if(!undoRestore()){D._msg="Nothing to undo.";render();}return;}
   if(t.dataset.tab){TB=null;if(t.dataset.tab==="favs")D._favFrom=t.dataset.from||D.tab;D.tab=t.dataset.tab;D._del=null;D._kitAsk=false;D._gmsg="";D._rs=false;D._msg="";dy.fin={};save();render();window.scrollTo(0,0);var h2=app.querySelector("h2");if(h2&&t.closest(".nav,.bk,.big")){h2.tabIndex=-1;h2.focus({preventScroll:true});}return;}
-  if(a==="owopen"||a==="owpick"||a==="owshut"||a==="owx"||a==="owset"||a==="owsetrm"||a==="owrm"||a==="owrpe"||a==="owsave"||a==="owcancel"){owAct(a,t);return;}
+  if(a==="owopen"||a==="owpick"||a==="owshut"||a==="owx"||a==="owset"||a==="owsetrm"||a==="owrm"||a==="owrpe"||a==="owsave"||a==="owcancel"||a==="owtpl"||a==="owtdel"){owAct(a,t);return;}
   if(a==="rpe"){dy.fin.rpe=+t.dataset.v;}
   else if(a==="onb"){askPersist();D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;D.seenFav=true;if(!D.logs.length)D.start=TODAY;D._toast=W("ready");}
   else if(a==="reonb"){D.onb=false;D.obStep=0;}
