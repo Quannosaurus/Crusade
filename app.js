@@ -108,7 +108,7 @@ function dOK(s){return typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&ds(pd
 var DSOK={test:dOK},KMMAX=300,MINMAX=1440,TRKMAX=20*1024*1024;
 function lim(v,hi){v=typeof v==="number"?v:num(v);return v!=null&&isFinite(v)&&v>0?Math.min(hi,v):null;}
 var TODAY=ds(new Date());
-function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"templar",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],goalNext:[],opt:{ready:false,rest:false,oa:false,tg:false},hold:{str:false,run:false,sk:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
+function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"plain",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],goalNext:[],opt:{ready:false,rest:false,oa:false,tg:false},hold:{str:false,run:false,sk:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
     var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
@@ -3017,6 +3017,19 @@ function owPick(o){var q=(D._addq||"").toLowerCase(),inW={},cat=favCatalog(),G=f
     h+='<details class="fvg adg'+(vis?'':' hid')+'"'+(gi<1||q?" open":"")+'><summary>'+esc(g[0])+' <span class="muted fvc">'+vis+'</span></summary><div class="fvlist">'+g[1].map(function(x){var hid=q&&x.n.toLowerCase().indexOf(q)<0;
       return '<button type="button" class="fvrow adr'+(hid?" hid":"")+(inW[x.n]?" on":"")+'" data-a="owx" data-n="'+esc(x.n)+'"><span class="st" aria-hidden="true">'+(inW[x.n]?"✓":"+")+'</span><span class="fn">'+esc(x.n)+'</span>'+(inW[x.n]?'<span class="gt">In workout</span>':'')+'</button>';}).join("")+'</div></details>';});
   return h+'<button type="button" class="lnk ctr" data-a="owshut">Close</button></div></div>';}
+/* A-074: "Getting started" – one page with everything a new user needs: what the app does, where the data lives, the
+   settings, the Extras, what to tap during training, logging and how progress works. Opens once right after the first
+   onboarding of a new user (no entries yet) and any time under More. Plain words, no theme wording. */
+function vGuide(){var sec=function(t,b){return '<div class="sec"><h3>'+t+'</h3>'+b+'</div>';},ul=function(a){return '<ul class="gd">'+a.map(function(x){return '<li>'+x+'</li>';}).join("")+'</ul>';};
+  var h='<button type="button" class="lnk bk" data-tab="start">← Today</button><div class="hero"><span class="eyebrow">Getting started</span><h2>How this app works</h2><p>Read it once, change anything later under More. You can open this page again from there.</p></div><div class="card guide">';
+  h+=sec("1 · What it does",ul(["Every day it suggests one session of about 60–90 min: warm-up first, 5 min of cool-down at the end.","It plans from what you logged: your values, your week, your goal. Log your sets and it adapts.","Today shows the suggestion and your week; tap a day in the week strip to see what is planned."]));
+  h+=sec("2 · Your data",ul(["Everything stays on this phone, in this browser. Nothing is sent anywhere.","So make a backup now and then (More → Data). Installed from the home screen? Use only that icon, the browser tab keeps its own data."])+'<button type="button" class="b" data-a="bkfile">Make a backup now</button>');
+  h+=sec("3 · Settings",ul(["Focus, emphasis, skills and an optional goal decide what your sessions hold.","Gym or home, your equipment and fixed class days (e.g. kickboxing) shape the plan.","The theme only changes looks and words."])+themeHTML("g")+'<button type="button" class="b" data-tab="mehr">Open all settings</button>');
+  h+=sec("4 · Extras (off unless you switch them on)",ul(["Daily readiness check: tell the app you are tired and the session gets about a third fewer sets.","Weekly rest day, Other activity (classes, hikes), Easy week now.","Train together: share today's session as a text code; your partner gets the same exercises at their own level.","Hold: keep your level with less volume during busy weeks."]));
+  h+=sec("5 · During training",ul(["Swap: another form of the same exercise. ⋯ menu: favourite, skip, never suggest, and “I can do this already” for a harder form.","Something hurts? Pick the area and the plan leaves those exercises out.","Limited time keeps the essentials; Field kit plans with what you have with you.","Numbers: “3 × 8–12” = 3 sets of 8 to 12 reps; a tempo like 4-0-2-2 is spelled out; “How?” explains every exercise.","Bar exercises take the bar and the added weight in two fields."]));
+  h+=sec("6 · Logging",ul(["Log your sets as you go; the last values are filled in.","+ Log own workout (Chronicle): your own session from the catalogue, today or a past day. Save it as a template to repeat it with one tap.","Other activity: sport without single exercises."]));
+  h+=sec("7 · Progress",ul(["Reach the top of the range in every set and the weight or the form goes up.","Blocks of 6 training weeks change the accent; the 6th week is lighter with a test.","A step back only comes after a real break of a movement, not when one exercise rests while others train the same muscles.","Levels on two axes, upper and lower body, grow with your training weeks."]));
+  return h+'<button type="button" class="b red wide" data-tab="start">Start</button></div>';}
 function vOwn(){var o=owSt(),cat=favCatalog(),h='<button type="button" class="lnk bk" data-tab="verlauf">← '+esc(W("chron"))+'</button>';
   h+='<div class="hero"><span class="eyebrow">Own workout</span><h2>'+esc(String(o.nm||"").trim()||"Log own workout")+'</h2><p>Put it together from the catalogue and log your sets. It counts like a planned session: targets, records, level and the plan ahead. Sport without exercises goes to Other activity.</p></div>';
   h+='<div id="owf"><div class="card"><div class="sec"><div class="grid2"><label for="ow_d">Day</label><input type="date" id="ow_d" data-ow="d" max="'+TODAY+'" value="'+esc(o.d||TODAY)+'">'+
@@ -3514,6 +3527,7 @@ function vMehr(){
     '<div class="sec"><h3>Kickboxing days</h3>'+kickSel("m_kick")+'</div>'+
     pauseHTML()+extrasHTML()+
     '<div class="sec"><h3>Basics</h3><p class="muted">Re-enter values, focus and equipment in three steps.</p><button type="button" class="b" data-a="reonb">Re-enter basics</button></div>'+
+    '<div class="sec"><h3>Getting started</h3><p class="muted">Everything the app does, in plain words, with the settings that matter.</p><button type="button" class="b" data-tab="guide">Open the guide</button></div>'+
     '<div class="sec howit"><h3>How it works</h3><ol class="why">'+R.map(function(r){return "<li>"+esc(r)+"</li>";}).join("")+'</ol></div>'+
     grp("App")+'<div class="sec">'+themeHTML("m")+'</div>'+
     grp("Data")+'<div class="sec"><h3>Watch import</h3><p class="muted">Runs: export a GPX or TCX file from your watch app and import it on the run screen. Values like sleep or recovery scores need a connection outside this file.</p></div>'+
@@ -3530,7 +3544,7 @@ function render0(){
   document.body.className=D.onb?(["train","morgen","run","kick","other"].indexOf(D.tab)>=0?"train":""):"ob";if(D.onb&&(iv||(D.tab==="train"&&setLogged())))document.body.classList.add("tmr");
   if(!D.onb) document.getElementById("subline").textContent=W("sub");
   rendering=true;
-  app.innerHTML=rsHTML()+(D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,other:vOther,own:vOwn,verlauf:vVerlauf,stand:vStand,mehr:vMehr,favs:vFavs}[D.tab]||vStart)()):vOnb());
+  app.innerHTML=rsHTML()+(D.onb?(({start:vStart,morgen:vMorgen,train:vTrain,run:vRun,kick:vKick,other:vOther,own:vOwn,guide:vGuide,verlauf:vVerlauf,stand:vStand,mehr:vMehr,favs:vFavs}[D.tab]||vStart)()):vOnb());
   rendering=false;
 }
 
@@ -3690,7 +3704,7 @@ document.addEventListener("click",function(e){
   if(t.dataset.tab){TB=null;if(t.dataset.tab==="favs")D._favFrom=t.dataset.from||D.tab;D.tab=t.dataset.tab;D._del=null;D._kitAsk=false;D._gmsg="";D._rs=false;D._msg="";dy.fin={};save();render();window.scrollTo(0,0);var h2=app.querySelector("h2");if(h2&&t.closest(".nav,.bk,.big")){h2.tabIndex=-1;h2.focus({preventScroll:true});}return;}
   if(a==="owopen"||a==="owpick"||a==="owshut"||a==="owx"||a==="owset"||a==="owsetrm"||a==="owrm"||a==="owrpe"||a==="owsave"||a==="owcancel"||a==="owtpl"||a==="owtdel"){owAct(a,t);return;}
   if(a==="rpe"){dy.fin.rpe=+t.dataset.v;}
-  else if(a==="onb"){askPersist();D.onb=true;D.tab="start";D.obStep=0;D.seenFocus=true;D.seenFav=true;if(!D.logs.length)D.start=TODAY;D._toast=W("ready");}
+  else if(a==="onb"){askPersist();D.onb=true;D.tab=D.logs.length?"start":"guide";D.obStep=0;D.seenFocus=true;D.seenFav=true;if(!D.logs.length)D.start=TODAY;D._toast=W("ready");}
   else if(a==="reonb"){D.onb=false;D.obStep=0;}
   else if(a==="obnext"||a==="obback"){D._msg="";D.obStep=Math.max(0,Math.min(3,(D.obStep||0)+(a==="obnext"?1:-1)));save();render();window.scrollTo(0,0);var hd=document.getElementById("dlgt");if(hd)hd.focus({preventScroll:true});return;}
   else if(a==="wkday"){var wi=+t.dataset.v;WK.sel=WK.sel===wi?-1:wi;keepRender();return;}

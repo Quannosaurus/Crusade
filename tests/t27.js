@@ -71,7 +71,8 @@ console.log('forecast for tomorrow came true: '+hits+'/'+tot);
   if(a.indexOf('Muscle-Up EMOM')<0)issue('EMOM block missing in the skill trial');
   else if(a.indexOf('every minute on the minute: one set at the start of each minute, rest for the remainder')<0)issue('EMOM explanation missing');
   if(JSON.stringify(D.fav)!==fav0)issue('favourites changed');
-  if(k.termNote('Push-ups 3 × 10')!=='')issue('explanation on an item without EMOM/AMRAP');}
+  /* A-073: "3 × 10" is explained now (sets × reps); a plain name still gets no note */
+  if(k.termNote('Push-ups')!=='')issue('explanation on an item without a short form');}
 
 // Playwright: real phone viewport
 (async()=>{let chromium;try{({chromium}=require('playwright'));}catch(e){issue('playwright missing');return done();}
