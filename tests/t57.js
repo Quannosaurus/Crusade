@@ -46,10 +46,13 @@ function setup(k,wk,o){o=o||{};const D=k.D();Object.assign(D,{onb:true,seenFocus
   /* runI rises only after a 3 min form, never in hold */
   D=setup(k,15);while(k.riForm(k.today())!=='i1')D.logs.push({d:addD(k.today(),-1),id:'RI',t:'Intervals',rpe:6,km:7,min:45});const i0=D.runI;const dy=k.day();dy.run='RI';dy.fin={rpe:6,km:'7',min:'45'};k.saveRun();if(D.runI!==i0)issue('runI rose after a 1 min form');
   rep.push('tempo season: '+heads.slice(0,4).join(' | '));}
-// 5 tempo hint from the own best times (text only), none without times
-{const {k}=boot();let D=setup(k,3);if(/Pace guide/.test(k.runInfo('RE').p))issue('pace hint without best times');
-  D.pr['run:t5']={min:30.8,d:addD(k.today(),-10)};const t=k.runInfo('RE').p;if(!/best 5 km 6:10\/km, today easy from about 7:10\/km/.test(t))issue('easy pace hint: '+t);
-  setup(k,15);k.D().pr['run:t5']={min:30.8,d:'2026-01-01'};const ri=k.runInfo('RI');if(!/Pace guide/.test(ri.p)&&!/strides/.test(ri.h))issue('interval pace hint missing: '+ri.p);
+// 5 tempo hint (A-075): only real efforts (rpe ≥ 8, ≥ 5 km) give the 5 km reference; without one the easy guide follows the
+//   recent easy runs, intervals stay feel-based; a fast record from an easy run is no reference
+{const {k}=boot();let D=setup(k,3);const nRE=D.logs.filter(l=>l.id==='RE'&&l.km>0&&l.min>0).length,t0=k.runInfo('RE').p;
+  if(nRE>=2?!/Pace guide: easy like your recent easy runs/.test(t0):/Pace guide/.test(t0))issue('pace hint without a hard run: '+t0);
+  D.pr['run:t5']={min:28,d:addD(k.today(),-10)};if(/best hard run/.test(k.runInfo('RE').p))issue('a record without a hard run became the reference');
+  D.logs.push({d:addD(k.today(),-10),id:'RI',t:'Intervals',rpe:8,km:5,min:30.8});const t=k.runInfo('RE').p;if(!/your best hard run 6:10\/km \(5 km pace\), today easy from about 7:10\/km/.test(t))issue('easy pace hint: '+t);
+  setup(k,15);k.D().logs.push({d:addD(k.today(),-5),id:'RH',t:'Hard run',rpe:9,km:10,min:62});const ri=k.runInfo('RI');if(!/Pace guide/.test(ri.p)&&!/strides/.test(ri.h))issue('interval pace hint missing: '+ri.p);
   rep.push('hint: '+t.match(/Pace guide[^.]*\./)[0]);}
 // 6 kept: Just starting (easy only in the first 4 weeks), 130 % guard, ≤ 1 of 3 runs hard, goal chain to 42 km
 {const {k}=boot();let D=setup(k,2,{startP:'s0',focus:'run'});const r=k.recAll(k.today(),false)||{};if(r.id==='RH'||r.id==='RI')issue('Just starting: hard run in week 2');
