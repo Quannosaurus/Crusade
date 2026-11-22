@@ -21,7 +21,7 @@ function run(html){const bad=[];let tempos=0,eachHow=0;
         if(!/Tempo a-b-c-d/.test(ctx))bad.push('a: '+id+' '+o.emph+'/'+(o.loc||'g')+': tempo '+m[0]+' not spelled out ("'+ctx.replace(/\s+/g,' ')+'")');}}
       z.d.querySelectorAll('details.how').forEach(h=>{if(/Each side \/ per leg/.test(h.textContent))eachHow++;});}}
   if(!tempos)bad.push('a: no tempo seen on any training page');else rep.push('a: '+tempos+' tempo notes spelled out');
-  const k=boot(html).k;[['Tempo 4-1-2-1','Tempo a-b-c-d'],['3 × 8–12','3 sets of 8 to 12'],['10 each side','Each side'],['1–2 reps in reserve','Reps in reserve']].forEach(([t,w])=>{if(!k.termNote(t).includes(w))bad.push('b: no explanation for "'+t+'"');});
+  const k=boot(html).k;if(/sets of/.test(k.termNote('3 × 20 s')))bad.push('b: a hold "3 × 20 s" explained as reps');[['Tempo 4-1-2-1','Tempo a-b-c-d'],['3 × 8–12','3 sets of 8 to 12'],['5 × 1–2','5 sets of 1 to 2'],['2 × 5 reps','2 sets of 5 reps'],['10 each side','Each side'],['1–2 reps in reserve','Reps in reserve']].forEach(([t,w])=>{if(!k.termNote(t).includes(w))bad.push('b: no explanation for "'+t+'"');});
   if(!eachHow)bad.push('c: no rendered "How?" explains "each side"');else rep.push('c: '+eachHow+' items explain "each side" in How?');
   return bad;}
 run(HTML0).forEach(issue);

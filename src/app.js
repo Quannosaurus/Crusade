@@ -2164,10 +2164,10 @@ function tempoTxt(t){return String(t||"").replace(/\b(\d)-(\d)-(\d)-(\d)\b(?! \(
   return m+" ("+"lower "+a+" s · "+(b==="0"?"no pause":"pause "+b+" s")+" · lift "+c+" s · "+(d==="0"?"no hold":"hold "+d+" s")+")";});}
 var TERMS=[[/\bEMOM\b/,"EMOM = every minute on the minute: one set at the start of each minute, rest for the remainder."],[/\bAMRAP\b/,"AMRAP = as many reps as possible in the time."],
   [/\b\d-\d-\d-\d\b/,"Tempo a-b-c-d = seconds per rep: lowering, pause at the bottom, lifting, pause at the top."],
-  [/\d+ × \d/,"3 × 8–12 = 3 sets of 8 to 12 reps. Stop each set with 1–2 good reps left; once you reach the top number in every set, the weight or the form goes up."],
+  [/(\d+) × (\d+)(?:–(\d+))?(?![\d–])(?! s\b)(?! min)/,function(m){return m[1]+" × "+m[2]+(m[3]?"–"+m[3]:"")+" = "+m[1]+" sets of "+(m[3]?m[2]+" to "+m[3]:m[2])+" reps"+(m[3]?"; stop each set with 1–2 good reps left":"")+".";}],
   [/reps? in reserve/,"Reps in reserve = how many more clean reps you could still do when you stop the set."],
   [/\beach side\b|\bper (?:leg|side|arm)\b/,"Each side / per leg = the number counts for one side; do it on both."]];
-function termNote(t){return TERMS.filter(function(x){return x[0].test(t||"");}).map(function(x){return x[1];}).join(" ");}
+function termNote(t){t=t||"";return TERMS.filter(function(x){return x[0].test(t);}).map(function(x){return typeof x[1]==="function"?x[1](t.match(x[0])):x[1];}).join(" ");}
 
 /* ================= Rendering ================= */
 var app=document.getElementById("app"), rendering=false, TB=null;
