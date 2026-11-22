@@ -22,6 +22,7 @@ function run(html){const bad=[];
    if(!bi||!ai)bad.push('a: no bar/added fields');else if(bi.value!=='20')bad.push('a: bar default '+bi.value);
    if(d.querySelector('[data-inp="w"][data-id="'+x.id+'"]'))bad.push('a: bar exercise still has the single kg field');
    const nb=k.favCatalog()['Machine chest fly'];if(nb&&k.barEx(nb.it,nb.v))bad.push('a: machine fly counted as a bar exercise');
+   {const cat=k.favCatalog();[['Romanian deadlift',true],['Seated good mornings',true],['Dumbbell B-stance Romanian deadlift',false],['Hip thrust machine',false],['Dumbbell bench press',false]].forEach(([n,want])=>{const c=cat[n];if(c&&k.barEx(c.it,c.v)!==want)bad.push('a: '+n+' bar exercise '+!want+' (expected '+want+')');});}
    if(k.barW('EZ-bar curls')!==10)bad.push('a: EZ bar default '+k.barW('EZ-bar curls'));
    // b
    const dy=k.day(),n=k.setsOf(x.it,x.b,k.ctx(TD),id);dy.inp[x.id]={s:Array(n).fill('6'),bar:'15',add:'40'};dy.done[x.id]=1;dy.fin={rpe:6};k.saveTrain();
@@ -38,7 +39,7 @@ function run(html){const bad=[];
      const c=k.favCatalog()[BAR],key=c.it.k+'#'+c.v;if(!D.ex[key]||D.ex[key].w!==80)bad.push('c: OW stored '+JSON.stringify(D.ex[key])+' (expected 80)');}}
   return bad;}
 run(HTML0).forEach(issue);
-const MUT=[['a','var BARX=/barbell|smith|landmine|ez-bar|\\bsz\\b|t-bar|trap bar/i;','var BARX=/^$/;','a'],
+const MUT=[['a2','return BARX.test(n)||(BARN.test(n)&&!NOBAR.test(n));','return BARX.test(n);','a'],['a','var BARX=/barbell|smith|landmine|ez-bar|\\bsz\\b|t-bar|trap bar/i;','var BARX=/^$/;','a'],
   ['b','return Math.max(0,(b===null?barW(n):b)+(a===null?0:a));','return Math.max(0,(a===null?0:a));','b'],
   ['c','x.bar=e.value;var b=num(e.value),a=ad?num(ad.value):null;x.w=a===null?"":String(Math.max(0,(b===null?barW(x.n):b)+a));','x.bar=e.value;x.w=ad?ad.value:"";','c'],
   ['d','if(n.bar&&typeof n.bar==="object"){b.bar={};','if(0){b.bar={};','d']];

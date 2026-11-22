@@ -2951,7 +2951,9 @@ var OWMAX=12,OWSMAX=12;
    records, goals, old entries and backups unchanged); the bar weight is kept per exercise name in D.bar (default 20 kg,
    EZ/SZ bar 10 kg). */
 var BARX=/barbell|smith|landmine|ez-bar|\bsz\b|t-bar|trap bar/i;
-function barEx(it,v){return v>=0&&!!it.opts[v]&&wOn(it,v)&&!it.iso&&!it.test&&BARX.test(it.opts[v].n);}
+/* barbell lifts whose name does not say "barbell" (Romanian deadlift, good mornings, seal row …), unless the name names other gear */
+var BARN=/romanian deadlift|good mornings?|seal row|back squat|front squat|bench press|overhead press|military press|bent-over row|hip thrust/i,NOBAR=/dumbbell|kettlebell|single-leg|cable|machine|band|goblet|one-arm/i;
+function barEx(it,v){if(!(v>=0&&!!it.opts[v]&&wOn(it,v)&&!it.iso&&!it.test))return false;var n=it.opts[v].n;return BARX.test(n)||(BARN.test(n)&&!NOBAR.test(n));}
 function barW(n){var b=D.bar&&own(D.bar,n)?D.bar[n]:null;return typeof b==="number"&&b>=0?b:(/ez-bar|\bsz\b/i.test(n)?10:20);}
 function barTot(inp,n){var b=num(inp.bar),a=num(inp.add);if(b===null&&a===null)return null;return Math.max(0,(b===null?barW(n):b)+(a===null?0:a));}
 /* A-070: saved Own workout templates (D.owT, ≤ OWTMAX: {nm, ex:[catalogue names]}); a chip opens the form with those
