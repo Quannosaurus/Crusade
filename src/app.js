@@ -29,9 +29,9 @@ var TODAY=ds(new Date());
 function fresh(){return {v:3,onb:false,start:TODAY,profile:{pull:5,dips:8,push:15,expl:2,negmu:3,mu:0,hang:30,tuck:15,lsit:0,hollow:45,hsw:20,hsf:0,pike:6,flSt:0,plSt:0},ex:{},vr:{},logs:[],days:{},abs:0,runKm:6,tab:"start",mlen:"n",loc:"g",short:false,kickDays:[],focus:"bal",startP:"s1",pr:{},theme:"plain",skills:{hs:false,mu:false,ls:false,fl:false,pl:false},runI:4,obStep:0,seenFocus:true,pain:{w:false,s:false,e:false,k:false,b:false,a:false,h:false},pause:null,pauseH:[],bkAt:0,goal:null,goalsDone:[],goalNext:[],opt:{ready:false,rest:false,oa:false,tg:false},hold:{str:false,run:false,sk:false},easy:"",home:{b:true,s:true,k:false,d:false,p:false,w:false,r:false}};}
 function load(){
   try{
-    var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
+    var v=JSON.parse(localStorage.getItem(KEY));if(v&&v.profile){if(v.theme==null)v.theme="templar";/* A-078: a stored state from before Plain keeps templar */if(!Array.isArray(v.kickDays)){v.kickDays=(v.kickDay==null||v.kickDay===2)?[2,5]:(v.kickDay>=0?[v.kickDay]:[]);delete v.kickDay;}return v;}
     var o=JSON.parse(localStorage.getItem("kz_app_v2"))||JSON.parse(localStorage.getItem("kz_app_v1"));
-    if(o&&o.profile){var f=fresh();["profile","logs","start","runKm","home","loc","mlen","abs"].forEach(function(k){if(o[k]!=null)f[k]=o[k];});f.onb=true;return f;}
+    if(o&&o.profile){var f=fresh();["profile","logs","start","runKm","home","loc","mlen","abs"].forEach(function(k){if(o[k]!=null)f[k]=o[k];});f.onb=true;f.theme="templar";return f;}
   }catch(e){memOnly=true;}
   return fresh();}
 var D=load();
@@ -91,7 +91,7 @@ function cleanImport(n){var b=fresh(),DS=DSOK,str=function(v,m){return typeof v=
   migTitles(b.logs);
   if(n.ex&&typeof n.ex==="object")Object.keys(n.ex).slice(0,500).forEach(function(k){var e=n.ex[k];if(/^[a-z0-9_]+#\d+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.ex[k]={r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",hold:!!e.hold,n:str(e.n,80)};if(e.stall!=null)x.stall=numv(e.stall);if(Array.isArray(e.s)){var sa=setsArr(e.s);if(sa.length)x.s=sa;}if(e.lad!=null){var ld=Math.round(numv(e.lad));if(ld>=1&&ld<=5)x.lad=ld;}}});
   if(n.pr&&typeof n.pr==="object")Object.keys(n.pr).slice(0,500).forEach(function(k){var e=n.pr[k];if(/^[a-z0-9_:#]+$/.test(k)&&okKey(k)&&e&&typeof e==="object"){var x=b.pr[k]={sc:numv(e.sc),r:numv(e.r),w:numv(e.w),d:DS.test(e.d)?e.d:"",n:str(e.n,80)};if(e.p!=null)x.p=numv(e.p);if(e.km!=null)x.km=lim(numv(e.km),KMMAX)||0;if(e.min!=null)x.min=lim(numv(e.min),MINMAX)||0;}});
-  if(typeof n.emph==="string"&&EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(typeof n.favP==="boolean")b.favP=n.favP; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90&&okKey(x);}).slice(0,20); if(own(THEMES,n.theme))b.theme=n.theme; if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string"&&x.length<40&&okKey(x);}).slice(0,50);
+  if(typeof n.emph==="string"&&EMPH.some(function(x){return x[0]===n.emph;}))b.emph=n.emph; if(typeof n.seenFav==="boolean")b.seenFav=n.seenFav; if(typeof n.favP==="boolean")b.favP=n.favP; if(Array.isArray(n.fav))b.fav=n.fav.filter(function(x){return typeof x==="string"&&x.length<90&&okKey(x);}).slice(0,20); if(own(THEMES,n.theme))b.theme=n.theme;else b.theme="templar";/* A-078: a backup without a valid theme keeps the look it had (templar); only fresh() starts in Plain */ if(Array.isArray(n.honSeen))b.honSeen=n.honSeen.filter(function(x){return typeof x==="string"&&x.length<40&&okKey(x);}).slice(0,50);
   if(n.kitD&&typeof n.kitD==="object")Object.keys(n.kitD).slice(0,500).forEach(function(k){if(/^[a-z0-9_]{1,40}$/.test(k)&&okKey(k)&&typeof n.kitD[k]==="string"&&DS.test(n.kitD[k]))(b.kitD=b.kitD||{})[k]=n.kitD[k];});
   if(n.bar&&typeof n.bar==="object"){b.bar={};Object.keys(n.bar).slice(0,200).forEach(function(k){var x=n.bar[k];if(okKey(k)&&k.length<90&&typeof x==="number"&&isFinite(x)&&x>=0&&x<=60)b.bar[k]=Math.round(x*2)/2;});}
   if(Array.isArray(n.kit))b.kit=n.kit.filter(function(x){return typeof x==="string"&&"kbdsr".indexOf(x)>=0&&x.length===1;}).filter(function(x,i,a){return a.indexOf(x)===i;});
@@ -2164,7 +2164,7 @@ function tempoTxt(t){return String(t||"").replace(/\b(\d)-(\d)-(\d)-(\d)\b(?! \(
   return m+" ("+"lower "+a+" s · "+(b==="0"?"no pause":"pause "+b+" s")+" · lift "+c+" s · "+(d==="0"?"no hold":"hold "+d+" s")+")";});}
 var TERMS=[[/\bEMOM\b/,"EMOM = every minute on the minute: one set at the start of each minute, rest for the remainder."],[/\bAMRAP\b/,"AMRAP = as many reps as possible in the time."],
   [/\b\d-\d-\d-\d\b/,"Tempo a-b-c-d = seconds per rep: lowering, pause at the bottom, lifting, pause at the top."],
-  [/(\d+) × (\d+)(?:–(\d+))?(?![\d–])(?! s\b)(?! min)/,function(m){return m[1]+" × "+m[2]+(m[3]?"–"+m[3]:"")+" = "+m[1]+" sets of "+(m[3]?m[2]+" to "+m[3]:m[2])+" reps"+(m[3]?"; stop each set with 1–2 good reps left":"")+".";}],
+  [/(\d+) × (\d+)(?:–(\d+))?(?![\d–\/])(?! s\b)(?! min)(?! breaths?\b)(?! ?→)/,function(m){return m[1]+" × "+m[2]+(m[3]?"–"+m[3]:"")+" = "+m[1]+(m[1]==="1"?" set of ":" sets of ")+(m[3]?m[2]+" to "+m[3]:m[2])+(m[2]==="1"&&!m[3]?" rep":" reps")+(m[3]?"; stop each set with 1–2 good reps left":"")+".";}],
   [/reps? in reserve/,"Reps in reserve = how many more clean reps you could still do when you stop the set."],
   [/\beach side\b|\bper (?:leg|side|arm)\b/,"Each side / per leg = the number counts for one side; do it on both."]];
 function termNote(t){t=t||"";return TERMS.filter(function(x){return x[0].test(t);}).map(function(x){return typeof x[1]==="function"?x[1](t.match(x[0])):x[1];}).join(" ");}
@@ -2224,7 +2224,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(g&&g.top&&!wOn(it,v)){var nv=nextVar(it,v,loc);if(nv>=0)h+='<div class="c"><button type="button" class="lnk nxv" data-a="nxv" data-id="'+id+'" data-v="'+nv+'">→ Next variation: '+esc(it.opts[nv].n)+'</button></div>';}
   h+=extra;
   if(!it.f){ h+='<div class="inp">';
-    if(barEx(it,v)){var bw=barW(o.n),bi=num(inp.bar);if(bi!==null&&bi>=0)bw=bi;h+='<label>Bar kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="bar" data-id="'+id+'" value="'+esc(inp.bar!=null?inp.bar:bw)+'"></label><label>Added kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="add" data-id="'+id+'" data-tw="'+(g.w||"")+'" data-bd="'+barW(o.n)+'" value="'+esc(inp.add!=null?inp.add:"")+'" placeholder="'+addPh(g.w,bw)+'"></label>';}
+    if(barEx(it,v)){var bw=barW(o.n),bi=num(inp.bar);if(bi!==null&&bi>=0)bw=bi;h+='<div class="barp"><label>Bar kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="bar" data-id="'+id+'" value="'+esc(inp.bar!=null?inp.bar:bw)+'"></label><label>Added kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="add" data-id="'+id+'" data-tw="'+(g.w||"")+'" data-bd="'+barW(o.n)+'" value="'+esc(inp.add!=null?inp.add:"")+'" placeholder="'+addPh(g.w,bw)+'"></label></div>';}
     else if(wOn(it,v)&&!it.iso&&!it.test) h+='<label>kg<input type="number" step="0.5" inputmode="decimal" data-inp="w" data-id="'+id+'" value="'+esc(inp.w)+'" placeholder="'+(g.w||"")+'"></label>';
     h+=setBoxes(id,n,inp,g.r,isS,rest,last)+'</div>'; }
   var isFav=(D.fav||[]).indexOf(o.n)>=0,pl=!it.f&&!it.test&&!it.iso;
@@ -2969,7 +2969,7 @@ function vOwn(){var o=owSt(),cat=favCatalog(),h='<button type="button" class="ln
     var it=c.it,v=c.v,isS=it.unit==="s"||/^s\b/.test(it.unit||""),pv=own(D.ex,it.k+"#"+v)?D.ex[it.k+"#"+v]:null,lt=lastTxt(it,v,pv);
     h+='<div class="owx'+(o.at===i?" on":"")+'" id="owr-'+i+'"><b>'+esc(x.n)+'</b><span class="muted"> · '+esc(it.lo+"–"+it.hi+" "+it.unit)+(lt?' · last: '+esc(lt):'')+'</span><div class="inp">';
     if(barEx(it,v)){var ob=x.bar!=null&&x.bar!==""?x.bar:barW(x.n),ow=num(x.w),oa=ow===null?"":Math.max(0,ow-(num(ob)||0));
-      h+='<label>Bar kg<input type="number" step="0.5" min="0" inputmode="decimal" data-ow="bar" data-owi="'+i+'" data-owbar="1" value="'+esc(ob)+'"></label><label>Added kg<input type="number" step="0.5" min="0" inputmode="decimal" data-ow="add" data-owi="'+i+'" data-owadd="1" value="'+esc(oa)+'"></label>';}
+      h+='<div class="barp"><label>Bar kg<input type="number" step="0.5" min="0" inputmode="decimal" data-ow="bar" data-owi="'+i+'" data-owbar="1" value="'+esc(ob)+'"></label><label>Added kg<input type="number" step="0.5" min="0" inputmode="decimal" data-ow="add" data-owi="'+i+'" data-owadd="1" value="'+esc(oa)+'"></label></div>';}
     else if(wOn(it,v))h+='<label>kg<input type="number" step="0.5" inputmode="decimal" data-ow="w" data-owi="'+i+'" data-oww="1" value="'+esc(x.w)+'"></label>';
     x.s.forEach(function(sv,j){h+='<label>'+(j+1)+'.<input type="number" inputmode="numeric" data-ow="s" data-owi="'+i+'" data-ows="'+j+'" value="'+esc(sv)+'" placeholder="'+esc(String(it.lo))+'" aria-label="'+esc(x.n)+' set '+(j+1)+(isS?" seconds":" "+it.unit)+'"></label>';});
     h+='</div><div class="row owr"><button type="button" class="lnk" data-a="owset" data-i="'+i+'">+ Set</button>'+(x.s.length>1?'<button type="button" class="lnk" data-a="owsetrm" data-i="'+i+'">− Set</button>':'')+'<button type="button" class="lnk" data-a="owrm" data-i="'+i+'">✕ Remove</button></div></div>';});
