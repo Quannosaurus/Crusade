@@ -5,6 +5,8 @@
 // b) UI: the menu shows "↑ I can do this already · <form>"; the first tap only asks ("Sure? Tap again"), the second takes the
 //    form (D.vr, per place) and the item shows it; the top of a ladder offers nothing.
 // c) never a form that doubles something in the session (it.swa) and never on warm-up/cool-down, tests or holds.
+// d) I-67: bodyweight pull-up and dip forms climb to their weighted form (Pull-ups + hold → Weighted pull-ups, Dips → Weighted dips,
+//    Commando → Archer, Wall → Weighted tibialis raises); a weighted top form offers nothing.
 // One mutation per point must turn it red.
 const {JSDOM}=require('./domguard');const fs=require('fs'),path=require('path');
 const HTML0=fs.readFileSync(path.resolve(__dirname,'../.build/index.html'),'utf8').replace(/<link[^>]*>/g,'');
@@ -32,11 +34,14 @@ function run(html){const bad=[];
    it.swa=[0,1];if(k.harderVar(it,0,'g')!==-1)bad.push('c: offers a form Swap refuses (duplicate in the session)');
    const t={test:'pull',unit:'reps',opts:[{n:'Pull-ups',req:'',w:false}]};if(k.harderVar(t,0,'g')!==-1)bad.push('c: a test offers a harder form');
    ['KA','KB','KC'].forEach(id=>{const s=k.S(id,k.ctx(TD));s.blocks.forEach(b=>{if(!(b.warm||b.cool))return;b.items.forEach(it=>{});});});}
+  {const z=boot(html),k=z.k,cat=k.favCatalog();[['Pull-ups + hold at the top','Weighted pull-ups'],['Dips','Weighted dips'],['Commando Pull-Ups','Archer Pull-Ups'],['Wall tibialis raises','Weighted tibialis raises'],['Weighted pull-ups','-']].forEach(([n,want])=>{const c=cat[n];if(!c){bad.push('d: '+n+' not in the catalogue');return;}
+     const h=k.harderVar(c.it,c.v,'g'),got=h>=0?c.it.opts[h].n:'-';if(got!==want)bad.push('d: '+n+' → '+got+' (expected '+want+')');});}
   return bad;}
 run(HTML0).forEach(issue);
 const MUT=[['a','"f:Transition on a Smith machine, low bar, feet on floor":[1,0,2,3],','"f:Transition on a Smith machine, low bar, feet on floor":[1,0,3,2],','a'],
   ['b','if(D._hvc!==hk){D._hvc=hk;keepRender();return;}','','b'],
-  ['c','return a.indexOf(j)>=0&&(!it.swa||it.swa.indexOf(j)>=0);','return a.indexOf(j)>=0;','c']];
+  ['c','return a.indexOf(j)>=0&&(!it.swa||it.swa.indexOf(j)>=0);','return a.indexOf(j)>=0;','c'],
+  ['d','var HLAD={c_pu:[3,2,0,1],','var HLAD={c_pu:[3,2,1,0],','d']];
 MUT.forEach(([n,a,b,u])=>{const m=HTML0.split(a).join(b);if(m===HTML0){issue('mutation '+n+': code not found');return;}
   let r;try{r=run(m);}catch(e){r=['crash '+e.message];}if(!r.some(x=>x.startsWith(u+':')||x.startsWith('crash')))issue('mutation '+n+' stays green');else rep.push('mutation '+n+': red');});
 rep.forEach(r=>console.log(r));

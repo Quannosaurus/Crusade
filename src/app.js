@@ -1244,7 +1244,10 @@ function topTwice(it,v){var K=it.k+"#"+v,st=D.ex[K];if(!st||st.r<it.hi)return fa
    for fixed drills by vkey), else nextVar's direction; never a form Swap would refuse (it.swa: no duplicate in the session). */
 function harderVar(it,v,loc){if(it.kx||it.test||it.iso||it.add||it.gx||it.anc)return -1;var key=vkey(it),a=avail(it,loc),ok=function(j){return a.indexOf(j)>=0&&(!it.swa||it.swa.indexOf(j)>=0);};
   if(own(ORD,key)&&(it.f||!/next stage/.test(it.up||"")&&!(it.lv&&it.lv[0]!==it.lv[1]))){var od=ORD[key],p=od.indexOf(v);if(p<0)return -1;for(var q=p+1;q<od.length;q++)if(ok(od[q]))return od[q];return -1;}
+  /* I-67: ladders for "I can do this already" only (planning and "Next variation" keep nextVar): bodyweight top form → its weighted form */
+  if(own(HLAD,key)&&!it.fx){var hl=HLAD[key],hp=hl.indexOf(v);if(hp>=0){for(var hq=hp+1;hq<hl.length;hq++)if(ok(hl[hq]))return hl[hq];return -1;}}
   if(it.f||it.fx)return -1;var nv=nextVar(it,v,loc);return nv>=0&&ok(nv)?nv:-1;}
+var HLAD={c_pu:[3,2,0,1],a2_wpu:[3,2,0,1],a2_com:[3,2,0,1],b2_sw:[3,2,0,1],c_dip:[2,0,1],c_tib:[0,1]};
 function nextVar(it,v,loc){if(it.kx||it.fx||it.test||it.iso||it.f)return -1;
   if(own(ORD,it.k)&&!/next stage/.test(it.up||"")&&!(it.lv&&it.lv[0]!==it.lv[1])){var od=ORD[it.k],p=od.indexOf(v),a0=avail(it,loc);if(p<0)return -1;
     for(var q=p+1;q<od.length;q++)if(a0.indexOf(od[q])>=0)return od[q];return -1;}
@@ -2271,7 +2274,12 @@ function rounds(b,c,id){
   if(accNow()==="skill")return vb>0&&st>0&&legLow(b)?b.rounds[1]:b.rounds[0];
   return vb>0&&st>0?b.rounds[1]:(vb<0?b.rounds[0]:base);
 }
-function pace(l){var p=l.min/l.km;return Math.floor(p)+":"+pad(Math.round((p%1)*60)%60)+"/km";}
+/* A-079: run times are entered as minutes + seconds and shown as m:ss; stored as decimal minutes (l.min) as before. */
+function mss(m){var t=Math.round((+m||0)*60);return Math.floor(t/60)+":"+pad(t%60);}
+function msIn(mn,sc){var a=num(mn),b=num(sc);if(a===null&&b===null)return null;a=a===null?0:a;b=b===null?0:b;if(a<0||b<0)return null;return Math.round((a+b/60)*1000)/1000;}
+function msPair(m){var t=Math.round((+m||0)*60);return m>0?[String(Math.floor(t/60)),String(t%60)]:["",""];}
+function msHTML(idm,ids,m,attr){var p=msPair(m);return '<label for="'+idm+'">Time</label><span class="ms"><input type="number" id="'+idm+'" step="1" min="0" inputmode="numeric" aria-label="Minutes" placeholder="min" value="'+esc(p[0])+'"'+(attr?attr("mm"):"")+'><span>:</span><input type="number" id="'+ids+'" step="1" min="0" max="59" inputmode="numeric" aria-label="Seconds" placeholder="s" value="'+esc(p[1])+'"'+(attr?attr("ss"):"")+'></span>';}
+function pace(l){return mss(l.min/l.km)+"/km";}
 function trainId(dy){var loc=D.loc,list=loc==="g"?GYM:HOME;
   /* A-063: a started together session keeps its unit, whatever the day choice */
   if(dy.tg&&tgOn()&&TGIDL.indexOf(dy.tg.id)>=0) return {id:dy.tg.id,rec:null};
@@ -2640,7 +2648,7 @@ function shortN(id){return String(NAMES[id]||id).split(":")[0];}
 function recDur(id){var m=0;try{if(STR[id]||id==="SK"||id==="HK"||id==="RS"||id==="DL"||id==="TE"){m=S(id,ctx(TODAY)).min;}else if(id==="RE"||id==="RH"||id==="RI")return " · "+runInfo(id).h;}catch(x){m=0;}return m?" · ≈ "+m+" min":"";}
 function doneSub(tab){var f={morgen:function(l){return l.id==="MO";},train:function(l){return GYM.indexOf(l.id)>=0||HOME.indexOf(l.id)>=0;},run:isRun,kick:function(l){return l.id==="KI";}}[tab],l=onDay(TODAY).filter(f).pop();if(!l)return "";
   if(tab==="morgen")return shortN(l.id)+(l.m&&l.m.length>1?" · full":" · short");
-  if(tab==="run")return shortN(l.id)+(l.km?" · "+fmtKg(l.km)+" km":"")+(l.min?" · "+fmtKg(l.min)+" min":"");
+  if(tab==="run")return shortN(l.id)+(l.km?" · "+fmtKg(l.km)+" km":"")+(l.min?" · "+mss(l.min):"");
   return shortN(l.id)+" · "+Math.round(logMin(l))+" min";}
 /* Week preview (A-015): a forecast of the next 7 days, assuming every recommended session is done as planned.
    It runs on a deep copy of the state (D and TODAY are swapped and always restored); nothing is saved or logged. */
@@ -2840,7 +2848,7 @@ function vRun(){
   var xr=dy.xr&&id==="RE";
   h+='<div class="hero"><span class="eyebrow">'+(xr?"Extra easy run":(id===rr.id?"Recommended":"Your choice"))+'</span><h2>'+esc(ri.h)+'</h2><p>'+esc(ri.p)+'</p>'+(xr?'<p class="c gold xrh">Order: best after your strength training, or a few hours apart from it. Keep it truly easy.</p>':(whyX(rr.why)?'<p class="muted">'+esc(whyX(rr.why))+'</p>':''))+'</div>';
   h+='<details class="blk"><summary><span class="bn">Cool-down</span><span class="bi">5 min after the run · hold each stretch, breathe slowly</span></summary>'+coolItems("run","h").map(function(x,i){return poseRow(x,"rc-"+i,dy);}).join("")+'</details>';
-  h+='<div class="card"><div class="sec"><p class="q">After the run</p><div class="inp two"><label>Distance km<input type="number" id="f_km" step="0.01" inputmode="decimal" data-fin="km" value="'+esc(f.km)+'"></label><label>Time min<input type="number" id="f_min" step="0.1" inputmode="decimal" data-fin="min" value="'+esc(f.min)+'"></label></div>'+
+  h+='<div class="card"><div class="sec"><p class="q">After the run</p><div class="inp two"><label>Distance km<input type="number" id="f_km" step="0.01" inputmode="decimal" data-fin="km" value="'+esc(f.km)+'"></label><label>Time<span class="ms"><input type="number" id="f_min" step="1" min="0" inputmode="numeric" aria-label="Minutes" placeholder="min" data-fin="mm" value="'+esc(f.mm!=null?f.mm:msPair(num(f.min))[0])+'"><span>:</span><input type="number" id="f_sec" step="1" min="0" max="59" inputmode="numeric" aria-label="Seconds" placeholder="s" data-fin="ss" value="'+esc(f.ss!=null?f.ss:msPair(num(f.min))[1])+'"></span></label></div>'+
      (num(f.km)>0&&num(f.min)>0?'<p class="tg">Pace '+pace({km:num(f.km),min:num(f.min)})+'</p>':'')+
      '<label class="filebtn" for="gfile">Import run file (GPX/TCX)</label><input type="file" id="gfile" class="vh" accept=".gpx,.tcx,application/gpx+xml,text/xml" data-a="gfile">'+(f.gmsg?'<p class="muted" role="status">'+esc(f.gmsg)+'</p>':'')+'</div>'+
      '<div class="sec">'+rpeHTML(f)+'<label class="lab" for="f_note">Note (optional)</label><textarea id="f_note" data-fin="note">'+esc(f.note)+'</textarea><button type="button" class="b red wide" data-a="saverun">Log run</button>'+(f.err?'<p class="warn" role="alert">'+esc(f.err)+'</p>':'')+'</div></div>';
@@ -3348,7 +3356,7 @@ function vVerlauf(){var mon=perNow()!=="12w",pm=mon?perMonths():null;var h='<div
   h+='<div class="sec"><h3>All entries</h3>'+owBtn()+blHTML();
   /* A-046: older entries are built only on request, 50 at a time */
   var nl=D.logs.length,shown=Math.min(nl,20+(D._chn||0)),rev=D.logs.slice(nl-shown).reverse();rev.forEach(function(l,ri){var i=nl-1-ri;
-    h+='<div class="log"><b>'+esc(l.t)+(l.tg?' <i class="tag tgm">Together</i>':'')+'</b><span class="muted">'+dLabY(l.d)+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+fmtKg(l.min)+' min · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
+    h+='<div class="log"><b>'+esc(l.t)+(l.tg?' <i class="tag tgm">Together</i>':'')+'</b><span class="muted">'+dLabY(l.d)+'</span><span class="muted">'+(l.rpe?({4:"Easy",6:"Fine",8:"Hard",10:"At the limit"}[l.rpe]||""):'')+(l.km?' · '+fmtKg(l.km)+' km'+(l.min?' in '+mss(l.min)+' · '+pace(l):''):'')+(l.sum?' · '+esc(l.sum):'')+(l.note?' · '+esc(l.note):'')+'</span><span class="lacts"><button type="button" class="b sm" data-a="edit" data-i="'+i+'" aria-expanded="'+(D._edit===i)+'">Edit</button><button type="button" class="b sm" data-a="del" data-i="'+i+'">'+(D._del===i?'Really delete':'Delete')+'</button></span></div>'+(D._edit===i?editForm(l):'');});
   if(nl>shown)h+='<button type="button" class="b sm chmore" data-a="chmore">Show older entries ('+(nl-shown)+' more)</button>';
   return h+'</div></div>';
 }
@@ -3356,7 +3364,7 @@ function editForm(l){var ids=Object.keys(NAMES).filter(function(k){return (k!=="
   return '<div class="edit"><div class="grid2"><label for="e_d">Date</label><input type="text" id="e_d" inputmode="numeric" value="'+esc(l.d)+'">'+
     '<label for="e_id">Session</label><select id="e_id">'+ids.map(function(k){return '<option value="'+k+'"'+(k===l.id?" selected":"")+'>'+esc(NAMES[k])+'</option>';}).join("")+'</select>'+
     '<label for="e_rpe">How hard</label><select id="e_rpe">'+[[0,"–"],[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return '<option value="'+x[0]+'"'+((l.rpe||0)===x[0]?" selected":"")+'>'+x[1]+'</option>';}).join("")+'</select>'+
-    (isRun(l)?'<label for="e_km">Distance km</label><input type="number" id="e_km" step="0.01" inputmode="decimal" value="'+esc(l.km||"")+'"><label for="e_min">Time min</label><input type="number" id="e_min" step="0.1" inputmode="decimal" value="'+esc(l.min||"")+'">':'')+
+    (isRun(l)?'<label for="e_km">Distance km</label><input type="number" id="e_km" step="0.01" inputmode="decimal" value="'+esc(l.km||"")+'">'+msHTML("e_min","e_sec",l.min)+'':'')+
     '</div><label class="lab" for="e_note">Note</label><textarea id="e_note">'+esc(l.note||"")+'</textarea><div class="row"><button type="button" class="b" data-a="edit" data-i="'+D.logs.indexOf(l)+'">Cancel</button><button type="button" class="b red" data-a="editsave">Save changes</button></div><p class="muted">Date format YYYY-MM-DD.</p></div>';}
 /* A-055 a: the hard-run tile follows the week preview (the same source as Today). It shows the hard run as current only
    when the next 7 days plan one (RI, or RH outside long-run mode); otherwise the next run the plan actually holds,
@@ -3574,7 +3582,7 @@ function saveBacklog(){var g=function(x){var e=document.getElementById(x);return
   if([4,6,8,10].indexOf(rp)<0){D._blErr="Please choose how hard it was.";return false;}
   o={d:d,id:id,t:NAMES[id],rpe:rp,note:(g("bl_note")||"").slice(0,300),bl:1};
   if(id==="KI"||id==="OA"){o.min=durOf(g("bl_min"),MINEST[id]);if(id==="OA")o.t=String(g("bl_oa")||"").trim().slice(0,40)||NAMES.OA;}
-  else if(isRun(o)){var km=lim(g("bl_km"),KMMAX),mn=lim(g("bl_min"),MINMAX);o.km=km?Math.round(km*100)/100:0;o.min=mn?Math.round(mn*10)/10:0;
+  else if(isRun(o)){var km=lim(g("bl_km"),KMMAX),mn=lim(msIn(g("bl_min"),g("bl_sec")),MINMAX);o.km=km?Math.round(km*100)/100:0;o.min=mn?Math.round(mn*1000)/1000:0;
     if(o.km&&o.min){runTimes(o.km,o.min,d);var pc=o.min/o.km,b=D.pr["run:pace5"],bl=D.pr["run:long"];if(o.km>=5&&(!b||pc<b.p)){if(b)prs.push("Fastest 5 km+ pace: "+pace(o));D.pr["run:pace5"]={p:pc,d:d};}
       if(!bl||o.km>bl.km){if(bl)prs.push("Longest run: "+fmtKg(Math.round(o.km*10)/10)+" km");D.pr["run:long"]={km:o.km,d:d};}}}
   else if(id!=="KI"){var T0=TODAY,sim=WK.sim;
@@ -3591,7 +3599,7 @@ function blHTML(){
     '<label for="bl_d">Day</label><select id="bl_d">'+blDays().map(function(x,i){return opt(x,WDN[pd(x).getDay()]+" "+dLab(x)+" · "+(i===0?"yesterday":(i+1)+" days ago"),i===0);}).join("")+'</select>'+
     '<label for="bl_id">What</label><select id="bl_id"><optgroup label="Training">'+BLIDS.map(function(k){return opt(k,NAMES[k],k===(D.loc==="h"?"HO":"KA"));}).join("")+'</optgroup><optgroup label="Running">'+["RE","RI","RH"].map(function(k){return opt(k,NAMES[k]);}).join("")+'</optgroup><optgroup label="Class">'+opt("KI",NAMES.KI)+'</optgroup>'+(D.opt&&D.opt.oa?'<optgroup label="Other">'+opt("OA",NAMES.OA)+'</optgroup>':'')+'</select>'+
     '<label for="bl_rpe">How hard</label><select id="bl_rpe">'+[[0,"Choose"],[4,"Easy"],[6,"Fine"],[8,"Hard"],[10,"At the limit"]].map(function(x){return opt(x[0],x[1]);}).join("")+'</select>'+
-    '<label for="bl_km">Run: km</label><input type="number" id="bl_km" step="0.01" inputmode="decimal"><label for="bl_min">Minutes</label><input type="number" id="bl_min" step="0.1" inputmode="decimal" placeholder="run, class, activity">'+(D.opt&&D.opt.oa?'<label for="bl_oa">Activity name</label><input type="text" id="bl_oa" maxlength="40" placeholder="e.g. Hiking">':'')+
+    '<label for="bl_km">Run: km</label><input type="number" id="bl_km" step="0.01" inputmode="decimal"><label for="bl_min">Time</label><span class="ms"><input type="number" id="bl_min" step="1" min="0" inputmode="numeric" aria-label="Minutes" placeholder="min"><span>:</span><input type="number" id="bl_sec" step="1" min="0" max="59" inputmode="numeric" aria-label="Seconds (run)" placeholder="s"></span>'+(D.opt&&D.opt.oa?'<label for="bl_oa">Activity name</label><input type="text" id="bl_oa" maxlength="40" placeholder="e.g. Hiking">':'')+
     '</div><label class="lab" for="bl_note">Note (optional)</label><textarea id="bl_note"></textarea><div class="row"><button type="button" class="b" data-a="blopen">Cancel</button><button type="button" class="b red" data-a="blsave">Save entry</button></div>'+(D._blErr?'<p class="warn" role="alert">'+esc(D._blErr)+'</p>':'')+'</div>';}
 /* Time goals (P-1): best time over at least 5 / 10 km, scaled to the distance by the run's pace. */
 function runTimes(km,mn,d){[5,10].forEach(function(x){if(km>=x&&mn>0){var t=Math.round(mn/km*x*10)/10,b=D.pr["run:t"+x];if(!b||t<b.min)D.pr["run:t"+x]={min:t,d:d};}});}
@@ -3712,7 +3720,7 @@ document.addEventListener("click",function(e){
       var nd=g("e_d");if(/^\d{4}-\d{2}-\d{2}$/.test(nd)&&!isNaN(pd(nd))&&nd<=TODAY)L.d=nd;
       var nt=g("e_id");if(own(NAMES,nt)&&!(nt===L.id&&nt==="OW")){L.id=nt;L.t=NAMES[nt];}
       var rp=+g("e_rpe");if([0,4,6,8,10].indexOf(rp)>=0){if(rp)L.rpe=rp;else delete L.rpe;}
-      if(isRun(L)){var km=lim(g("e_km"),KMMAX),mn=lim(g("e_min"),MINMAX);L.km=km?Math.round(km*100)/100:0;L.min=mn?Math.round(mn*10)/10:0;}
+      if(isRun(L)){var km=lim(g("e_km"),KMMAX),mn=lim(msIn(g("e_min"),g("e_sec")),MINMAX);L.km=km?Math.round(km*100)/100:0;L.min=mn?Math.round(mn*1000)/1000:0;}
       L.note=(g("e_note")||"").slice(0,300);
       D.logs.sort(function(a,b){return a.d<b.d?-1:(a.d>b.d?1:0);});CWC.k=RHC.k=HSC.k=ODC.k=IDI.k=TDI.k="";lvClr();D._edit=null;D._toast="Entry updated.";}}
   else if(a==="del"){var i=+t.dataset.i; if(D._del===i){D.logs.splice(i,1);CWC.k=RHC.k=HSC.k=ODC.k=IDI.k=TDI.k="";lvClr();D._del=null;} else D._del=i;}
@@ -3774,6 +3782,7 @@ document.addEventListener("change",function(e){
     /* A-077: the Added placeholder follows the bar just typed (target total − bar) */
     if(q.inp==="bar"){var ad=document.querySelector('[data-inp="add"][data-id="'+q.id+'"]'),bt=num(t.value);if(ad&&ad.dataset.tw)ad.placeholder=addPh(+ad.dataset.tw,bt!==null&&bt>=0?bt:+ad.dataset.bd);} }
   else if(q.ow!=null){ owRead(); save(); }
+  else if(q.fin==="mm"||q.fin==="ss"){ /* A-079: minutes + seconds → decimal minutes */ dy.fin[q.fin]=t.value; var fm=document.getElementById("f_min"),fs=document.getElementById("f_sec"),mv=msIn(fm?fm.value:dy.fin.mm,fs?fs.value:dy.fin.ss); dy.fin.min=mv===null?"":String(mv); save(); render(); }
   else if(q.fin){ dy.fin[q.fin]=t.value; save(); if(q.fin==="km"||q.fin==="min") render(); }
   else if(q.prof){ var v=num(t.value); if(v!==null&&v>=0){D.profile[q.prof]=v; save(); var ln=document.getElementById("lvlnote"); if(ln) ln.innerHTML=lvlNote(); if(D.onb) render();} }
   else if(q.goal&&D.goal){ if(q.goal==="d"){if(t.value===""||/^\d{4}-\d{2}-\d{2}$/.test(t.value)&&t.value>TODAY){if(t.value)D.goal.d=t.value;else delete D.goal.d;}}
@@ -3785,7 +3794,7 @@ document.addEventListener("change",function(e){
   else if(q.a==="gfile"&&t.files&&t.files[0]&&t.files[0].size>TRKMAX){t.value="";dy.fin.gmsg="This run file is too large (over 20 MB). Nothing was imported.";save();render();}
   else if(q.a==="gfile"&&t.files&&t.files[0]){ var fr=new FileReader(), name=t.files[0].name;
     fr.onload=function(){ var r=null; try{r=parseTrack(String(fr.result));}catch(x){}
-      if(r){dy.fin.km=r.km; if(r.min>0)dy.fin.min=r.min; dy.fin.gmsg="Imported from "+name+": "+fmtKg(r.km)+" km"+(r.min>0?" in "+fmtKg(r.min)+" min.":". Please enter the time by hand.");}
+      if(r){dy.fin.km=r.km; if(r.min>0){dy.fin.min=r.min;delete dy.fin.mm;delete dy.fin.ss;} dy.fin.gmsg="Imported from "+name+": "+fmtKg(r.km)+" km"+(r.min>0?" in "+mss(r.min)+".":". Please enter the time by hand.");}
       else dy.fin.gmsg="The file could not be read. Please export GPX or TCX, FIT does not work.";
       save(); render(); };
     fr.onerror=function(){dy.fin.gmsg="The file could not be opened.";save();render();};
