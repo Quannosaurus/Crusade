@@ -41,7 +41,7 @@ function run(html){const bad=[];
 run(HTML0).forEach(issue);
 const MUT=[['a2','return BARX.test(n)||(BARN.test(n)&&!NOBAR.test(n));','return BARX.test(n);','a'],['a','var BARX=/barbell|smith|landmine|ez-bar|\\bsz\\b|t-bar|trap bar/i;','var BARX=/^$/;','a'],
   ['b','return Math.max(0,(b===null?barW(n):b)+(a===null?0:a));','return Math.max(0,(a===null?0:a));','b'],
-  ['c','x.bar=e.value;var b=num(e.value),a=ad?num(ad.value):null;x.w=a===null?"":String(Math.max(0,(b===null?barW(x.n):b)+a));','x.bar=e.value;x.w=ad?ad.value:"";','c'],
+  ['c','x.bar=e.value;var t=barTot({bar:e.value,add:ad?ad.value:""},x.n);x.w=t===null?"":String(t);','x.bar=e.value;x.w=ad?ad.value:"";','c'],
   ['d','if(n.bar&&typeof n.bar==="object"){b.bar={};','if(0){b.bar={};','d']];
 MUT.forEach(([n,a,b,u])=>{const m=HTML0.split(a).join(b);if(m===HTML0){issue('mutation '+n+': code not found');return;}
   let r;try{r=run(m);}catch(e){r=['crash '+e.message];}if(!r.some(x=>x.startsWith(u+':')||x.startsWith('crash')))issue('mutation '+n+' stays green');else rep.push('mutation '+n+': red');});

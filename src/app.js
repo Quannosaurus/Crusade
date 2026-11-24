@@ -2224,7 +2224,7 @@ function itemHTML(it,id,dy,loc,b,c,sid,last){
   if(g&&g.top&&!wOn(it,v)){var nv=nextVar(it,v,loc);if(nv>=0)h+='<div class="c"><button type="button" class="lnk nxv" data-a="nxv" data-id="'+id+'" data-v="'+nv+'">→ Next variation: '+esc(it.opts[nv].n)+'</button></div>';}
   h+=extra;
   if(!it.f){ h+='<div class="inp">';
-    if(barEx(it,v)){var bw=barW(o.n);h+='<label>Bar kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="bar" data-id="'+id+'" value="'+esc(inp.bar!=null?inp.bar:bw)+'"></label><label>Added kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="add" data-id="'+id+'" value="'+esc(inp.add!=null?inp.add:"")+'" placeholder="'+(g.w?Math.max(0,g.w-bw):"")+'"></label>';}
+    if(barEx(it,v)){var bw=barW(o.n),bi=num(inp.bar);if(bi!==null&&bi>=0)bw=bi;h+='<label>Bar kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="bar" data-id="'+id+'" value="'+esc(inp.bar!=null?inp.bar:bw)+'"></label><label>Added kg<input type="number" step="0.5" min="0" inputmode="decimal" data-inp="add" data-id="'+id+'" data-tw="'+(g.w||"")+'" data-bd="'+barW(o.n)+'" value="'+esc(inp.add!=null?inp.add:"")+'" placeholder="'+addPh(g.w,bw)+'"></label>';}
     else if(wOn(it,v)&&!it.iso&&!it.test) h+='<label>kg<input type="number" step="0.5" inputmode="decimal" data-inp="w" data-id="'+id+'" value="'+esc(inp.w)+'" placeholder="'+(g.w||"")+'"></label>';
     h+=setBoxes(id,n,inp,g.r,isS,rest,last)+'</div>'; }
   var isFav=(D.fav||[]).indexOf(o.n)>=0,pl=!it.f&&!it.test&&!it.iso;
@@ -2873,6 +2873,9 @@ var BARX=/barbell|smith|landmine|ez-bar|\bsz\b|t-bar|trap bar/i;
 var BARN=/romanian deadlift|good mornings?|seal row|back squat|front squat|bench press|overhead press|military press|bent-over row|hip thrust/i,NOBAR=/dumbbell|kettlebell|single-leg|cable|machine|band|goblet|one-arm/i;
 function barEx(it,v){if(!(v>=0&&!!it.opts[v]&&wOn(it,v)&&!it.iso&&!it.test))return false;var n=it.opts[v].n;return BARX.test(n)||(BARN.test(n)&&!NOBAR.test(n));}
 function barW(n){var b=D.bar&&own(D.bar,n)?D.bar[n]:null;return typeof b==="number"&&b>=0?b:(/ez-bar|\bsz\b/i.test(n)?10:20);}
+/* A-077: "only Bar" means training with the bar alone: the bar is the total (Training and Own workout alike);
+   no input at all keeps the target total. The Added placeholder shows target − bar, never below 0. */
+function addPh(tw,bw){return tw>0?Math.max(0,tw-(bw||0)):"";}
 function barTot(inp,n){var b=num(inp.bar),a=num(inp.add);if(b===null&&a===null)return null;return Math.max(0,(b===null?barW(n):b)+(a===null?0:a));}
 /* A-070: saved Own workout templates (D.owT, ≤ OWTMAX: {nm, ex:[catalogue names]}); a chip opens the form with those
    exercises, each row prefilled from its newest stored value. */
@@ -2890,7 +2893,7 @@ function owRead(){var o=D._ow;if(!o||!Array.isArray(o.ex)||!document.getElementB
   document.querySelectorAll("#owf [data-ows]").forEach(function(e){var x=o.ex[+e.dataset.owi];if(x&&+e.dataset.ows<x.s.length)x.s[+e.dataset.ows]=e.value;});
   document.querySelectorAll("#owf [data-oww]").forEach(function(e){var x=o.ex[+e.dataset.owi];if(x)x.w=e.value;});
   document.querySelectorAll("#owf [data-owbar]").forEach(function(e){var i=+e.dataset.owi,x=o.ex[i],ad=document.querySelector('#owf [data-owadd][data-owi="'+i+'"]');if(!x)return;
-    x.bar=e.value;var b=num(e.value),a=ad?num(ad.value):null;x.w=a===null?"":String(Math.max(0,(b===null?barW(x.n):b)+a));});}
+    x.bar=e.value;var t=barTot({bar:e.value,add:ad?ad.value:""},x.n);x.w=t===null?"":String(t);});}
 /* the rows that carry at least one set, each with its catalogue item */
 function owParse(o,cat){var out=[];(o.ex||[]).forEach(function(x){if(!x||typeof x.n!=="string"||!own(cat,x.n))return;var c=cat[x.n],s=setsArr(x.s||[]);if(!s.length)return;
   var w=wOn(c.it,c.v)?num(x.w):null;out.push({c:c,n:x.n,s:s,w:w!==null&&w>0&&w<=999?Math.round(w*10)/10:0,bar:x.bar});});return out;}
@@ -3767,7 +3770,9 @@ document.addEventListener("change",function(e){
     if(t.value!==""&&+q.rest>0){ var det=t.closest("details"), circuit=!!(det&&det.querySelector(".kind.z")), lastSet=+q.set===n-1;
       if(circuit?q.last==="1":!lastSet) startRest(+q.rest); }
     if(filled>=n){ var y=window.scrollY; render(); window.scrollTo(0,y); } }
-  else if(q.inp){ (dy.inp[q.id]||(dy.inp[q.id]={}))[q.inp]=t.value; save(); }
+  else if(q.inp){ (dy.inp[q.id]||(dy.inp[q.id]={}))[q.inp]=t.value; save();
+    /* A-077: the Added placeholder follows the bar just typed (target total − bar) */
+    if(q.inp==="bar"){var ad=document.querySelector('[data-inp="add"][data-id="'+q.id+'"]'),bt=num(t.value);if(ad&&ad.dataset.tw)ad.placeholder=addPh(+ad.dataset.tw,bt!==null&&bt>=0?bt:+ad.dataset.bd);} }
   else if(q.ow!=null){ owRead(); save(); }
   else if(q.fin){ dy.fin[q.fin]=t.value; save(); if(q.fin==="km"||q.fin==="min") render(); }
   else if(q.prof){ var v=num(t.value); if(v!==null&&v>=0){D.profile[q.prof]=v; save(); var ln=document.getElementById("lvlnote"); if(ln) ln.innerHTML=lvlNote(); if(D.onb) render();} }
